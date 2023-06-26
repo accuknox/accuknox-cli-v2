@@ -1,0 +1,207 @@
+version: v0.0.1
+policyRules:
+- name: cert-access
+  precondition: 
+  - /etc/ssl/.*
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1553/
+    tldr: Restrict access to trusted certificated bundles in the OS image
+    detailed: Operating systems maintain a list of trusted certificates (often called
+      trust bundles) in file system. These bundles decides which authorities are trusted.
+      Subverting these trust controls would essentially allow an adversary to operate
+      as a trusted entity. Adversaries may undermine security controls that will either
+      warn users of untrusted activity or prevent execution of untrusted programs.
+      Operating systems and security products may contain mechanisms to identify programs
+      or websites as possessing some level of trust. Examples of such features would
+      include a program being allowed to run because it is signed by a valid code
+      signing certificate, a program prompting the user with a warning because it
+      has an attribute set from being downloaded from the Internet, or getting an
+      indication that you are about to connect to an untrusted site.
+  spec:
+    severity: 2
+    message: restrict access to certificate data
+    tags:
+    - PCI-DSS
+    - MITRE
+    action: Audit
+    file:
+      matchDirectories:
+      - dir: "/etc/ssl/"
+        recursive: true
+      - dir: "/etc/pki/"
+        recursive: true
+      - dir: "/usr/local/share/ca-certificates/"
+        recursive: true
+- name: sys-bin-protect
+  precondition: 
+  - /bin/.*
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1543/
+    tldr: create or modify system-level processes for persistence of malicious payloads
+    detailed: Adversaries may create or modify system-level processes to repeatedly
+      execute malicious payloads as part of persistence.
+  spec:
+    severity: 1
+    message: attempted access to system binaries
+    tags:
+    - CIS
+    - MITRE
+    action: Audit
+    file:
+      matchDirectories:
+      - dir: "/bin/"
+      - dir: "/usr/bin/"
+      - dir: "/usr/sbin/"
+      recursive: true
+- name: password-protect
+  precondition: 
+  - /etc/passwd
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1555/
+    tldr: abuse common password storage locations to obtain user credentials
+    detailed: Adversaries may search for common password storage locations to obtain
+      user credentials. Passwords are stored in several places on a system, depending
+      on the operating system or application holding the credentials.
+  spec:
+    severity: 1
+    message: attempted access to password files
+    tags:
+    - CIS
+    - MITRE
+    action: Audit
+    file:
+      matchPaths:
+      - path: "/etc/passwd"
+      - path: "/etc/shadow"
+- name: scheduler-protect
+  precondition: 
+  - /etc/crontab
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1053/
+    tldr: abuse task scheduling functionality to facilitate initial or recurring execution
+      of malicious code
+    detailed: |-
+      Adversaries may abuse task scheduling functionality to facilitate initial or recurring execution of malicious code. Utilities exist within all major operating systems to schedule programs or scripts to be executed at a specified date and time.
+      Adversaries may use task scheduling to execute programs at system startup or on a scheduled basis for persistence. These mechanisms can also be abused to run a process under the context of a specified account (such as one with elevated permissions/privileges).
+  spec:
+    severity: 1
+    message: attempted access to cronjob settings
+    tags:
+    - MITRE
+    action: Audit
+    file:
+      matchPaths:
+      - path: "/etc/crontab"
+      - path: "/etc/at.allow"
+      - path: "/etc/at.deny"
+- name: maint-tool-access
+  precondition: 
+  - /sbin/apk
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1553/
+    tldr: Restrict access to maintenance tools (apk, mii-tool, ...)
+    detailed: Container images might contain maintenance tools which should ideally
+      never be used in prod env, or if used, should be used only in certain time frames.
+      Examples include, dynamic package management tools, mii-tool, iptables etc
+  spec:
+    severity: 1
+    message: restricted maintenance tool access attempted
+    tags:
+    - PCI-DSS
+    - MITRE
+    action: Audit
+    file:
+      matchDirectories:
+      - dir: "/sbin/"
+      recursive: true 
+- name: shell-access
+  precondition: 
+  - /bin/sh
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1059/
+    tldr: abuse shell access and execute arbitrary commands, scripts, or binaries
+    detailed: Containers comes with some built-in shell and scripting capabilities.
+      Adversaries may attempt to use the shell to execute arbitrary commands. 
+  spec:
+    severity: 1
+    message: attempted access to shell
+    tags:
+    - MITRE
+    action: Audit
+    process:
+      matchPaths:
+      - path: "/bin/sh"
+      - path: "/bin/bash"
+      - path: "/bin/dash"
+      - path: "/bin/ksh"
+      - path: "/bin/zsh"
+      - path: "/bin/tcsh"
+      - path: "/bin/csh"
+- name: ssh-access
+  precondition: 
+  - /usr/bin/ssh
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1021/
+    tldr: use ssh to gain access to host in the same network
+    detailed: To accomplish Lateral Movement, adversaries can use SSH to login into host in the same network. 
+  spec:
+    severity: 1
+    message: attempted access to SSH
+    tags:
+    - MITRE
+    action: Audit
+    process:
+      matchPaths:
+      - path: "/usr/bin/ssh"
+- name: nist-ca-3-net-icmp-audit
+  precondition: 
+  - /bin/busybox
+  description:
+    refs:
+    - name: NIST-CA-3
+      url:
+      - https://csf.tools/reference/nist-sp-800-53/r5/ca/ca-3/
+    tldr: Audit ICMP protocol
+    detailed: Approve and manage the exchange of information between the system and 
+       other systems using Assignment (one or more) interconnection security agreements,
+       information exchange security agreements, memoranda of understanding or agreement, 
+       service level agreements, user agreements, nondisclosure agreements, 
+       [Assignment organization-defined type of agreement] Document, as part of 
+       each exchange agreement, the interface characteristics, security and privacy 
+       requirements, controls, and responsibilities for each system, and the impact level 
+       of the information communicated; and Review and update the agreements 
+       [Assignment organization-defined frequency].
+  spec:
+    severity: 1
+    message: Detected Network traffic using ICMP packets
+    tags:
+    - NIST
+    - NIST-800-CA-3
+    - NETWORK
+    - System-Interconnections
+    action: Audit
+    network:
+      matchProtocol:
+      - protocol: "icmp"
+    

@@ -1,0 +1,50 @@
+            <tr onclick="showHideRow('{{.RowID}}');">
+				{{range $i, $p := .Rec}}
+					{{if eq $i 0}}
+						<td>
+							<span class="v38_6848">{{.Name}}</span>
+						</td>
+					{{else if eq $i 2}}
+						<td>
+						{{if eq .Name "-"}}
+							{{.Name}}
+						{{else}}
+							{{.Name}}/10
+						{{end}}
+						</td>
+					{{else if eq $i 3}}
+						{{if eq .Name "Block"}}
+							<td>
+								<div class="v38_6859"><span class="v38_6860">{{.Name}}</span></div>
+							</td>
+						{{else if eq .Name "Audit"}}
+							<td>
+								<div class="v38_6985"><span class="v38_6986">{{.Name}}</span></div>
+							</td>
+				        {{else if eq .Name "Enforce"}}
+				            <td>
+					            <div class="v38_6859"><span class="v38_6860">{{.Name}}</span></div>
+				            </td>
+						{{end}}
+					{{else}}
+						<td>{{.Name}}</td>	
+					{{end}}
+				{{end}}
+
+					
+            </tr>
+            <tr id="{{.RowID}}" class="hidden_row">
+                <td colspan="100%">
+					<h3>{{.PolicyType}}</h3>
+<pre>
+{{.Policy}}
+</pre>
+					<h3>Description</h3>
+					{{.Description}}
+					<br>
+					<h3>References</h3>
+					{{range .Refs}}
+					{{.Name}}: {{.URL}}<br>
+					{{end}}
+                </td>
+            </tr>
