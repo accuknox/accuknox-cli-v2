@@ -61,6 +61,7 @@ ifeq (, $(shell which gosec))
 	set -e ;\
 	GOSEC_TMP_DIR=$$(mktemp -d) ;\
 	cd $$GOSEC_TMP_DIR ;\
+	mkdir bin ;\
 	go mod init tmp ;\
 	go install github.com/securego/gosec/v2/cmd/gosec@latest ;\
 	rm -rf $$GOSEC_TMP_DIR ;\
