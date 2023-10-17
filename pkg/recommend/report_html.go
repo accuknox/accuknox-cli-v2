@@ -18,6 +18,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+// DO WE REALLY NEED HTML REPORTS HERE, IS IT NOT HANDLED MORE EFFIECIENTLY BY SAAS?
+
 // HTMLReport Report in HTML format
 type HTMLReport struct {
 	header    *template.Template
@@ -195,6 +197,31 @@ func (r HTMLReport) RecordAdmissionController(policyName, action string, annotat
 		Description: annotations["recommended-policies.kubearmor.io/description-detailed"],
 		// TODO: Figure out how to get the references, adding them to annotations would make them too long
 		Refs: []Ref{},
+	}
+	_ = r.record.Execute(r.outString, reci)
+	return nil
+}
+
+func (r HTMLReport) RecordHardeningController(policyName, action string, severity int, annotations map[string]string, tags []string) error {
+	*r.RecordCnt = *r.RecordCnt + 1
+	policy, err := os.ReadFile(filepath.Clean(policyName))
+	if err != nil {
+		log.WithError(err).Error(fmt.Sprintf("failed to read policy %s", policyName))
+	}
+	policyName = policyName[strings.LastIndex(policyName, "/")+1:]
+	reci := RecordInfo{
+		RowID: fmt.Sprintf("row%d", *r.RecordCnt),
+		Rec: []Col{
+			{Name: policyName},
+			{Name: annotations["app.accuknox.com/tldr"]},
+			{Name: fmt.Sprintf("%d", severity)},
+			{Name: cases.Title(language.English).String(action)},
+			{Name: strings.Join(tags, "\n")},
+		},
+		Policy:      string(policy),
+		PolicyType:  "KubeArmorPolicy",
+		Description: annotations["app.accuknox.com/description"],
+		Refs:        []Ref{},
 	}
 	_ = r.record.Execute(r.outString, reci)
 	return nil

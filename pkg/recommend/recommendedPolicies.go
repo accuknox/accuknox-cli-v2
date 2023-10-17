@@ -10,9 +10,12 @@ import (
 	// Karmor
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/utils"
+	"sigs.k8s.io/yaml"
 
 	"github.com/accuknox/auto-policy-discovery/src/libs"
 	"github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
+	dev2policy "github.com/accuknox/dev2/api/grpc/v1/policy"
+	hardening "github.com/accuknox/dev2/hardening/pkg/types"
 	"github.com/clarketm/json"
 	"github.com/fatih/color"
 	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
@@ -50,9 +53,9 @@ func closeConnectionToDiscoveryEngine() {
 
 func getClientConnection(c *k8s.Client) (*grpc.ClientConn, error) {
 	gRPC := ""
-	targetSvc := "discovery-engine"
-	var port int64 = 9089
-	mtchLabels := map[string]string{"app": "discovery-engine"}
+	var port int64 = 8090 // offloader is exposed at 8090
+	mtchLabels := map[string]string{"app": targetSvc}
+
 	if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
 		gRPC = val
 	} else {
@@ -97,6 +100,39 @@ func recommendAdmissionControllerPolicies(img ImageInfo) error {
 	return nil
 }
 
+func recommendHardeningPolicy(img ImageInfo) error {
+	client := dev2policy.NewGetPolicyClient(connection)
+	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
+		Type:      "hardening",
+		Kind:      "KubeArmorPolicy",
+		TenantId:  0,
+		ClusterId: 0,
+	})
+	if err != nil {
+		color.Red(err.Error())
+		return err
+	}
+
+	if resp.Policies != nil {
+		for _, policy := range resp.Policies {
+			policyStr := string(policy.Yaml)
+
+			var hardeningPolicy hardening.KubeArmorPolicy
+			err := yaml.Unmarshal([]byte(policyStr), &hardeningPolicy)
+			if err != nil {
+				log.Error(err)
+				return err
+			}
+
+			if namespaceMatches(hardeningPolicy.Metadata.Namespace) && matchHardeningTags(&hardeningPolicy) {
+				img.writeHardeningPolicy(hardeningPolicy)
+			}
+		}
+	}
+
+	return nil
+}
+
 func matchAdmissionControllerPolicyTags(policy *kyvernov1.Policy) bool {
 	policyTags := strings.Split(policy.Annotations["recommended-policies.kubearmor.io/tags"], ",")
 	if len(options.Tags) <= 0 {
@@ -107,6 +143,20 @@ func matchAdmissionControllerPolicyTags(policy *kyvernov1.Policy) bool {
 			return true
 		}
 	}
+	return false
+}
+
+func matchHardeningTags(policy *hardening.KubeArmorPolicy) bool {
+	policyTags := policy.Spec.Tags
+	if len(options.Labels) <= 0 {
+		return true
+	}
+	for _, t := range options.Tags {
+		if slices.Contains(policyTags, t) {
+			return true
+		}
+	}
+
 	return false
 }
 

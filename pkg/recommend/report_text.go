@@ -29,25 +29,8 @@ func NewTextReport() TextReport {
 	}
 }
 
-func (r TextReport) writeImageSummary(img *ImageInfo) {
-	t := tablewriter.NewWriter(r.outString)
-	t.SetBorder(false)
-	if img.Deployment != "" {
-		dp := fmt.Sprintf("%s/%s", img.Namespace, img.Deployment)
-		t.Append([]string{"Deployment", dp})
-	}
-	t.Append([]string{"Container", img.RepoTags[0]})
-	t.Append([]string{"OS", img.OS})
-	t.Append([]string{"Arch", img.Arch})
-	t.Append([]string{"Distro", img.Distro})
-	t.Append([]string{"Output Directory", img.getPolicyDir()})
-	t.Append([]string{"policy-template version", CurrentVersion})
-	t.Render()
-}
-
 // Start Start of the section of the text report
 func (r TextReport) Start(img *ImageInfo) error {
-	r.writeImageSummary(img)
 	r.table.SetHeader([]string{"Policy", "Short Desc", "Severity", "Action", "Tags"})
 	r.table.SetAlignment(tablewriter.ALIGN_LEFT)
 	r.table.SetRowLine(true)
@@ -88,6 +71,19 @@ func (r TextReport) RecordAdmissionController(policyName, action string, annotat
 	return nil
 }
 
+func (r TextReport) RecordHardeningPolicy(policyName, action string, severity int, annotations map[string]string, tags []string) error {
+	var rec []string
+	policyName = policyName[strings.LastIndex(policyName, "/")+1:]
+	rec = append(rec, wrapPolicyName(policyName, 35))
+	rec = append(rec, annotations["app.accuknox.com/tldr"])
+	rec = append(rec, fmt.Sprintf("%d", severity))
+	rec = append(rec, action)
+	tagsStr := strings.Join(tags, "\n")
+	rec = append(rec, tagsStr)
+	r.table.Append(rec)
+	return nil
+}
+
 func wrapPolicyName(name string, limit int) string {
 	line := ""
 	lines := []string{}
@@ -117,7 +113,6 @@ func wrapPolicyName(name string, limit int) string {
 
 // Render output the table
 func (r TextReport) Render(out string) error {
-
 	if err := os.WriteFile(out, []byte(r.outString.String()), 0600); err != nil {
 		log.WithError(err).Error("failed to write file")
 	}

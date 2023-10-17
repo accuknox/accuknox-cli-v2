@@ -68,6 +68,16 @@ func ReportAdmissionControllerRecord(policyName, action string, annotations map[
 	return errors.New("unknown reporter type")
 }
 
+func ReportHardeningControllerRecord(policyName, action string, severity int, annotations map[string]string, tags []string) error {
+	switch v := Handler.(type) {
+	case HTMLReport:
+		return v.RecordHardeningController(policyName, action, severity, annotations, tags)
+	case TextReport:
+		return v.RecordHardeningPolicy(policyName, action, severity, annotations, tags)
+	}
+	return errors.New("unknown reporter type")
+}
+
 // ReportSectEnd called once per container image at the end
 func ReportSectEnd(img *ImageInfo) error {
 	switch v := Handler.(type) {

@@ -18,7 +18,8 @@ import (
 )
 
 // DefaultPoliciesToBeRecommended are the default policies to be recommended
-var DefaultPoliciesToBeRecommended = []string{KyvernoPolicy, KubeArmorPolicy}
+// KubeArmor policies are hardening policies that are fetched from dev2-offloader.
+var DefaultPoliciesToBeRecommended = []string{KubeArmorPolicy}
 
 // KyvernoPolicy is alias for kyverno policy. The actual kind of Kyverno policy is 'Policy' but we use 'KyvernoPolicy'
 // to explicitly differentiate it from other policy types.
@@ -26,6 +27,9 @@ var KyvernoPolicy = "KyvernoPolicy"
 
 // KubeArmorPolicy is alias for kubearmor policy
 var KubeArmorPolicy = "KubeArmorPolicy"
+
+// Service name for discovery-engine subject to change
+const targetSvc = "discovery-engine"
 
 // Options for accuknox-cli recommend
 type Options struct {
@@ -105,9 +109,7 @@ func Recommend(c *k8s.Client, o Options) error {
 			"Current Version": CurrentVersion,
 		}).Info("Found outdated version of policy-templates")
 		log.Info("Downloading latest version [", LatestVersion, "]")
-		if _, err := DownloadAndUnzipRelease(); err != nil {
-			return err
-		}
+
 		log.WithFields(log.Fields{
 			"Updated Version": LatestVersion,
 		}).Info("policy-templates updated")
@@ -124,7 +126,6 @@ func Recommend(c *k8s.Client, o Options) error {
 	labelMap := labelArrayToLabelMap(o.Labels)
 
 	if len(o.Images) == 0 {
-		// recommendation based on k8s manifest
 		dps, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), v1.ListOptions{})
 		if err != nil {
 			return err
@@ -170,7 +171,6 @@ func Recommend(c *k8s.Client, o Options) error {
 }
 
 func handleDeployment(dp Deployment, c *k8s.Client) error {
-
 	var err error
 	for _, img := range dp.Images {
 		tempDir, err = os.MkdirTemp("", "accuknox-cli")
