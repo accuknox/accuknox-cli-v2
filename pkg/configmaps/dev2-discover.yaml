@@ -1,0 +1,30 @@
+app.yaml: |
+  discover:
+    consumer:
+      buffer-limit:
+        system: "1000"
+        network: "100"
+      time-limit: "1"
+      topic: "summary-v2"
+    processor:
+      spu: "1"
+      npu: "1"
+      cores: "50"
+    sink:
+      channel-size: "100"
+      topic: "policy-v1"
+    policy-client:
+      server: "127.0.0.1:8090"
+  logging:
+    level: "info"
+kmux.yaml: |
+  kmux:
+    source:
+      stream: "rabbitmq"
+    sink:
+      stream: "rabbitmq"
+  rabbitmq:
+    server: "127.0.0.1:5672"
+    exchange:
+      name: "dev2"
+      type: "direct"

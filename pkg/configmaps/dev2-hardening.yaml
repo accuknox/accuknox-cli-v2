@@ -1,0 +1,17 @@
+app.yaml: |
+  hardening:
+    enabled: "true"
+    cron-job-time-interval: "1h00m00s"
+    recommend-host-policy: "true"
+    template-version: ""
+    exclude-kube-system: "true"
+    topic: "policy-v1"
+kmux.yaml: |
+  kmux:
+    sink:
+      stream: "rabbitmq"
+  rabbitmq:
+    server: "localhost:5672"
+    exchange:
+      name: "dev2"
+      type: "direct"
