@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/accuknox/accuknox-cli-v2/pkg/summary"
 	"github.com/spf13/cobra"
 )
@@ -17,6 +18,7 @@ var summaryCmd = &cobra.Command{
 	Long:  `Discovery engine keeps the telemetry information from the policy enforcement engines and the accuknox-cli connects to it to provide this as observability data`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := summary.Summary(client, summaryOptions); err != nil {
+			fmt.Println(err)
 			return err
 		}
 		return nil
@@ -27,13 +29,11 @@ func init() {
 	rootCmd.AddCommand(summaryCmd)
 
 	summaryCmd.Flags().StringVar(&summaryOptions.GRPC, "gRPC", "", "gRPC server information")
-	summaryCmd.Flags().StringVarP(&summaryOptions.Labels, "labels", "l", "", "Labels")
-	summaryCmd.Flags().StringVarP(&summaryOptions.Namespace, "namespace", "n", "", "Namespace")
-	summaryCmd.Flags().StringVarP(&summaryOptions.PodName, "pod", "p", "", "PodName")
-	summaryCmd.Flags().StringVarP(&summaryOptions.Type, "type", "t", summary.DefaultReqType, "Summary filter type : process|file|network ")
-	summaryCmd.Flags().StringVar(&summaryOptions.ClusterName, "cluster", "", "Cluster name")
-	summaryCmd.Flags().StringVar(&summaryOptions.ContainerName, "container", "", "Container name")
+	summaryCmd.Flags().StringArrayVarP(&summaryOptions.Labels, "labels", "l", []string{}, "Labels")
+	summaryCmd.Flags().StringArrayVarP(&summaryOptions.Namespace, "namespace", "n", []string{}, "Namespace")
+	summaryCmd.Flags().StringVarP(&summaryOptions.Operation, "type", "t", "", "Summary filter type : process|file|network ")
+	summaryCmd.Flags().StringArrayVarP(&summaryOptions.Clusters, "cluster", "c", []string{}, "Cluster name")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Output, "output", "o", "", "Export Summary Data in JSON (accuknox-cli summary -o json)")
 	summaryCmd.Flags().BoolVar(&summaryOptions.RevDNSLookup, "rev-dns-lookup", false, "Reverse DNS Lookup")
-	summaryCmd.Flags().BoolVar(&summaryOptions.Aggregation, "agg", false, "Aggregate destination files/folder path")
+	//summaryCmd.Flags().BoolVar(&summaryOptions.Aggregation, "agg", false, "Aggregate destination files/folder path")
 }

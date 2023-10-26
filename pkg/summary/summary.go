@@ -6,67 +6,55 @@ package summary
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
-
-	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
+	"github.com/accuknox/accuknox-cli-v2/pkg"
+	"github.com/accuknox/dev2/api/grpc/v2/summary"
+	"github.com/clarketm/json"
 	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/utils"
-
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 // DefaultReqType : default option for request type
 var DefaultReqType = "process,file,network"
-var matchLabels = map[string]string{"app": "discovery-engine"}
-var port int64 = 9089
 
 // Options Structure
 type Options struct {
-	GRPC          string
-	Labels        string
-	Namespace     string
-	PodName       string
-	ClusterName   string
-	ContainerName string
-	Type          string
-	Output        string
-	RevDNSLookup  bool
-	Aggregation   bool
+	GRPC         string
+	Labels       []string
+	Namespace    []string
+	Clusters     []string
+	Operation    string
+	Workloads    []Workload
+	Source       []string
+	Destination  []string
+	Output       string
+	RevDNSLookup bool
+}
+
+type Workload struct {
+	Type string
+	Name string
+
+	Namespace string
+	Cluster   string
 }
 
 // GetSummary on pods
-func GetSummary(c *k8s.Client, o Options) ([]string, error) {
-	var str []string
-	gRPC := ""
-	targetSvc := "discovery-engine"
+func GetSummary(c *k8s.Client, o Options) (*summary.SummaryResponse, error) {
 
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
-			gRPC = val
-		} else {
-			pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
-			if err != nil {
-				return nil, err
-			}
-			gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
-		}
-	}
+	gRPC, err := pkg.ConnectGrpc(c, o.GRPC)
 
-	data := &opb.Request{
-		Label:         o.Labels,
-		NameSpace:     o.Namespace,
-		PodName:       o.PodName,
-		ClusterName:   o.ClusterName,
-		ContainerName: o.ContainerName,
-		Aggregate:     o.Aggregation,
-		Type:          o.Type,
+	data := &summary.SummaryRequest{
+		Labels:     o.Labels,
+		Namespaces: o.Namespace,
+		Clusters:   o.Clusters,
+		Operation:  o.Operation,
+		//WorkloadTypes: []*summary.Workload{},
+		Source:      o.Source,
+		Destination: o.Destination,
 	}
 
 	// create a client
@@ -76,69 +64,58 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 	}
 	defer conn.Close()
 
-	client := opb.NewObservabilityClient(conn)
+	client := summary.NewSummaryClient(conn)
 
-	if data.PodName != "" {
-		sumResp, err := client.Summary(context.Background(), data)
-		if err != nil {
-			return nil, err
-		}
-		if o.Output == "" {
-			DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
-		}
+	sumResp, err := client.GetSummaryEvent(context.Background(), data)
 
-		sumstr := ""
-		if o.Output == "json" {
-			arr, _ := json.MarshalIndent(sumResp, "", "    ")
-			sumstr = fmt.Sprintf("%s\n", string(arr))
-			str = append(str, sumstr)
-			return str, nil
-		}
-
-	} else {
-		//Fetch Summary Logs
-		podNameResp, err := client.GetPodNames(context.Background(), data)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, podname := range podNameResp.PodName {
-			if podname == "" {
-				continue
-			}
-			data.PodName = podname
-			sumResp, err := client.Summary(context.Background(), data)
-			if err != nil {
-				return nil, err
-			}
-			if o.Output == "" {
-				DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
-			}
-
-			sumstr := ""
-			if o.Output == "json" {
-				arr, _ := json.MarshalIndent(sumResp, "", "    ")
-				sumstr = fmt.Sprintf("%s\n", string(arr))
-				str = append(str, sumstr)
-			}
-		}
-		if o.Output == "json" {
-			return str, nil
-		}
+	if err != nil {
+		return nil, err
 	}
-	return str, nil
+
+	return sumResp, nil
+
+	return nil, nil
 }
 
 // Summary - printing the summary output
 func Summary(c *k8s.Client, o Options) error {
 
-	summary, err := GetSummary(c, o)
+	summaryResp, err := GetSummary(c, o)
 	if err != nil {
+		log.Error().Msgf("error while getting summary, error: %s", err.Error())
 		return err
 	}
-	for _, sum := range summary {
-		if o.Output == "json" {
-			fmt.Printf("%s", sum)
+
+	if o.Output == "json" {
+		summaryByte, err := json.MarshalIndent(summaryResp, "", "  ")
+		if err != nil {
+			log.Error().Msgf("error while marshalling summary, error: %s", err.Error())
+			return err
+		}
+		fmt.Println(string(summaryByte))
+	} else {
+		for clusterName, cluster := range summaryResp.GetClusters() {
+			for nsName, namespace := range cluster.GetNamespaces() {
+
+				for depName, dep := range namespace.Deployments {
+					pkg.DisplayOutput(dep.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", depName)
+				}
+				for dsName, ds := range namespace.DaemonSets {
+					pkg.DisplayOutput(ds.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", dsName)
+				}
+				for rsName, rs := range namespace.ReplicaSets {
+					pkg.DisplayOutput(rs.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", rsName)
+				}
+				for stsName, sts := range namespace.StatefulSets {
+					pkg.DisplayOutput(sts.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", stsName)
+				}
+				for cjName, cj := range namespace.CronJobs {
+					pkg.DisplayOutput(cj.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", cjName)
+				}
+				for jobName, job := range namespace.Jobs {
+					pkg.DisplayOutput(job.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", jobName)
+				}
+			}
 		}
 	}
 	return nil

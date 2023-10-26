@@ -12,11 +12,8 @@ import (
 	"github.com/kubearmor/kubearmor-client/utils"
 	"sigs.k8s.io/yaml"
 
-	"github.com/accuknox/auto-policy-discovery/src/libs"
-	"github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
 	dev2policy "github.com/accuknox/dev2/api/grpc/v1/policy"
 	hardening "github.com/accuknox/dev2/hardening/pkg/types"
-	"github.com/clarketm/json"
 	"github.com/fatih/color"
 	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	log "github.com/sirupsen/logrus"
@@ -73,32 +70,33 @@ func getClientConnection(c *k8s.Client) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func recommendAdmissionControllerPolicies(img ImageInfo) error {
-	client := worker.NewWorkerClient(connection)
-	labels := libs.LabelMapToString(img.Labels)
-	resp, err := client.Convert(context.Background(), &worker.WorkerRequest{
-		Labels:     labels,
-		Namespace:  img.Namespace,
-		Policytype: "AdmissionControllerPolicy",
-	})
-	if err != nil {
-		color.Red(err.Error())
-		return err
-	}
-	if resp.AdmissionControllerPolicy != nil {
-		for _, policy := range resp.AdmissionControllerPolicy {
-			var kyvernoPolicy kyvernov1.Policy
-			err := json.Unmarshal(policy.Data, &kyvernoPolicy)
-			if err != nil {
-				return err
-			}
-			if namespaceMatches(kyvernoPolicy.Namespace) && matchAdmissionControllerPolicyTags(&kyvernoPolicy) {
-				img.writeAdmissionControllerPolicy(kyvernoPolicy)
-			}
-		}
-	}
-	return nil
-}
+//
+//func recommendAdmissionControllerPolicies(img ImageInfo) error {
+//	client := worker.NewWorkerClient(connection)
+//	labels := libs.LabelMapToString(img.Labels)
+//	resp, err := client.Convert(context.Background(), &worker.WorkerRequest{
+//		Labels:     labels,
+//		Namespace:  img.Namespace,
+//		Policytype: "AdmissionControllerPolicy",
+//	})
+//	if err != nil {
+//		color.Red(err.Error())
+//		return err
+//	}
+//	if resp.AdmissionControllerPolicy != nil {
+//		for _, policy := range resp.AdmissionControllerPolicy {
+//			var kyvernoPolicy kyvernov1.Policy
+//			err := json.Unmarshal(policy.Data, &kyvernoPolicy)
+//			if err != nil {
+//				return err
+//			}
+//			if namespaceMatches(kyvernoPolicy.Namespace) && matchAdmissionControllerPolicyTags(&kyvernoPolicy) {
+//				img.writeAdmissionControllerPolicy(kyvernoPolicy)
+//			}
+//		}
+//	}
+//	return nil
+//}
 
 func recommendHardeningPolicy(img ImageInfo) error {
 	client := dev2policy.NewGetPolicyClient(connection)

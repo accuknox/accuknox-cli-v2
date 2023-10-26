@@ -5,7 +5,7 @@
 package cmd
 
 import (
-	"github.com/accuknox/accuknox-cli/cmd/license"
+	//"github.com/accuknox/accuknox-cli/cmd/license"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -42,7 +42,7 @@ This client can be used to interact with KubeArmor OSS and AccuKnox's proprietar
 
 // adding all the commands with sub commands
 func addSubCommandPalettes() {
-	rootCmd.AddCommand(license.LicenseCmd)
+	//rootCmd.AddCommand(license.LicenseCmd)
 }
 
 func init() {

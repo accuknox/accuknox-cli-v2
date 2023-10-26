@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	pb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/license"
+	//pb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/license"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/utils"
 	"google.golang.org/grpc"
@@ -46,13 +46,13 @@ func InstallLicense(client *k8s.Client, key string, user string) error {
 	}
 	defer conn.Close()
 
-	licenseClient := pb.NewLicenseClient(conn)
-
-	req := &pb.LicenseInstallRequest{
-		Key:    key,
-		UserId: user,
-	}
-	_, err = licenseClient.InstallLicense(context.Background(), req)
+	//licenseClient := pb.NewLicenseClient(conn)
+	//
+	//req := &pb.LicenseInstallRequest{
+	//	Key:    key,
+	//	UserId: user,
+	//}
+	//_, err = licenseClient.InstallLicense(context.Background(), req)
 	if err != nil {
 		return err
 	}
