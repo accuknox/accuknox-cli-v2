@@ -113,7 +113,8 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 	for _, w := range workloads.Workloads {
 		sumReq.Namespaces = []string{w.Namespace}
 		sumReq.Clusters = []string{w.Cluster}
-		sumResp, err := client.GetSummaryEvent(context.Background(), sumReq)
+		maxSizeOption := grpc.MaxCallRecvMsgSize(32 * 10e6)
+		sumResp, err := client.GetSummaryEvent(context.Background(), sumReq, maxSizeOption)
 		if err != nil {
 			log.Error().Msgf("error while fetching summary for workload: %s in namespace : %s, error: %s", w.Name, w.Namespace, err.Error())
 			continue
