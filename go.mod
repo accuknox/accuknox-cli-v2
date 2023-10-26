@@ -29,9 +29,9 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20230519075515-e8b45043a53d
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230519075515-e8b45043a53d
-	github.com/kubearmor/kubearmor-client v0.13.7
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20230918061249-1d5b51c449bd
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230626060245-4f5b8ac4f298
+	github.com/kubearmor/kubearmor-client v0.14.1
 	github.com/kyverno/kyverno v1.9.2
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587
@@ -193,8 +193,8 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34 // indirect
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230616113436-0f9e047493a0 // indirect
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20230515155803-35434b6407a5 // indirect
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230918135729-00395f443fa0 // indirect
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20230918061249-1d5b51c449bd // indirect
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230426205424-1c7e0fd1d876 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
@@ -331,7 +331,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	k8s.io/kubectl v0.27.1 // indirect
 	k8s.io/pod-security-admission v0.27.1 // indirect
-	sigs.k8s.io/controller-runtime v0.14.6 // indirect
+	sigs.k8s.io/controller-runtime v0.15.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.2 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.14.1 // indirect
