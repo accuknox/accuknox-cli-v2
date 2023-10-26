@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/accuknox/accuknox-cli-v2/pkg"
 	"strconv"
 	"strings"
 
@@ -19,10 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const serviceName = "discovery-engine" // Subject to change
-const port int64 = 8090
-
-var matchLabels = map[string]string{"app": serviceName}
+var matchLabels = map[string]string{"app": pkg.ServiceName}
 var connection *grpc.ClientConn
 
 func initClientConnection(c *k8s.Client, o Options) error {
@@ -40,12 +38,12 @@ func initClientConnection(c *k8s.Client, o Options) error {
 
 func getClientConnection(c *k8s.Client, o Options) (*grpc.ClientConn, error) {
 	gRPC := ""
-	targetSvc := serviceName
+	targetSvc := pkg.ServiceName
 
 	if o.GRPC != "" {
 		gRPC = o.GRPC
 	} else {
-		pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
+		pf, err := utils.InitiatePortForward(c, pkg.Port, pkg.Port, matchLabels, targetSvc)
 		if err != nil {
 			return nil, err
 		}

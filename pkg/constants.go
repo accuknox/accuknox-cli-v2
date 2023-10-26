@@ -1,9 +1,12 @@
 package pkg
 
+const (
+	ServiceName       = "discovery-engine" // Subject to change
+	Port        int64 = 8090
+)
+
 var (
-	matchLabels       = map[string]string{"app": "discovery-engine"}
-	port        int64 = 9089
-	targetSvc         = "discovery-engine"
+	matchLabels = map[string]string{"app": "discovery-engine"}
 	// SysProcHeader variable contains source process, destination process path, count, timestamp and status
 	SysProcHeader = []string{"Src Process", "Destination Process Path", "Count", "Last Updated Time", "Status"}
 	// SysFileHeader variable contains source process, destination file path, count, timestamp and status

@@ -18,7 +18,7 @@ func ConnectGrpc(c *k8s.Client, grpc string) (string, error) {
 		if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
 			grpc = val
 		} else {
-			pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
+			pf, err := utils.InitiatePortForward(c, Port, Port, matchLabels, ServiceName)
 			if err != nil {
 				return "", err
 			}
