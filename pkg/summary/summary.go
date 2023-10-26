@@ -66,27 +66,69 @@ func GetSummary(c *k8s.Client, o Options) (*summary.SummaryResponse, error) {
 
 	client := summary.NewSummaryClient(conn)
 
-	sumResp, err := client.GetSummaryEvent(context.Background(), data)
+	//sumResp, err := o.getSummary(client, data)
 
+	sumResp, err := o.getSummaryPerWorkload(client, data)
 	if err != nil {
 		return nil, err
 	}
 
 	return sumResp, nil
 
-	return nil, nil
 }
 
 // Summary - printing the summary output
 func Summary(c *k8s.Client, o Options) error {
 
-	summaryResp, err := GetSummary(c, o)
+	_, err := GetSummary(c, o)
 	if err != nil {
 		log.Error().Msgf("error while getting summary, error: %s", err.Error())
 		return err
 	}
 
-	if o.Output == "json" {
+	return nil
+}
+
+func (o *Options) getSummary(client summary.SummaryClient, sumReq *summary.SummaryRequest) (*summary.SummaryResponse, error) {
+	sumResp, err := client.GetSummaryEvent(context.Background(), sumReq)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return sumResp, nil
+}
+
+func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *summary.SummaryRequest) (*summary.SummaryResponse, error) {
+
+	// TODO: apply options for clusters,namespaces, labels and workloads here itself.
+	workloadReq := &summary.WorkloadRequest{}
+
+	workloads, err := client.GetWorkloads(context.Background(), workloadReq)
+	if err != nil {
+		log.Error().Msgf("error while fetching summary, error: %s", err.Error())
+		return nil, err
+	}
+
+	for _, w := range workloads.Workloads {
+		sumReq.Namespaces = []string{w.Namespace}
+		sumReq.Clusters = []string{w.Cluster}
+		sumResp, err := client.GetSummaryEvent(context.Background(), sumReq)
+		if err != nil {
+			log.Error().Msgf("error while fetching summary for workload: %s in namespace : %s, error: %s", w.Name, w.Namespace, err.Error())
+			continue
+		}
+		err = printOutput(o.Output, sumResp, o.Operation, o.RevDNSLookup)
+		if err != nil {
+			log.Error().Msgf("error while displaying summary, error: %s", err.Error())
+			//return nil, err
+		}
+	}
+	return nil, nil
+}
+
+func printOutput(outputType string, summaryResp *summary.SummaryResponse, operationType string, revDns bool) error {
+	if outputType == "json" {
 		summaryByte, err := json.MarshalIndent(summaryResp, "", "  ")
 		if err != nil {
 			log.Error().Msgf("error while marshalling summary, error: %s", err.Error())
@@ -98,22 +140,22 @@ func Summary(c *k8s.Client, o Options) error {
 			for nsName, namespace := range cluster.GetNamespaces() {
 
 				for depName, dep := range namespace.Deployments {
-					pkg.DisplayOutput(dep.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", depName)
+					pkg.DisplayOutput(dep.Events, revDns, operationType, clusterName, nsName, "Deployment", depName)
 				}
 				for dsName, ds := range namespace.DaemonSets {
-					pkg.DisplayOutput(ds.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", dsName)
+					pkg.DisplayOutput(ds.Events, revDns, operationType, clusterName, nsName, "Deployment", dsName)
 				}
 				for rsName, rs := range namespace.ReplicaSets {
-					pkg.DisplayOutput(rs.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", rsName)
+					pkg.DisplayOutput(rs.Events, revDns, operationType, clusterName, nsName, "Deployment", rsName)
 				}
 				for stsName, sts := range namespace.StatefulSets {
-					pkg.DisplayOutput(sts.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", stsName)
+					pkg.DisplayOutput(sts.Events, revDns, operationType, clusterName, nsName, "Deployment", stsName)
 				}
 				for cjName, cj := range namespace.CronJobs {
-					pkg.DisplayOutput(cj.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", cjName)
+					pkg.DisplayOutput(cj.Events, revDns, operationType, clusterName, nsName, "Deployment", cjName)
 				}
 				for jobName, job := range namespace.Jobs {
-					pkg.DisplayOutput(job.Events, o.RevDNSLookup, o.Operation, clusterName, nsName, "Deployment", jobName)
+					pkg.DisplayOutput(job.Events, revDns, operationType, clusterName, nsName, "Deployment", jobName)
 				}
 			}
 		}
