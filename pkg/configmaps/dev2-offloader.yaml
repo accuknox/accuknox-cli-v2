@@ -1,0 +1,29 @@
+app.yaml: |
+  offloader:
+    summary:
+      enabled: "true"
+      topic: "summary-v2"
+    policy:
+      enabled: "true"
+      topic: "policy-v1"
+    server:
+      enabled: "true"
+      host: "0.0.0.0"
+      port: "8090"
+    database:
+      driver: "sqlite"
+      name: "accuknox.db"
+      credentials: "local"
+    logging:
+      level: "info"
+kmux.yaml: |
+  kmux:
+    source:
+      stream: "rabbitmq"
+    sink:
+      stream: "rabbitmq"
+  rabbitmq:
+    server: "localhost:5672"
+    exchange:
+      name: "dev2"
+      type: "direct"

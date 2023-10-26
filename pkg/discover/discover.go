@@ -1,195 +1,124 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2022 Authors of KubeArmor
-
-// Package discover fetches policies from discovery engine
+// Package discover fetches discovered policies from discovery engine
 package discover
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"os"
-	"strconv"
+	"strings"
 
-	"github.com/clarketm/json"
 	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/utils"
-	"github.com/rs/zerolog/log"
-	"sigs.k8s.io/yaml"
 
-	nv1 "k8s.io/api/networking/v1"
+	log "github.com/sirupsen/logrus"
+)
 
-	wpb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
-	"github.com/accuknox/auto-policy-discovery/src/types"
-	"google.golang.org/grpc"
+const (
+	KindK8sNetworkPolicy    = "NetworkPolicy"
+	KindKubeArmorPolicy     = "KubeArmorPolicy"
+	KindKubeArmorHostPolicy = "KubeArmorHostPolicy"
+
+	PolicyType = "discovered"
+
+	FmtYAML = "yaml"
+	FmtJSON = "json"
 )
 
 // Options Structure
 type Options struct {
 	GRPC           string
 	Format         string
-	Policy         string
+	Kind           string
 	Namespace      string
-	Clustername    string
 	Labels         string
 	Fromsource     string
 	IncludeNetwork bool
 }
 
-var matchLabels = map[string]string{"app": "discovery-engine"}
-var port int64 = 9089
+type policyHandler struct {
+	fn func(*k8s.Client, Options) ([]string, error)
+}
 
-// ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
-func ConvertPolicy(c *k8s.Client, o Options) ([]string, error) {
-	var str []string
-	gRPC := ""
-	targetSvc := "discovery-engine"
+func Policy(c *k8s.Client, o Options) error {
+	defer disconnect()
+	log.Info("Discovering policies...")
 
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
-			gRPC = val
-		} else {
-			pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
+	policies := getSupportedPolicies()
+	toProcess, err := determinePoliciesToProcess(o, policies)
+	if err != nil {
+		return err
+	}
+
+	var errorSlice []string
+	for kind, process := range toProcess {
+		if process {
+			data, err := fetchPolicyData(policies, kind, c, o)
 			if err != nil {
-				return nil, err
+				log.WithFields(log.Fields{
+					"kind":           o.Kind,
+					"format":         o.Format,
+					"namespace":      o.Namespace,
+					"labels":         o.Labels,
+					"fromSource":     o.Fromsource,
+					"gRPC":           o.GRPC,
+					"includeNetwork": o.IncludeNetwork,
+				}).Warn("failed to process/fetch policies")
+				errorSlice = append(errorSlice, err.Error())
+				continue
 			}
-			gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
+
+			pd := NewPolicyDisplay(data)
+			err = pd.Display(o)
+			if err != nil {
+				errorSlice = append(errorSlice, err.Error())
+			}
 		}
 	}
 
-	data := &wpb.WorkerRequest{
-		Policytype:     o.Policy,
-		Namespace:      o.Namespace,
-		Clustername:    o.Clustername,
-		Labels:         o.Labels,
-		Fromsource:     o.Fromsource,
-		Includenetwork: o.IncludeNetwork,
+	if len(errorSlice) > 0 {
+		return errors.New(strings.Join(errorSlice, "; "))
 	}
 
-	// create a client
-	conn, err := grpc.Dial(gRPC, grpc.WithInsecure())
+	return nil
+}
+
+// As we support more type of policies in future we can extend here
+func getSupportedPolicies() map[string]policyHandler {
+	return map[string]policyHandler{
+		KindK8sNetworkPolicy:    {getNetworkPolicy},
+		KindKubeArmorHostPolicy: {getKaHostPolicy},
+		KindKubeArmorPolicy:     {getKaPolicy},
+	}
+}
+
+func determinePoliciesToProcess(o Options, policies map[string]policyHandler) (map[string]bool, error) {
+	toProcess := make(map[string]bool)
+	for k := range policies {
+		toProcess[k] = true
+	}
+
+	if o.Kind != "" {
+		if _, exists := policies[o.Kind]; !exists {
+			var supportedPolicies []string
+			for policyKey := range toProcess {
+				supportedPolicies = append(supportedPolicies, policyKey)
+			}
+			return nil, errors.New("the policy you are requesting is not supported. \nCurrently supported policies are: " + strings.Join(supportedPolicies, ", "))
+		}
+
+		for k := range toProcess {
+			if k != o.Kind {
+				toProcess[k] = false
+			}
+		}
+	}
+	return toProcess, nil
+}
+
+func fetchPolicyData(policies map[string]policyHandler, kind string, c *k8s.Client, o Options) ([]string, error) {
+	data, err := policies[kind].fn(c, o)
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
 
-	client := wpb.NewWorkerClient(conn)
-
-	var response *wpb.WorkerResponse
-	response, err = client.Convert(context.Background(), data)
-	if err != nil {
-		return nil, errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- kubectl get po -n accuknox-agents")
-	}
-
-	if o.Policy == "CiliumNetworkPolicy" {
-
-		if len(response.Ciliumpolicy) > 0 {
-			for _, val := range response.Ciliumpolicy {
-				policy := types.CiliumNetworkPolicy{}
-
-				err = json.Unmarshal(val.Data, &policy)
-				if err != nil {
-					log.Error().Msg(err.Error())
-					return nil, err
-				}
-
-				if o.Format == "json" {
-					arr, _ := json.MarshalIndent(policy, "", "    ")
-					pstr := fmt.Sprintf("%s\n", string(arr))
-					str = append(str, pstr)
-				} else if o.Format == "yaml" {
-					arr, _ := json.Marshal(policy)
-					yamlarr, _ := yaml.JSONToYAML(arr)
-					pstr := fmt.Sprintf("%s", string(yamlarr))
-					str = append(str, pstr)
-				} else {
-					log.Printf("Currently supported formats are json and yaml\n")
-					break
-				}
-			}
-			return str, err
-		}
-	} else if o.Policy == "KubearmorSecurityPolicy" {
-
-		if len(response.Kubearmorpolicy) > 0 {
-			for _, val := range response.Kubearmorpolicy {
-				policy := types.KubeArmorPolicy{}
-
-				err = json.Unmarshal(val.Data, &policy)
-				if err != nil {
-					log.Error().Msg(err.Error())
-					return nil, err
-				}
-
-				if o.Format == "json" {
-					arr, _ := json.MarshalIndent(policy, "", "    ")
-					pstr := fmt.Sprintf("%s\n", string(arr))
-					str = append(str, pstr)
-				} else if o.Format == "yaml" {
-					arr, _ := json.Marshal(policy)
-					yamlarr, _ := yaml.JSONToYAML(arr)
-					pstr := fmt.Sprintf("%s", string(yamlarr))
-					str = append(str, pstr)
-				} else {
-					fmt.Printf("Currently supported formats are json and yaml\n")
-					break
-				}
-			}
-			return str, err
-		}
-	} else if o.Policy == "NetworkPolicy" {
-
-		if len(response.K8SNetworkpolicy) > 0 {
-			for _, val := range response.K8SNetworkpolicy {
-				policy := nv1.NetworkPolicy{}
-
-				err = json.Unmarshal(val.Data, &policy)
-				if err != nil {
-					log.Error().Msg(err.Error())
-					return nil, err
-				}
-
-				if o.Format == "json" {
-					arr, _ := json.MarshalIndent(policy, "", "    ")
-					pstr := fmt.Sprintf("%s\n", string(arr))
-					str = append(str, pstr)
-				} else if o.Format == "yaml" {
-					arr, _ := json.Marshal(policy)
-					yamlarr, _ := yaml.JSONToYAML(arr)
-					pstr := fmt.Sprintf("%s", string(yamlarr))
-					str = append(str, pstr)
-				} else {
-					fmt.Printf("Currently supported formats are json and yaml\n")
-					break
-				}
-			}
-			return str, err
-		}
-	}
-
-	return str, err
-}
-
-// Policy discovers Cilium or KubeArmor policies
-func Policy(c *k8s.Client, o Options) error {
-	var str []string
-	var err error
-	if o.Policy != "CiliumNetworkPolicy" && o.Policy != "NetworkPolicy" && o.Policy != "KubearmorSecurityPolicy" {
-		log.Error().Msgf("Policy type not recognized.\nCurrently supported policies are cilium, kubearmor and k8snetpol\n")
-	}
-
-	if str, err = ConvertPolicy(c, o); err != nil {
-		return err
-	}
-	for _, policy := range str {
-		if o.Format == "yaml" {
-			fmt.Printf("%s---\n", policy)
-		}
-		if o.Format == "json" {
-			fmt.Printf("%s", policy)
-		}
-	}
-	return nil
+	totalPolicies := len(data)
+	log.Infof("Total policies discovered by the discovery engine: [%v]", totalPolicies)
+	return data, nil
 }

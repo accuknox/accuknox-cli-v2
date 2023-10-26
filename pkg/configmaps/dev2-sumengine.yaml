@@ -1,0 +1,26 @@
+app.yaml: |
+  watcher:
+    enabled: "true"
+    kubearmor-event-type:
+      logs: "true"
+      alerts: "true"
+    kubearmor-relay:
+      name: "relay-1"
+      enabled: "true"
+      url: "kubearmor.kube-system.svc.cluster.local"
+      port: "32767"
+  summary-engine:
+    enabled: "true"
+    cron-interval: "0h01m0s"
+    threshold: "10000"
+    topic:
+      summary-event: "summary-v2"
+kmux.yaml: |
+  kmux:
+    sink:
+      stream: "rabbitmq"
+  rabbitmq:
+    server: "localhost:5672"
+    exchange:
+      name: "dev2"
+      type: "direct"
