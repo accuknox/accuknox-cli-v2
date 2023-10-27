@@ -1,6 +1,7 @@
 package discoveryengine
 
 import (
+	"github.com/accuknox/accuknox-cli-v2/pkg"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -8,10 +9,10 @@ import (
 func GetCRD() *apiextv1.CustomResourceDefinition {
 	crd := &apiextv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "discoveredpolicies.security.kubearmor.com",
+			Name: pkg.CRDName,
 		},
 		Spec: apiextv1.CustomResourceDefinitionSpec{
-			Group: "security.kubearmor.com",
+			Group: pkg.APIGroupKubearmorSecurity,
 			Names: apiextv1.CustomResourceDefinitionNames{
 				Kind:     "DiscoveredPolicy",
 				ListKind: "DiscoveredPolicyList",

@@ -1,12 +1,47 @@
 package pkg
 
 const (
-	ServiceName       = "discovery-engine" // Subject to change
+	ServiceName       = "dev2" // Subject to change
 	Port        int64 = 8090
+
+	APIGroupCilium            = "cilium.io"
+	APIGroupKubearmorSecurity = "security.kubearmor.com"
+	APIGroupNetworking        = "networking.k8s.io"
+	APIGroupRBACAuth          = "rbac.authorization.k8s.io"
+
+	ClusterRole                 = "ClusterRole"
+	ServiceAccount              = "ServiceAccount"
+	GRPC                        = "grpc"
+	AMQP                        = "amqp"
+	AMQPPort              int32 = 5672
+	GRPCPort              int32 = 8090
+	Management                  = "management"
+	ManagementPort        int32 = 15672
+	CRDName                     = "discoveredpolicies.security.kubearmor.com"
+	ConfigMapDirPath            = "pkg/configmaps"
+	ClusterRoleViewName         = "dev2-view-cluster-resources"
+	ClusterRoleManageName       = "dev2-manage-policies"
+
+	SumEngine          = "summary-engine"
+	SumEngineImage     = "accuknox/dev2-sumengine:latest"
+	Offlaoder          = "offloader"
+	OffloaderImage     = "public.ecr.aws/k9v9d5v2/discovery-engine-offloader:v0.1.0"
+	Discover           = "discover"
+	DiscoverImage      = "accx3435/dev2-discover:v1"
+	Rabbitmq           = "rabbitmq"
+	RabbitmqImage      = "rabbitmq:3.12.2-management"
+	Hardening          = "hardening"
+	HardeningImage     = "accuknox/dev2-hardening:latest"
+	ServiceAccountName = "dev2"
+
+	DiscoverConfMap  = "dev2-discover"
+	HardeningConfMap = "dev2-hardening"
+	OffloaderConfMap = "dev2-offloader"
+	SumengineConfmap = "dev2-sumengine"
 )
 
 var (
-	matchLabels = map[string]string{"app": "discovery-engine"}
+	MatchLabels = map[string]string{"app": "discovery-engine"}
 	// TODO: Add action and few other coloumns in network
 	// SysProcHeader variable contains source process, destination process path, count, timestamp and status
 	SysProcHeader = []string{"Src Process", "Destination Process Path", "Count", "Last Updated Time"}

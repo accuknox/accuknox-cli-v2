@@ -6,16 +6,28 @@ app.yaml: |
     policy:
       enabled: "true"
       topic: "policy-v1"
+      merge_policy: "false"
     server:
       enabled: "true"
       host: "0.0.0.0"
       port: "8090"
-    database:
-      driver: "sqlite"
-      name: "accuknox.db"
-      credentials: "local"
-    logging:
-      level: "info"
+
+  # Database configurations
+  database:
+    driver: "sqlite"
+    name: "accuknox.db"
+    host: "localhost"
+    port: "5432"
+    schema: "cwpp"
+    credentials: "local"
+    secret: 
+      path: "/knox/offloader/secrets"
+      key:
+        username: "postgres_user"
+        password: "postgres_password"
+
+
+
 kmux.yaml: |
   kmux:
     source:

@@ -2,13 +2,14 @@ package pkg
 
 import (
 	"fmt"
+	"os"
+	"sort"
+	"strconv"
+
 	"github.com/accuknox/dev2/api/grpc/v2/summary"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/utils"
 	"github.com/olekukonko/tablewriter"
-	"os"
-	"sort"
-	"strconv"
 )
 
 func ConnectGrpc(c *k8s.Client, grpc string) (string, error) {
@@ -18,7 +19,7 @@ func ConnectGrpc(c *k8s.Client, grpc string) (string, error) {
 		if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
 			grpc = val
 		} else {
-			pf, err := utils.InitiatePortForward(c, Port, Port, matchLabels, ServiceName)
+			pf, err := utils.InitiatePortForward(c, Port, Port, MatchLabels, ServiceName)
 			if err != nil {
 				return "", err
 			}
