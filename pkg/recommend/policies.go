@@ -131,6 +131,16 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 		}
 	}
 
+	val, err := policyBucket.RetrievePolicies(c, o)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(val) == 0 {
+		fmt.Println("No hardening policies found. Please check discovery engine logs.")
+		return nil, nil
+	}
+
 	StartTUI(policyBucket)
 	return data, nil
 }

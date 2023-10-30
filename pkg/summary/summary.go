@@ -1,164 +1,254 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2022 Authors of KubeArmor
-
-// Package summary shows observability data from discovery engine
 package summary
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/dev2/api/grpc/v2/summary"
-	"github.com/clarketm/json"
 	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/rs/zerolog/log"
+	"github.com/schollz/progressbar/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	log "github.com/sirupsen/logrus"
 )
 
-// DefaultReqType : default option for request type
-var DefaultReqType = "process,file,network"
+var globalConn *grpc.ClientConn
 
-// Options Structure
-type Options struct {
-	GRPC         string
-	Labels       []string
-	Namespace    []string
-	Clusters     []string
-	Operation    string
-	Workloads    []Workload
-	Source       []string
-	Destination  []string
-	Output       string
-	RevDNSLookup bool
+func disconnect() {
+	if globalConn != nil {
+		err := globalConn.Close()
+		if err != nil {
+			log.WithError(err).Error("failed to close connection")
+		}
+	}
 }
 
-type Workload struct {
-	Type string
-	Name string
+func getGRPCConnection(address string) (*grpc.ClientConn, error) {
+	if globalConn == nil {
+		var err error
+		opts := []grpc.DialOption{
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(32 * 10e6)),
+		}
 
-	Namespace string
-	Cluster   string
+		globalConn, err = grpc.Dial(address, opts...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return globalConn, nil
 }
 
 // GetSummary on pods
-func GetSummary(c *k8s.Client, o Options) (*summary.SummaryResponse, error) {
-
+func GetSummary(c *k8s.Client, o Options) (*Workload, error) {
 	gRPC, err := common.ConnectGrpc(c, o.GRPC)
+	if err != nil {
+		log.WithError(err).Errorf("failed to connect to grpc: %v", err)
+		return nil, err
+	}
 
 	data := &summary.SummaryRequest{
-		Labels:     o.Labels,
-		Namespaces: o.Namespace,
-		Clusters:   o.Clusters,
-		Operation:  o.Operation,
-		//WorkloadTypes: []*summary.Workload{},
+		Labels:      o.Labels,
+		Namespaces:  o.Namespace,
+		Operation:   o.Operation,
 		Source:      o.Source,
 		Destination: o.Destination,
 	}
 
-	// create a client
-	conn, err := grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := getGRPCConnection(gRPC)
 	if err != nil {
 		return nil, errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- kubectl get po -n accuknox-agents")
 	}
-	defer conn.Close()
 
 	client := summary.NewSummaryClient(conn)
 
-	//sumResp, err := o.getSummary(client, data)
+	bar := progressbar.NewOptions(
+		-1,
+		progressbar.OptionSetDescription("Processing workload data..."),
+		progressbar.OptionSpinnerType(14),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionSetPredictTime(false),
+		progressbar.OptionSetWidth(10),
+		progressbar.OptionClearOnFinish(),
+	)
 
-	sumResp, err := o.getSummaryPerWorkload(client, data)
+	sumResp, err := o.getSummaryPerWorkload(client, data, bar)
 	if err != nil {
 		return nil, err
 	}
 
 	return sumResp, nil
-
 }
 
-// Summary - printing the summary output
+// Summary summarizes the data recieved from discovery engine
 func Summary(c *k8s.Client, o Options) error {
-
-	_, err := GetSummary(c, o)
+	defer disconnect()
+	fmt.Println("Summarizing data...")
+	workload, err := GetSummary(c, o)
 	if err != nil {
-		log.Error().Msgf("error while getting summary, error: %s", err.Error())
+		log.WithError(err).Error("Failed to get summary")
 		return err
+	}
+
+	if workload != nil && o.Format == "glance" {
+		glance(workload)
+		return nil
+	}
+
+	if !o.noFilters() {
+		workload = filterOpts(workload, o)
+	}
+
+	if workload != nil {
+		if o.Format == "table" {
+			displayWorkloadInTable(workload)
+			writeTableToFile(workload)
+		} else if o.Format == "json" {
+			jsonData, err := json.MarshalIndent(workload, "", "    ")
+			if err != nil {
+				log.WithError(err).Error("Failed to format workload as JSON")
+				return err
+			}
+
+			fmt.Println(string(jsonData))
+			return nil
+		} else { // default
+			StartTUI(workload)
+		}
+	} else {
+		fmt.Println("No workloads found.")
 	}
 
 	return nil
 }
 
-func (o *Options) getSummary(client summary.SummaryClient, sumReq *summary.SummaryRequest) (*summary.SummaryResponse, error) {
-	sumResp, err := client.GetSummaryEvent(context.Background(), sumReq)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return sumResp, nil
-}
-
-func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *summary.SummaryRequest) (*summary.SummaryResponse, error) {
+func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *summary.SummaryRequest, bar *progressbar.ProgressBar) (*Workload, error) {
 	workloadReq := &summary.WorkloadRequest{}
 
 	workloads, err := client.GetWorkloads(context.Background(), workloadReq)
 	if err != nil {
-		log.Error().Msgf("error while fetching summary, error: %s", err.Error())
+		log.WithError(err).Errorf("failed to get workloads: %v", err)
 		return nil, err
 	}
 
-	for _, w := range workloads.Workloads {
-		sumReq.Namespaces = []string{w.Namespace}
-		sumReq.Clusters = []string{w.Cluster}
-		maxSizeOption := grpc.MaxCallRecvMsgSize(32 * 10e6)
-		sumResp, err := client.GetSummaryEvent(context.Background(), sumReq, maxSizeOption)
-		if err != nil {
-			log.Error().Msgf("error while fetching summary for workload: %s in namespace : %s, error: %s", w.Name, w.Namespace, err.Error())
-			continue
-		}
-		err = printOutput(o.Output, sumResp, o.Operation, o.RevDNSLookup)
-		if err != nil {
-			log.Error().Msgf("error while displaying summary, error: %s", err.Error())
-			//return nil, err
-		}
+	rootWorkload := &Workload{
+		Clusters: make(map[string]*Cluster),
 	}
-	return nil, nil
+
+	sumRespChan := make(chan *summary.SummaryResponse)
+	done := make(chan struct{})
+	var wg sync.WaitGroup
+
+	for _, w := range workloads.Workloads {
+		wg.Add(1)
+		go func(w *summary.Workload) {
+			defer wg.Done()
+
+			sumReq.Namespaces = []string{w.Namespace}
+			sumReq.Clusters = []string{w.Cluster}
+			sumResp, err := client.GetSummaryEvent(context.Background(), sumReq) // <sumresp.cluster.namespace.workloadevents.labels>
+			if err != nil {
+				log.WithError(err).Errorf("error while fetching summary for workload: %s in namespace: %s, error: %s", w.Name, w.Namespace, err.Error())
+				return
+			}
+			sumRespChan <- sumResp
+			bar.Add(1)
+		}(w)
+	}
+
+	go func() {
+		wg.Wait()
+		close(sumRespChan)
+		close(done)
+
+		bar.Finish()
+	}()
+
+	go func() {
+		for sumResp := range sumRespChan {
+			processSummaryResponse(rootWorkload, sumResp, workloads.Workloads) // error is here, we need to pass the value here
+		}
+	}()
+
+	<-done
+
+	return rootWorkload, nil
 }
 
-func printOutput(outputType string, summaryResp *summary.SummaryResponse, operationType string, revDns bool) error {
-	if outputType == "json" {
-		summaryByte, err := json.MarshalIndent(summaryResp, "", "  ")
-		if err != nil {
-			log.Error().Msgf("error while marshalling summary, error: %s", err.Error())
-			return err
-		}
-		fmt.Println(string(summaryByte))
-	} else {
-		for clusterName, cluster := range summaryResp.GetClusters() {
-			for nsName, namespace := range cluster.GetNamespaces() {
+// processSummaryResponse populates the Workload structure with the summary response data.
+func processSummaryResponse(rootWorkload *Workload, sumResp *summary.SummaryResponse, workloads []*summary.Workload) {
+	for clusterName, cluster := range sumResp.GetClusters() {
+		rootCluster := rootWorkload.AddCluster(clusterName, &Cluster{
+			Cluster:    cluster,
+			Namespaces: make(map[string]*Namespace),
+		})
 
-				for depName, dep := range namespace.Deployments {
-					common.DisplayOutput(dep.Events, revDns, operationType, clusterName, nsName, "Deployment", depName)
-				}
-				for dsName, ds := range namespace.DaemonSets {
-					common.DisplayOutput(ds.Events, revDns, operationType, clusterName, nsName, "Deployment", dsName)
-				}
-				for rsName, rs := range namespace.ReplicaSets {
-					common.DisplayOutput(rs.Events, revDns, operationType, clusterName, nsName, "Deployment", rsName)
-				}
-				for stsName, sts := range namespace.StatefulSets {
-					common.DisplayOutput(sts.Events, revDns, operationType, clusterName, nsName, "Deployment", stsName)
-				}
-				for cjName, cj := range namespace.CronJobs {
-					common.DisplayOutput(cj.Events, revDns, operationType, clusterName, nsName, "Deployment", cjName)
-				}
-				for jobName, job := range namespace.Jobs {
-					common.DisplayOutput(job.Events, revDns, operationType, clusterName, nsName, "Deployment", jobName)
-				}
-			}
+		for nsName, ns := range cluster.GetNamespaces() {
+			rootNamespace := rootCluster.AddNamespace(nsName, &Namespace{
+				Namespace:     ns,
+				WorkloadTypes: make(map[string]*WorkloadType),
+			})
+
+			populateNamespace(rootNamespace, ns)
 		}
 	}
-	return nil
+}
+
+// populateNamespace takes a namespace from the gRPC response and populates the namespace structure.
+func populateNamespace(existingNamespace *Namespace, namespace *summary.Namespace) {
+	for workloadType, eventsMap := range map[string]map[string]*summary.WorkloadEvents{
+		"Deployments":  namespace.Deployments,
+		"StatefulSets": namespace.StatefulSets,
+		"DaemonSets":   namespace.DaemonSets,
+		"ReplicaSets":  namespace.ReplicaSets,
+		"Jobs":         namespace.Jobs,
+		"CronJobs":     namespace.CronJobs,
+	} {
+		workloadTypeStruct := existingNamespace.GetWorkloadType(workloadType)
+		if workloadTypeStruct == nil {
+			workloadTypeStruct = &WorkloadType{Events: &Events{}, Labels: &Labels{}}
+			existingNamespace.AddWorkloadType(workloadType, workloadTypeStruct)
+		}
+
+		convertWorkloadEvents(workloadTypeStruct, eventsMap)
+	}
+}
+
+// convertWorkloadEvents converts summary WorkloadEvents into the application's Events structure.
+func convertWorkloadEvents(wt *WorkloadType, eventsMap map[string]*summary.WorkloadEvents) {
+	for _, workloadEvents := range eventsMap {
+		if workloadEvents == nil {
+			continue
+		}
+
+		wt.Labels.mu.Lock()
+		wt.Labels.Labels = workloadEvents.Labels
+		wt.Labels.mu.Unlock()
+
+		for _, pfe := range workloadEvents.Events.Process {
+			wt.Events.AddProcessEvent(pfe)
+		}
+
+		for _, pe := range workloadEvents.Events.File {
+			wt.Events.AddFileEvent(pe)
+		}
+
+		for _, ing := range workloadEvents.Events.Ingress {
+			wt.Events.AddIngressEvent(ing)
+		}
+
+		for _, eg := range workloadEvents.Events.Egress {
+			wt.Events.AddEgressEvent(eg)
+		}
+
+		for _, bi := range workloadEvents.Events.Bind {
+			wt.Events.AddBindEvent(bi)
+		}
+	}
 }

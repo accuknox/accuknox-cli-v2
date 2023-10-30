@@ -24,3 +24,5 @@ accuknoxD
 accuknoxR
 accuknoxS
 accuknox-cli-v2
+
+*.pprof
