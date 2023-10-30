@@ -6,8 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/accuknox/accuknox-cli-v2/pkg"
-
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"gopkg.in/yaml.v2"
 )
 
@@ -19,7 +18,7 @@ type ConfigMapStruct struct {
 
 func GetConfigmap(ns string) ([]ConfigMapStruct, error) {
 	var configMaps []ConfigMapStruct
-	configMapDir := pkg.ConfigMapDirPath
+	configMapDir := common.ConfigMapDirPath
 	files, err := os.ReadDir(configMapDir)
 	if err != nil {
 		return configMaps, fmt.Errorf("error reading the directory. error: %v", err)

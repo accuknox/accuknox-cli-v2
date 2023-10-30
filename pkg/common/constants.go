@@ -1,4 +1,4 @@
-package pkg
+package common
 
 const (
 	ServiceName       = "dev2" // Subject to change

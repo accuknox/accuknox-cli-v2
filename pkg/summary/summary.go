@@ -8,7 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/accuknox/accuknox-cli-v2/pkg"
+
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/dev2/api/grpc/v2/summary"
 	"github.com/clarketm/json"
 	"github.com/kubearmor/kubearmor-client/k8s"
@@ -45,7 +46,7 @@ type Workload struct {
 // GetSummary on pods
 func GetSummary(c *k8s.Client, o Options) (*summary.SummaryResponse, error) {
 
-	gRPC, err := pkg.ConnectGrpc(c, o.GRPC)
+	gRPC, err := common.ConnectGrpc(c, o.GRPC)
 
 	data := &summary.SummaryRequest{
 		Labels:     o.Labels,
@@ -100,8 +101,6 @@ func (o *Options) getSummary(client summary.SummaryClient, sumReq *summary.Summa
 }
 
 func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *summary.SummaryRequest) (*summary.SummaryResponse, error) {
-
-	// TODO: apply options for clusters,namespaces, labels and workloads here itself.
 	workloadReq := &summary.WorkloadRequest{}
 
 	workloads, err := client.GetWorkloads(context.Background(), workloadReq)
@@ -141,22 +140,22 @@ func printOutput(outputType string, summaryResp *summary.SummaryResponse, operat
 			for nsName, namespace := range cluster.GetNamespaces() {
 
 				for depName, dep := range namespace.Deployments {
-					pkg.DisplayOutput(dep.Events, revDns, operationType, clusterName, nsName, "Deployment", depName)
+					common.DisplayOutput(dep.Events, revDns, operationType, clusterName, nsName, "Deployment", depName)
 				}
 				for dsName, ds := range namespace.DaemonSets {
-					pkg.DisplayOutput(ds.Events, revDns, operationType, clusterName, nsName, "Deployment", dsName)
+					common.DisplayOutput(ds.Events, revDns, operationType, clusterName, nsName, "Deployment", dsName)
 				}
 				for rsName, rs := range namespace.ReplicaSets {
-					pkg.DisplayOutput(rs.Events, revDns, operationType, clusterName, nsName, "Deployment", rsName)
+					common.DisplayOutput(rs.Events, revDns, operationType, clusterName, nsName, "Deployment", rsName)
 				}
 				for stsName, sts := range namespace.StatefulSets {
-					pkg.DisplayOutput(sts.Events, revDns, operationType, clusterName, nsName, "Deployment", stsName)
+					common.DisplayOutput(sts.Events, revDns, operationType, clusterName, nsName, "Deployment", stsName)
 				}
 				for cjName, cj := range namespace.CronJobs {
-					pkg.DisplayOutput(cj.Events, revDns, operationType, clusterName, nsName, "Deployment", cjName)
+					common.DisplayOutput(cj.Events, revDns, operationType, clusterName, nsName, "Deployment", cjName)
 				}
 				for jobName, job := range namespace.Jobs {
-					pkg.DisplayOutput(job.Events, revDns, operationType, clusterName, nsName, "Deployment", jobName)
+					common.DisplayOutput(job.Events, revDns, operationType, clusterName, nsName, "Deployment", jobName)
 				}
 			}
 		}

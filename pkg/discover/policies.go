@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/accuknox/accuknox-cli-v2/pkg"
-	"strconv"
 	"strings"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/clarketm/json"
 	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"sigs.k8s.io/yaml"
@@ -20,44 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var matchLabels = map[string]string{"app": pkg.ServiceName}
 var connection *grpc.ClientConn
-
-func initClientConnection(c *k8s.Client, o Options) error {
-	if connection != nil {
-		return nil
-	}
-	var err error
-	connection, err = getClientConnection(c, o)
-	if err != nil {
-		return err
-	}
-	log.Info("Connected to discovery engine")
-	return nil
-}
-
-func getClientConnection(c *k8s.Client, o Options) (*grpc.ClientConn, error) {
-	gRPC := ""
-	targetSvc := pkg.ServiceName
-
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		pf, err := utils.InitiatePortForward(c, pkg.Port, pkg.Port, matchLabels, targetSvc)
-		if err != nil {
-			return nil, err
-		}
-		gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
-		log.Info(gRPC)
-	}
-
-	conn, err := grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, nil
-}
 
 func disconnect() {
 	if connection != nil {
@@ -73,7 +34,12 @@ func disconnect() {
 func getNetworkPolicy(c *k8s.Client, o Options) ([]string, error) {
 	var data []string
 
-	err := initClientConnection(c, o)
+	gRPC, err := common.ConnectGrpc(c, o.GRPC)
+	if err != nil {
+		log.WithError(err).Error("failed to initialize gRPC connection")
+		return nil, err
+	}
+	connection, err = grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.WithError(err).Error("failed to connect to discovery engine")
 		return nil, err
@@ -121,7 +87,12 @@ func getNetworkPolicy(c *k8s.Client, o Options) ([]string, error) {
 func getKaHostPolicy(c *k8s.Client, o Options) ([]string, error) {
 	var data []string
 
-	err := initClientConnection(c, o)
+	gRPC, err := common.ConnectGrpc(c, o.GRPC)
+	if err != nil {
+		log.WithError(err).Error("failed to initialize gRPC connection")
+		return nil, err
+	}
+	connection, err = grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.WithError(err).Error("failed to connect to discovery engine")
 		return nil, err
@@ -169,7 +140,12 @@ func getKaHostPolicy(c *k8s.Client, o Options) ([]string, error) {
 func getKaPolicy(c *k8s.Client, o Options) ([]string, error) {
 	var data []string
 
-	err := initClientConnection(c, o)
+	gRPC, err := common.ConnectGrpc(c, o.GRPC)
+	if err != nil {
+		log.WithError(err).Error("failed to initialize gRPC connection")
+		return nil, err
+	}
+	connection, err = grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.WithError(err).Error("failed to connect to discovery engine")
 		return nil, err

@@ -1,11 +1,12 @@
-package pkg
+package common
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/jedib0t/go-pretty/text"
 	"github.com/olekukonko/tablewriter"
-	"os"
 )
 
 func tableOutput(header []string, data [][]string, title string) {

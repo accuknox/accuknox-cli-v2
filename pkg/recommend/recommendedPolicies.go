@@ -3,15 +3,13 @@ package recommend
 import (
 	"context"
 	"errors"
-	"os"
-	"strconv"
 	"strings"
 
 	// Karmor
 	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/utils"
 	"sigs.k8s.io/yaml"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	dev2policy "github.com/accuknox/dev2/api/grpc/v1/policy"
 	hardening "github.com/accuknox/dev2/hardening/pkg/types"
 	"github.com/fatih/color"
@@ -49,20 +47,12 @@ func closeConnectionToDiscoveryEngine() {
 }
 
 func getClientConnection(c *k8s.Client) (*grpc.ClientConn, error) {
-	gRPC := ""
-	var port int64 = 8090 // offloader is exposed at 8090
-	mtchLabels := map[string]string{"app": targetSvc}
-
-	if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
-		gRPC = val
-	} else {
-		pf, err := utils.InitiatePortForward(c, port, port, mtchLabels, targetSvc)
-		if err != nil {
-			return nil, err
-		}
-		gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
+	gRPC, err := common.ConnectGrpc(c, "")
+	if err != nil {
+		log.WithError(err).Error("failed to connect to gRPC")
+		return nil, err
 	}
-	// create a client
+
 	conn, err := grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- Create a portforward to discovery engine service using\n\t\033[1mkubectl port-forward -n explorer service/knoxautopolicy --address 0.0.0.0 --address :: 9089:9089\033[0m\n[0m")
