@@ -21,20 +21,15 @@ require (
 	github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d
 	github.com/accuknox/dev2/hardening v0.0.0-20231026051927-56fe5412ae0d
 	github.com/clarketm/json v1.17.1
-	github.com/docker/docker v24.0.7+incompatible
-	github.com/fatih/color v1.15.0
+	github.com/gdamore/tcell/v2 v2.6.0
 	github.com/gizak/termui/v3 v3.1.0
-	github.com/google/go-github v17.0.0+incompatible
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231026112027-a8919b7db708
 	github.com/kubearmor/kubearmor-client v0.14.2
-	github.com/kyverno/kyverno v1.10.3
 	github.com/olekukonko/tablewriter v0.0.5
+	github.com/rivo/tview v0.0.0-20231102183219-1b91b8131c43
 	github.com/rs/zerolog v1.31.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/text v0.13.0
 	google.golang.org/grpc v1.59.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.3
@@ -119,16 +114,17 @@ require (
 	github.com/djherbis/times v1.5.0 // indirect
 	github.com/docker/cli v23.0.5+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
+	github.com/docker/docker v24.0.7+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
-	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
 	github.com/emicklei/proto v1.11.1 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/evertras/bubble-table v0.15.2 // indirect
+	github.com/fatih/color v1.15.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
@@ -193,7 +189,9 @@ require (
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34 // indirect
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20231019102803-e4e0e68a457b // indirect
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20231024025323-15ad34e8f01e // indirect
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231026112027-a8919b7db708 // indirect
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b // indirect
+	github.com/kyverno/kyverno v1.10.3 // indirect
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230426205424-1c7e0fd1d876 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
@@ -304,12 +302,14 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.12.0 // indirect
 	golang.org/x/sync v0.4.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
 	google.golang.org/api v0.143.0 // indirect

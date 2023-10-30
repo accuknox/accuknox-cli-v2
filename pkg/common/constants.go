@@ -1,7 +1,7 @@
 package common
 
 const (
-	ServiceName       = "dev2" // Subject to change
+	ServiceName       = "discovery-engine" // Subject to change
 	Port        int64 = 8090
 
 	APIGroupCilium            = "cilium.io"
@@ -32,7 +32,7 @@ const (
 	RabbitmqImage      = "rabbitmq:3.12.2-management"
 	Hardening          = "hardening"
 	HardeningImage     = "accuknox/dev2-hardening:latest"
-	ServiceAccountName = "dev2"
+	ServiceAccountName = "discovery-engine"
 
 	DiscoverConfMap  = "dev2-discover"
 	HardeningConfMap = "dev2-hardening"

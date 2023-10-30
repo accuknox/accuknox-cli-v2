@@ -1,217 +1,93 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2022 Authors of KubeArmor
-
 package recommend
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DefaultPoliciesToBeRecommended are the default policies to be recommended
-// KubeArmor policies are hardening policies that are fetched from dev2-offloader.
-var DefaultPoliciesToBeRecommended = []string{KubeArmorPolicy}
+const (
+	KindKubeArmorPolicy = "KubeArmorPolicy"
 
-// KyvernoPolicy is alias for kyverno policy. The actual kind of Kyverno policy is 'Policy' but we use 'KyvernoPolicy'
-// to explicitly differentiate it from other policy types.
-var KyvernoPolicy = "KyvernoPolicy"
+	PolicyType = "hardening"
+)
 
-// KubeArmorPolicy is alias for kubearmor policy
-var KubeArmorPolicy = "KubeArmorPolicy"
-
-// Service name for discovery-engine subject to change
-const targetSvc = "discovery-engine"
-
-// Options for accuknox-cli recommend
-type Options struct {
-	Images     []string
-	Labels     []string
-	Tags       []string
-	Policy     []string
-	Namespace  string
-	OutDir     string
-	ReportFile string
-	Config     string
+type policyHandler struct {
+	fn func(*k8s.Client, *Options) ([]string, error)
 }
 
-// LabelMap is an alias for map[string]string
-type LabelMap = map[string]string
-
-// Deployment contains brief information about a k8s deployment
-type Deployment struct {
-	Name      string
-	Namespace string
-	Labels    LabelMap
-	Images    []string
-}
-
-var options Options
-
-func unique(s []string) []string {
-	inResult := make(map[string]bool)
-	var result []string
-	for _, str := range s {
-		str = strings.Trim(str, " ")
-		if _, ok := inResult[str]; !ok {
-			inResult[str] = true
-			result = append(result, str)
-		}
-	}
-	return result
-}
-
-func createOutDir(dir string) error {
-	if dir == "" {
-		return nil
-	}
-	_, err := os.Stat(dir)
-	if errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(dir, 0750)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
-	}
-	return nil
-}
-
-func finalReport() {
-	repFile := filepath.Clean(filepath.Join(options.OutDir, options.ReportFile))
-	_ = ReportRender(repFile)
-	color.Green("output report in %s ...", repFile)
-	if strings.Contains(repFile, ".html") {
-		return
-	}
-	data, err := os.ReadFile(repFile)
+func Recommend(c *k8s.Client, o *Options) error {
+	policies := getSupportedPolicies()
+	toProcess, err := determinePoliciesToProcess(o, policies)
 	if err != nil {
-		log.WithError(err).Fatal("failed to read report file")
-		return
-	}
-	fmt.Println(string(data))
-}
-
-// Recommend handler for accuknox-cli tool
-func Recommend(c *k8s.Client, o Options) error {
-	deployments := []Deployment{}
-	var err error
-	if !isLatest() {
-		log.WithFields(log.Fields{
-			"Current Version": CurrentVersion,
-		}).Info("Found outdated version of policy-templates")
-		log.Info("Downloading latest version [", LatestVersion, "]")
-
-		log.WithFields(log.Fields{
-			"Updated Version": LatestVersion,
-		}).Info("policy-templates updated")
-	}
-
-	if err = createOutDir(o.OutDir); err != nil {
 		return err
 	}
 
-	if o.ReportFile != "" {
-		ReportInit(o.ReportFile)
-	}
-
-	labelMap := labelArrayToLabelMap(o.Labels)
-
-	if len(o.Images) == 0 {
-		dps, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), v1.ListOptions{})
-		if err != nil {
-			return err
-		}
-		for _, dp := range dps.Items {
-
-			if matchLabels(labelMap, dp.Spec.Template.Labels) {
-				images := []string{}
-				for _, container := range dp.Spec.Template.Spec.Containers {
-					images = append(images, container.Image)
-				}
-
-				deployments = append(deployments, Deployment{
-					Name:      dp.Name,
-					Namespace: dp.Namespace,
-					Labels:    dp.Spec.Template.Labels,
-					Images:    images,
-				})
-			}
-		}
-	} else {
-		deployments = append(deployments, Deployment{
-			Namespace: o.Namespace,
-			Labels:    labelMap,
-			Images:    o.Images,
-		})
-	}
-
-	// o.Images = unique(o.Images)
-	o.Tags = unique(o.Tags)
-	options = o
-
-	defer closeConnectionToDiscoveryEngine()
-	for _, dp := range deployments {
-		err := handleDeployment(dp, c)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
-	finalReport()
-	return nil
-}
-
-func handleDeployment(dp Deployment, c *k8s.Client) error {
-	var err error
-	for _, img := range dp.Images {
-		tempDir, err = os.MkdirTemp("", "accuknox-cli")
-		if err != nil {
-			log.WithError(err).Error("could not create temp dir")
-		}
-		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img, c)
-		if err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"image": img,
-			}).Error("could not handle container image")
-		}
-		_ = os.RemoveAll(tempDir)
-	}
-
-	return nil
-}
-
-func matchLabels(filter, selector LabelMap) bool {
-	match := true
-	for k, v := range filter {
-		if selector[k] != v {
-			match = false
-			break
-		}
-	}
-	return match
-}
-
-func labelArrayToLabelMap(labels []string) LabelMap {
-	labelMap := LabelMap{}
-	for _, label := range labels {
-		kvPair := strings.FieldsFunc(label, labelSplitter)
-		if len(kvPair) != 2 {
+	errorSlice := []string{}
+	for kind, process := range toProcess {
+		if !process {
 			continue
 		}
-		labelMap[kvPair[0]] = kvPair[1]
+		_, err := fetchPolicyData(policies, kind, c, o)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"policy":    o.Policy,
+				"namespace": o.Namespace,
+				"labels":    o.Labels,
+				"outdir":    o.Outdir,
+				"tags":      o.Tags,
+			}).Warn("failed to process/fetch policies")
+			errorSlice = append(errorSlice, err.Error())
+			continue
+		}
 	}
-	return labelMap
+
+	if len(errorSlice) > 0 {
+		return errors.New(strings.Join(errorSlice, "; "))
+	}
+
+	return nil
 }
 
-func labelSplitter(r rune) bool {
-	return r == ':' || r == '='
+func getSupportedPolicies() map[string]policyHandler {
+	return map[string]policyHandler{
+		KindKubeArmorPolicy: {getKaPolicy},
+	}
+}
+
+func determinePoliciesToProcess(o *Options, policies map[string]policyHandler) (map[string]bool, error) {
+	toProcess := make(map[string]bool)
+
+	var supportedPolicies []string
+	for k := range policies {
+		supportedPolicies = append(supportedPolicies, k)
+		toProcess[k] = false
+	}
+
+	if len(o.Policy) == 0 {
+		toProcess[KindKubeArmorPolicy] = true
+		return toProcess, nil
+	}
+
+	for _, kind := range o.Policy {
+		if _, exists := policies[kind]; exists {
+			toProcess[kind] = true
+		} else {
+			return nil, fmt.Errorf("unsupported policy: %s, currently supported policies are: %s", kind, strings.Join(supportedPolicies, ", "))
+		}
+	}
+
+	return toProcess, nil
+}
+
+func fetchPolicyData(policies map[string]policyHandler, kind string, c *k8s.Client, o *Options) ([]string, error) {
+	data, err := policies[kind].fn(c, o)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
