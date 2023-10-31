@@ -8,24 +8,24 @@ ifeq (, $(shell which govvv))
 $(shell go install github.com/ahmetb/govvv@latest)
 endif
 
-PKG      := $(shell go list ./selfupdate)
+PKG      := $(shell go list ./pkg/version)
 GIT_INFO := $(shell govvv -flags -pkg $(PKG))
 
 .PHONY: build
 build:
-	cd $(CURDIR); go mod tidy; CGO_ENABLED=0 go build -ldflags "-w -s ${GIT_INFO}" -o accuknoxcli
+	cd $(CURDIR); go mod tidy; CGO_ENABLED=0 go build -ldflags "-w -s ${GIT_INFO}" -o knoxctl
 
 .PHONY: debug
 debug:
-	cd $(CURDIR); go mod tidy; CGO_ENABLED=0 go build -ldflags "${GIT_INFO}" -o accuknoxcli
+	cd $(CURDIR); go mod tidy; CGO_ENABLED=0 go build -ldflags "${GIT_INFO}" -o knoxctl
 
 .PHONY: install
 install: build
-	install -m 0755 accuknoxcli $(DESTDIR)$(INSTALLDIR)
+	install -m 0755 knoxctl $(DESTDIR)$(INSTALLDIR)
 
 .PHONY: clean
 clean:
-	cd $(CURDIR); rm -f accuknoxcli
+	cd $(CURDIR); rm -f knoxctl
 
 
 .PHONY: protobuf

@@ -134,6 +134,7 @@ func Summary(c *k8s.Client, o Options) error {
 				log.WithError(err).Errorf("Failed to write JSON to file '%s': %v", filePath, err)
 				return err
 			}
+			fmt.Println("JSON summary written to ", filePath)
 
 		default:
 			StartTUI(workload)
@@ -208,6 +209,7 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 				if !ok {
 					errChan = nil
 				}
+				_ = bar.Finish()
 			}
 
 			if sumRespChan == nil && errChan == nil {

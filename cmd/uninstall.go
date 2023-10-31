@@ -20,12 +20,12 @@ var uninstallCmd = &cobra.Command{
 	Short: "Uninstall KubeArmor from a Kubernetes Cluster",
 	Long:  `Uninstall KubeArmor from a Kubernetes Clusters`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// uninstallOptions.Animation = true
 		if uninstallKubearmor {
 			if err := install.K8sUninstaller(client, uninstallOptions); err != nil {
 				return err
 			}
 		}
+
 		if uninstallDev2 {
 			if err := discoveryengine.K8sUninstaller(client, dev2UninstallOptions); err != nil {
 				return err
@@ -37,13 +37,11 @@ var uninstallCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
-
 	uninstallCmd.Flags().StringVarP(&uninstallOptions.Namespace, "namespace", "n", "kube-system", "Namespace for kubearmor resources")
-	uninstallCmd.Flags().BoolVar(&uninstallOptions.Force, "force", false, "Force remove kubearmor annotations from deployments. (Deployments might be restarted)")
+	uninstallCmd.Flags().BoolVar(&uninstallOptions.Force, "force", false, "Force remove KubeArmor annotations from deployments. (Deployments might be restarted)")
 
-	uninstallCmd.Flags().StringVarP(&dev2UninstallOptions.Namespace, "dev2-namespace", "p", "accuknox-agents", "Namespace for dev2 resources")
+	uninstallCmd.Flags().StringVarP(&dev2UninstallOptions.Namespace, "dev2-namespace", "p", "accuknox-agents", "Namespace for Discovery Engine resources")
 
-	uninstallCmd.Flags().BoolVar(&uninstallKubearmor, "kubearmor", true, "uninstall Kubearmor")
-	uninstallCmd.Flags().BoolVar(&uninstallDev2, "dev2", true, "uninstall dev2")
-
+	uninstallCmd.Flags().BoolVar(&uninstallKubearmor, "kubearmor", true, "uninstall KubeArmor")
+	uninstallCmd.Flags().BoolVar(&uninstallDev2, "dev2", true, "uninstall Discovery Engine")
 }

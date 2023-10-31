@@ -76,7 +76,6 @@ func displayEvents(title string, table *tablewriter.Table, nsName string, wtName
 
 func writeTableToFile(workload *Workload) error {
 	fmt.Println()
-	fmt.Println("Writing summary to file...")
 
 	outDir := "knoxctl_out/summary/table"
 	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
@@ -104,7 +103,7 @@ func writeTableToFile(workload *Workload) error {
 		writeClusterToTable(cluster, file, bar)
 	}
 
-	fmt.Printf("Summary written to %s\n", filePath)
+	fmt.Printf("Table based text summary written to %s\n", filePath)
 	return nil
 }
 
