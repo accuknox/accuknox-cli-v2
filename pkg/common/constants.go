@@ -1,7 +1,7 @@
 package common
 
 const (
-	ServiceName       = "dev2" // Subject to change
+	ServiceName       = "discovery-engine" // Subject to change
 	Port        int64 = 8090
 
 	APIGroupCilium            = "cilium.io"

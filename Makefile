@@ -68,3 +68,7 @@ ifeq (, $(shell which gosec))
 	}
 endif
 	cd $(CURDIR); gosec ./...
+
+.PHONY: test 
+test: 
+	./scripts/tests.sh

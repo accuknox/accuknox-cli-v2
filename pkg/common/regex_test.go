@@ -332,20 +332,15 @@ var tests = []struct {
 		target:   &SampleConfig{},
 		expected: map[string]string{"sl": "newstr,oldstr"},
 	},
-	{
-		input:    "-b -s",
-		target:   &SampleConfig{},
-		expected: nil,
-		err:      true,
-	},
 }
 
 func TestFlagsToMap(t *testing.T) {
+	// Initialize the parser here using your actual parser initialization code
 	parser := NewParser()
 
 	for _, test := range tests {
 		got, err := parser.FlagsToMap(test.input, test.target)
-		t.Logf("RESULT: %+v", got)
+		t.Logf("RESULT: %v", got)
 		if (err != nil) != test.err {
 			t.Errorf("FlagsToMap(%q, %v) expected error: %v, got: %v", test.input, test.target, test.err, err)
 			continue

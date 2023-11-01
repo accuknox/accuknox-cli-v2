@@ -200,16 +200,16 @@ func (pd *PolicyDisplay) getCueText() string {
 	return "Press 's' to save this policy"
 }
 
-func (pd *PolicyDisplay) Display(o Options) error {
+func (pd *PolicyDisplay) Display(p Options) error {
 	if len(pd.data) == 0 {
 		log.WithFields(log.Fields{
-			"kind":           o.Kind,
-			"format":         o.Format,
-			"namespace":      o.Namespace,
-			"labels":         o.Labels,
-			"fromSource":     o.Fromsource,
-			"gRPC":           o.GRPC,
-			"includeNetwork": o.IncludeNetwork,
+			"kind":           p.Kind,
+			"format":         p.Format,
+			"namespace":      p.Namespace,
+			"labels":         p.Labels,
+			"fromSource":     p.Source,
+			"gRPC":           p.GRPC,
+			"includeNetwork": p.IncludeNetwork,
 		}).Warn("no policies found")
 		return nil
 	}

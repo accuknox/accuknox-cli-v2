@@ -31,10 +31,10 @@ func disconnect() {
 	}
 }
 
-func getNetworkPolicy(c *k8s.Client, o Options) ([]string, error) {
+func getNetworkPolicy(c *k8s.Client, p *Options) ([]string, error) {
 	var data []string
 
-	gRPC, err := common.ConnectGrpc(c, o.GRPC)
+	gRPC, err := common.ConnectGrpc(c, p.GRPC)
 	if err != nil {
 		log.WithError(err).Error("failed to initialize gRPC connection")
 		return nil, err
@@ -47,8 +47,8 @@ func getNetworkPolicy(c *k8s.Client, o Options) ([]string, error) {
 
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
-		Type: PolicyType, // discovered
-		Kind: o.Kind,     // NetworkPolicy
+		Type: PolicyType,           // discovered
+		Kind: KindK8sNetworkPolicy, // NetworkPolicy
 	})
 	if err != nil {
 		log.WithError(err).Error("failed to fetch response from discovery engine")
@@ -66,11 +66,11 @@ func getNetworkPolicy(c *k8s.Client, o Options) ([]string, error) {
 				continue
 			}
 
-			if !networkPolicyFilter(networkPolicy, o) {
+			if !networkPolicyFilter(networkPolicy, p) {
 				continue
 			}
 
-			formattedPolicy, err := formatPolicy(networkPolicy, o)
+			formattedPolicy, err := formatPolicy(networkPolicy, p)
 			if err != nil {
 				log.WithError(err).Error("failed to format " + KindK8sNetworkPolicy)
 				return nil, err
@@ -84,10 +84,10 @@ func getNetworkPolicy(c *k8s.Client, o Options) ([]string, error) {
 	return data, err
 }
 
-func getKaHostPolicy(c *k8s.Client, o Options) ([]string, error) {
+func getKaHostPolicy(c *k8s.Client, p *Options) ([]string, error) {
 	var data []string
 
-	gRPC, err := common.ConnectGrpc(c, o.GRPC)
+	gRPC, err := common.ConnectGrpc(c, p.GRPC)
 	if err != nil {
 		log.WithError(err).Error("failed to initialize gRPC connection")
 		return nil, err
@@ -100,8 +100,8 @@ func getKaHostPolicy(c *k8s.Client, o Options) ([]string, error) {
 
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
-		Type: PolicyType, // discovered
-		Kind: o.Kind,     // KAHostPolicy
+		Type: PolicyType,              // discovered
+		Kind: KindKubeArmorHostPolicy, // KAHostPolicy
 	})
 	if err != nil {
 		log.WithError(err).Error("failed to fetch response from discovery engine")
@@ -119,11 +119,11 @@ func getKaHostPolicy(c *k8s.Client, o Options) ([]string, error) {
 				continue
 			}
 
-			if !kaPolicyFilter(kaHostPolicy, o) {
+			if !kaPolicyFilter(kaHostPolicy, p) {
 				continue
 			}
 
-			formattedPolicy, err := formatPolicy(kaHostPolicy, o)
+			formattedPolicy, err := formatPolicy(kaHostPolicy, p)
 			if err != nil {
 				log.WithError(err).Error("failed to format " + KindKubeArmorHostPolicy)
 				continue
@@ -137,10 +137,10 @@ func getKaHostPolicy(c *k8s.Client, o Options) ([]string, error) {
 	return data, nil
 }
 
-func getKaPolicy(c *k8s.Client, o Options) ([]string, error) {
+func getKaPolicy(c *k8s.Client, p *Options) ([]string, error) {
 	var data []string
 
-	gRPC, err := common.ConnectGrpc(c, o.GRPC)
+	gRPC, err := common.ConnectGrpc(c, p.GRPC)
 	if err != nil {
 		log.WithError(err).Error("failed to initialize gRPC connection")
 		return nil, err
@@ -153,8 +153,8 @@ func getKaPolicy(c *k8s.Client, o Options) ([]string, error) {
 
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
-		Type: PolicyType, // discovered
-		Kind: o.Kind,     // KAPolicy
+		Type: PolicyType,          // discovered
+		Kind: KindKubeArmorPolicy, // KAPolicy
 	})
 	if err != nil {
 		log.WithError(err).Error("failed to fetch response from discovery engine")
@@ -172,11 +172,11 @@ func getKaPolicy(c *k8s.Client, o Options) ([]string, error) {
 				continue
 			}
 
-			if !kaPolicyFilter(kaPolicy, o) {
+			if !kaPolicyFilter(kaPolicy, p) {
 				continue
 			}
 
-			formattedPolicy, err := formatPolicy(kaPolicy, o)
+			formattedPolicy, err := formatPolicy(kaPolicy, p)
 			if err != nil {
 				log.WithError(err).Error("failed to format " + KindKubeArmorPolicy)
 				return nil, err
@@ -190,114 +190,148 @@ func getKaPolicy(c *k8s.Client, o Options) ([]string, error) {
 	return data, nil
 }
 
-// Centralized filteration based on user options,
-// OR based logic, in case there are multiple options defined
-// the filter will return true if anyone of them is met.
-func kaPolicyFilter(policy policyType.KubeArmorPolicy, o Options) bool {
+// Centralized filteration based on user options
+// OR based filter at flag level and AND based filter at command level.
+func kaPolicyFilter(policy policyType.KubeArmorPolicy, p *Options) bool {
 	// If no filters are provided, return true
-	if o.Namespace == "" && o.Labels == "" && o.Fromsource == "" && !o.IncludeNetwork {
+	if p.noFilters() {
 		return true
 	}
 
+	namespaceMatched := len(p.Namespace) == 0 && p.NamespaceRegex == nil
+	labelMatched := len(p.Labels) == 0 && p.LabelsRegex == nil
+	sourceMatched := len(p.Source) == 0 && p.SourceRegex == nil
+	includeNetworkMatched := !p.IncludeNetwork || len(policy.Spec.Network.MatchProtocols) > 0
+
 	// Namespace filtering
-	if o.Namespace != "" {
-		if policy.Metadata.Namespace == o.Namespace {
-			log.Infof("Found namespace '%s'", o.Namespace)
-			return true
-		} else {
-			log.Infof("Looking for '%s'.\n", o.Namespace)
+	if !namespaceMatched {
+		for _, ns := range p.Namespace {
+			if policy.Metadata.Namespace == ns {
+				log.Infof("Found namespace '%s'", ns)
+				namespaceMatched = true
+				break
+			}
+		}
+		if p.NamespaceRegex != nil && !namespaceMatched {
+			for _, regex := range p.NamespaceRegex {
+				if regex.MatchString(policy.Metadata.Namespace) {
+					log.Infof("Namespace matched by regex")
+					namespaceMatched = true
+					break
+				}
+			}
 		}
 	}
 
-	// Label filtering
-	if o.Labels != "" {
-		labelMatched := false
-		providedLabels := strings.Split(o.Labels, ",")
-		for _, label := range providedLabels {
+	// Labels filtering
+	if !labelMatched {
+		for _, label := range p.Labels {
 			keyVal := strings.Split(label, "=")
 			if len(keyVal) == 2 {
-				if policyValue, exists := policy.Metadata.Labels[keyVal[0]]; exists && policyValue == keyVal[1] {
+				if policyValue, exists := policy.Spec.Selector.MatchLabels[keyVal[0]]; exists && policyValue == keyVal[1] {
+					log.Info("Label matched")
 					labelMatched = true
 					break
 				}
 			}
 		}
-		if labelMatched {
-			return true
-		} else {
-			log.Info("Provided labels may not exists, please check again.")
-		}
-	}
-
-	// FromSource filtering
-	if o.Fromsource != "" {
-		sourceMatched := false
-		for _, path := range policy.Spec.Process.MatchPaths {
-			for _, fromSource := range path.FromSource {
-				if fromSource.Path == o.Fromsource || fromSource.Dir == o.Fromsource {
-					sourceMatched = true
+		if p.LabelsRegex != nil && !labelMatched {
+			for _, regex := range p.LabelsRegex {
+				for k, v := range policy.Spec.Selector.MatchLabels {
+					if regex.MatchString(k + "=" + v) {
+						log.Info("Label matched by regex")
+						labelMatched = true
+						break
+					}
+				}
+				if labelMatched {
 					break
 				}
 			}
 		}
-		for _, dir := range policy.Spec.File.MatchDirectories {
-			for _, fromSource := range dir.FromSource {
-				if fromSource.Path == o.Fromsource || fromSource.Dir == o.Fromsource {
-					sourceMatched = true
+	}
+
+	// FromSource filtering
+	if !sourceMatched {
+		for _, path := range policy.Spec.Process.MatchPaths {
+			for _, fromSource := range path.FromSource {
+				for _, src := range p.Source {
+					if fromSource.Path == src || fromSource.Dir == src {
+						sourceMatched = true
+						break
+					}
+				}
+				if sourceMatched {
+					break
+				}
+				if p.SourceRegex != nil {
+					for _, regex := range p.SourceRegex {
+						if regex.MatchString(fromSource.Path) || regex.MatchString(fromSource.Dir) {
+							sourceMatched = true
+							break
+						}
+					}
+				}
+				if sourceMatched {
+					break
+				}
+			}
+			if sourceMatched {
+				break
+			}
+		}
+		if !sourceMatched {
+			for _, dir := range policy.Spec.File.MatchDirectories {
+				for _, fromSource := range dir.FromSource {
+					for _, src := range p.Source {
+						if fromSource.Path == src || fromSource.Dir == src {
+							sourceMatched = true
+							break
+						}
+					}
+					if sourceMatched {
+						break
+					}
+					if p.SourceRegex != nil {
+						for _, regex := range p.SourceRegex {
+							if regex.MatchString(fromSource.Path) || regex.MatchString(fromSource.Dir) {
+								sourceMatched = true
+								break
+							}
+						}
+					}
+					if sourceMatched {
+						break
+					}
+				}
+				if sourceMatched {
 					break
 				}
 			}
 		}
 		if sourceMatched {
-			return true
+			log.Infof("FromSource matched")
 		} else {
-			log.Infof("FromSource '%s' not found.\n", o.Fromsource)
+			log.Infof("FromSource '%s' not found.", strings.Join(p.Source, ","))
 		}
 	}
 
-	// IncludeNetwork filtering
-	if o.IncludeNetwork && len(policy.Spec.Network.MatchProtocols) > 0 {
-		return true
-	} else if o.IncludeNetwork {
-		log.Info("No network match protocols found.")
-	}
-
-	// If none of the criteria are met
-	return false
+	return namespaceMatched && labelMatched && sourceMatched && includeNetworkMatched
 }
 
-func networkPolicyFilter(policy policyType.KnoxNetworkPolicy, o Options) bool {
-	// Metadata Label filtering
-	if o.Labels != "" {
-		providedLabels := strings.Split(o.Labels, ",")
-		for _, label := range providedLabels {
-			keyVal := strings.Split(label, "=")
-			if len(keyVal) == 2 {
-				if policyValue, exists := policy.Metadata[keyVal[0]]; exists && policyValue == keyVal[1] {
-					return true
-				}
-			}
-		}
+func formatPolicy(policy interface{}, p *Options) (string, error) {
+	if p.Format == "" {
+		p.Format = "yaml"
 	}
 
-	// Namespace filtering from Metadata
-	if o.Namespace != "" && policy.Metadata["namespace"] == o.Namespace {
-		return true
-	}
-
-	// If none of the criteria are met
-	return false
-}
-
-func formatPolicy(policy interface{}, o Options) (string, error) {
 	var formattedPolicy string
-	if o.Format == FmtJSON {
+	if p.Format == FmtJSON {
 		arr, err := json.MarshalIndent(policy, "", "    ")
 		if err != nil {
 			return "", err
 		}
 		formattedPolicy = string(arr)
-	} else if o.Format == FmtYAML {
+	} else if p.Format == FmtYAML {
 		arr, err := json.Marshal(policy)
 		if err != nil {
 			return "", err
@@ -321,6 +355,62 @@ func formatPolicy(policy interface{}, o Options) (string, error) {
 	}
 
 	return metadata + formattedPolicy, nil
+}
+
+func networkPolicyFilter(policy policyType.KnoxNetworkPolicy, p *Options) bool {
+	if p.noFilters() {
+		return true
+	}
+
+	labelMatched := len(p.Labels) == 0 && p.LabelsRegex == nil
+	namespaceMatched := len(p.Namespace) == 0 && p.NamespaceRegex == nil
+
+	// Metadata Label filtering
+	if !labelMatched {
+		for _, label := range p.Labels {
+			keyVal := strings.Split(label, "=")
+			if len(keyVal) == 2 {
+				if policyValue, exists := policy.Metadata[keyVal[0]]; exists && policyValue == keyVal[1] {
+					labelMatched = true
+					break
+				}
+			}
+		}
+		if p.LabelsRegex != nil && !labelMatched {
+			for _, regex := range p.LabelsRegex {
+				for key, value := range policy.Metadata {
+					if regex.MatchString(key + "=" + value) {
+						labelMatched = true
+						break
+					}
+				}
+				if labelMatched {
+					break
+				}
+			}
+		}
+	}
+
+	// Namespace filtering from Metadata
+	if !namespaceMatched {
+		for _, ns := range p.Namespace {
+			if policy.Metadata["namespace"] == ns {
+				namespaceMatched = true
+				break
+			}
+		}
+		if p.NamespaceRegex != nil && !namespaceMatched {
+			for _, regex := range p.NamespaceRegex {
+				if regex.MatchString(policy.Metadata["namespace"]) {
+					namespaceMatched = true
+					break
+				}
+			}
+		}
+	}
+
+	// If both criteria are met
+	return labelMatched && namespaceMatched
 }
 
 func prettifyPolicy(formattedPolicy string, policyNumber int, totalPolicies int) string {
