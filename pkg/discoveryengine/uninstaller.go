@@ -18,7 +18,7 @@ func checkTerminatingPods(c *k8s.Client) int {
 	otime := stime.Add(600 * time.Second)
 	for {
 		time.Sleep(200 * time.Millisecond)
-		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "app=dev2", FieldSelector: "status.phase=Running"})
+		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: common.DELabel, FieldSelector: "status.phase=Running"})
 		podno := len(pods.Items)
 		fmt.Printf("\r")
 		clearLine(90)
@@ -43,7 +43,7 @@ func checkTerminatingPods(c *k8s.Client) int {
 func K8sUninstaller(c *k8s.Client, o Options) error {
 
 	fmt.Print("\n❌   Discovery Engine Deployments ...\n")
-	kaDeployments, _ := c.K8sClientset.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{LabelSelector: "app=dev2"})
+	kaDeployments, _ := c.K8sClientset.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{LabelSelector: common.DELabel})
 	for _, d := range kaDeployments.Items {
 		if err := c.K8sClientset.AppsV1().Deployments(d.Namespace).Delete(context.Background(), d.Name, metav1.DeleteOptions{}); err != nil {
 			fmt.Printf("ℹ️   Error while uninstalling Discovery Engine Deployment %s : %s\n", d.Name, err.Error())

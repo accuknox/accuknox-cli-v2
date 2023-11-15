@@ -3,6 +3,7 @@ package common
 const (
 	ServiceName       = "discovery-engine" // Subject to change
 	Port        int64 = 8090
+	DELabel           = "app=discovery-engine"
 
 	APIGroupCilium            = "cilium.io"
 	APIGroupKubearmorSecurity = "security.kubearmor.com"
