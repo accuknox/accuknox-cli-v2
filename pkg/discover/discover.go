@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/schollz/progressbar/v3"
 )
 
 const (
@@ -23,46 +23,76 @@ const (
 )
 
 type policyHandler struct {
-	fn func(*k8s.Client, *Options) ([]string, error)
+	fn func(*k8s.Client, *Options, *PolicyForest, *progressbar.ProgressBar) error
 }
 
 func Policy(c *k8s.Client, parsedArgs *Options) error {
 	defer disconnect()
 	fmt.Println("Discovering policies...")
 
-	log.Infof("Parsed Args: %+v", parsedArgs)
+	bar := progressbar.NewOptions(
+		-1,
+		progressbar.OptionSetDescription("Processing discovered policies..."),
+		progressbar.OptionSpinnerType(14),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionSetPredictTime(false),
+		progressbar.OptionSetWidth(10),
+		progressbar.OptionClearOnFinish(),
+	)
+
+	err := initConnection(c, parsedArgs, bar)
+	if err != nil {
+		return err
+	}
+
 	policies := getSupportedPolicies()
 	toProcess, err := determinePoliciesToProcess(parsedArgs, policies)
 	if err != nil {
 		return err
 	}
 
-	errorSlice := []string{}
-	for kind, process := range toProcess {
-		if !process {
-			continue
-		}
-		data, err := fetchPolicyData(policies, kind, c, parsedArgs)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"kind":           parsedArgs.Kind,
-				"format":         parsedArgs.Format,
-				"namespace":      parsedArgs.Namespace,
-				"labels":         parsedArgs.Labels,
-				"fromSource":     parsedArgs.Source,
-				"gRPC":           parsedArgs.GRPC,
-				"includeNetwork": parsedArgs.IncludeNetwork,
-			}).Warn("failed to process/fetch policies")
-			errorSlice = append(errorSlice, err.Error())
-			continue
-		}
+	policyForest := NewPolicyForest()
+	var wg sync.WaitGroup
 
-		pd := NewPolicyDisplay(data)
-		if err := pd.Display(*parsedArgs); err != nil {
-			errorSlice = append(errorSlice, err.Error())
+	errorChan := make(chan error, len(toProcess))
+
+	for kind, process := range toProcess {
+		if process {
+			wg.Add(1)
+
+			go func(kind string, handler policyHandler) {
+				defer wg.Done()
+
+				err := handler.fn(c, parsedArgs, policyForest, bar)
+				if err != nil {
+					errorChan <- err
+				}
+			}(kind, policies[kind])
 		}
 	}
 
+	go func() {
+		wg.Wait()
+		close(errorChan)
+
+		bar.Finish()
+	}()
+
+	wg.Wait()
+
+	if len(policyForest.Namespaces) == 0 {
+		fmt.Println("No discovered policies were found.")
+		return nil
+	} else {
+		StartTUI(policyForest)
+	}
+
+	var errorSlice []string
+	for err := range errorChan {
+		if err != nil {
+			errorSlice = append(errorSlice, err.Error())
+		}
+	}
 	if len(errorSlice) > 0 {
 		return errors.New(strings.Join(errorSlice, "; "))
 	}
@@ -102,15 +132,4 @@ func determinePoliciesToProcess(parsedArgs *Options, policies map[string]policyH
 	}
 
 	return toProcess, nil
-}
-
-func fetchPolicyData(policies map[string]policyHandler, kind string, c *k8s.Client, p *Options) ([]string, error) {
-	data, err := policies[kind].fn(c, p)
-	if err != nil {
-		return nil, err
-	}
-
-	totalPolicies := len(data)
-	log.Infof("Total policies discovered by the discovery engine: [%v]", totalPolicies)
-	return data, nil
 }

@@ -2,314 +2,190 @@ package discover
 
 import (
 	"fmt"
-	"os"
-	"strings"
-	"time"
 
+	networkingv1 "k8s.io/api/networking/v1"
+
+	policyType "github.com/accuknox/dev2/discover/pkg/common"
 	"github.com/clarketm/json"
-	"github.com/gizak/termui/v3/widgets"
-	"sigs.k8s.io/yaml"
-
-	ui "github.com/gizak/termui/v3"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/yaml"
 )
 
-type PolicyDisplay struct {
-	data               []string     // List of policies (each policy is a string)
-	currentPolicyIndex int          // Index pointing to current policy in display
-	scrollOffset       int          // Number of lines scrolled vertically in current policy view
-	width              int          // Width of display box
-	savedPolicies      map[int]bool // Keeping track of saved policies
-	linesPerPage       int          // Lines of policy to display at once
-	page               int          // Current page of the policy being displayed
-	leftArrowColor     ui.Color     // Nav cue color (left arrow)
-	rightArrowColor    ui.Color     // Nav cue color (right arrow)
-}
+func StartTUI(pf *PolicyForest) {
+	app := tview.NewApplication().EnableMouse(true)
 
-func NewPolicyDisplay(data []string) *PolicyDisplay {
-	return &PolicyDisplay{
-		data:            data,
-		savedPolicies:   make(map[int]bool),
-		width:           80,
-		linesPerPage:    40,
-		leftArrowColor:  ui.ColorWhite,
-		rightArrowColor: ui.ColorWhite,
-	}
-}
+	grid := tview.NewGrid().
+		SetRows(1, 0, 1, 1).
+		SetColumns(25, 0, 85).
+		SetBorders(true)
 
-func (pd *PolicyDisplay) extractPolicyParts(policy string) (string, string) {
-	parts := strings.SplitN(policy, "|", 4)
-	name := strings.Split(parts[0], ":")[1]
-	namespace := strings.Split(parts[1], ":")[1]
-	kind := strings.Split(parts[2], ":")[1]
-	metadata := fmt.Sprintf("Name: %s\nNamespace: %s\nKind: %s\n\n", name, namespace, kind)
-	content := parts[3]
-	return metadata, content
-}
+	policyTree := tview.NewTreeView().
+		SetRoot(tview.NewTreeNode("Policy Tree")).
+		SetCurrentNode(tview.NewTreeNode("Policy Tree"))
 
-func (pd *PolicyDisplay) renderPolicyBox(policy string, yPos int) int {
-	metadata, content := pd.extractPolicyParts(policy)
+	namespaceList := tview.NewList()
 
-	allLines := strings.Split(content, "\n")
-	totalPolicyLines := len(allLines)
-	startIndex := pd.page * pd.linesPerPage
-	endIndex := (pd.page+1)*pd.linesPerPage + pd.scrollOffset
-	if startIndex > len(allLines)-1 {
-		startIndex = len(allLines) - 1
-	}
-	if endIndex > len(allLines) {
-		endIndex = len(allLines)
-	}
-	lines := allLines[startIndex:endIndex]
+	policyDetailsView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetRegions(true).
+		SetWordWrap(true).
+		SetScrollable(true)
 
-	if pd.scrollOffset > 0 && pd.scrollOffset < len(lines) {
-		content = strings.Join(lines[pd.scrollOffset:], "\n")
+	for ns := range pf.Namespaces {
+		namespaceList.AddItem(ns, "", 0, nil)
 	}
 
-	title := " AccuKnox "
-	padding := (pd.width - len(title) - 2) / 2
-	titleBox := widgets.NewParagraph()
-	titleBox.Text = title
-	titleBox.TextStyle.Fg = ui.ColorWhite
-	titleBox.TextStyle.Modifier = ui.ModifierBold
-	titleBox.Border = false
-	titleBox.WrapText = false
-	titleBox.SetRect(padding, yPos, padding+len(title)+2, yPos+1)
-	ui.Render(titleBox)
-	yPos++
+	grid.AddItem(tview.NewTextView().SetText("Namespaces").SetTextAlign(tview.AlignCenter), 0, 0, 1, 1, 0, 0, false)
+	grid.AddItem(tview.NewTextView().SetText("Tree View").SetTextAlign(tview.AlignCenter), 0, 1, 1, 1, 0, 0, false)
+	grid.AddItem(tview.NewTextView().SetText("Policies").SetTextAlign(tview.AlignCenter), 0, 2, 1, 1, 0, 0, false)
 
-	// Metadata section
-	metaBox := widgets.NewParagraph()
-	metaBox.Text = metadata
-	metaBox.TextStyle.Fg = ui.ColorBlue
-	metaBox.TextStyle.Modifier = ui.ModifierBold
-	metaBox.Border = false
-	metaBox.WrapText = false
-	metaHeight := len(strings.Split(metadata, "\n"))
-	metaBox.SetRect(0, yPos, pd.width, yPos+metaHeight)
-	ui.Render(metaBox)
-	yPos += metaHeight
+	grid.AddItem(namespaceList, 1, 0, 1, 1, 0, 0, true)
+	grid.AddItem(policyTree, 1, 1, 1, 1, 0, 0, true)
+	grid.AddItem(policyDetailsView, 1, 2, 1, 1, 0, 0, false)
 
-	// Navigation cues
-	leftArrowWidget := widgets.NewParagraph()
-	rightArrowWidget := widgets.NewParagraph()
+	accuKnoxLabel := tview.NewTextView().
+		SetText("[::b]AccuKnox[::-]").
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
 
-	leftArrow := "<"
-	rightArrow := ">"
+	navigationCues := tview.NewTextView().
+		SetText("Navigate: Arrows | Select: Enter | Exit: Q/Esc").
+		SetTextAlign(tview.AlignRight).
+		SetDynamicColors(true)
 
-	navCues := fmt.Sprintf(" [%d|%d] [Lines: %d] \t\t", pd.currentPolicyIndex+1, len(pd.data), totalPolicyLines)
+	navFlex := tview.NewFlex().
+		AddItem(accuKnoxLabel, 0, 1, false).
+		AddItem(tview.NewBox(), 0, 1, false).
+		AddItem(navigationCues, 0, 1, false)
 
-	navWidth := len(navCues) + 2
+	grid.AddItem(navFlex, 3, 0, 1, 3, 0, 100, false)
 
-	leftPadding := (pd.width - navWidth) / 2
-	navBoxStart := leftPadding + 2
-	navBoxEnd := navBoxStart + len(navCues)
+	namespaceList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
+		populatePolicyTree(policyTree, mainText, pf)
+		app.SetFocus(policyTree)
+	})
 
-	navBox := widgets.NewParagraph()
-	navBox.Text = navCues
-	navBox.TextStyle.Fg = ui.ColorWhite
-	navBox.Border = false
-	navBox.WrapText = false
-	navBox.SetRect(navBoxStart, yPos, navBoxEnd, yPos+1)
+	policyTree.SetChangedFunc(func(node *tview.TreeNode) {
+		switch ref := node.GetReference().(type) {
+		case *networkingv1.NetworkPolicy:
+			policyDetailsView.SetText(networkPolicyToString(ref))
+		case *policyType.KubeArmorPolicy:
+			policyDetailsView.SetText(kubearmorPolicyToString(ref))
+		}
+	})
 
-	leftArrowWidget.Text = leftArrow
-	rightArrowWidget.Text = rightArrow
-
-	leftArrowWidget.TextStyle.Modifier = ui.ModifierBold
-	rightArrowWidget.TextStyle.Modifier = ui.ModifierBold
-
-	if pd.leftArrowColor == ui.ColorGreen {
-		leftArrowWidget.TextStyle.Fg = ui.ColorGreen
-	} else {
-		leftArrowWidget.TextStyle.Fg = ui.ColorWhite
-	}
-
-	if pd.rightArrowColor == ui.ColorGreen {
-		rightArrowWidget.TextStyle.Fg = ui.ColorGreen
-	} else {
-		rightArrowWidget.TextStyle.Fg = ui.ColorWhite
-	}
-
-	leftArrowWidget.Border = false
-	rightArrowWidget.Border = false
-	leftArrowWidget.WrapText = false
-	rightArrowWidget.WrapText = false
-	leftArrowWidget.SetRect(leftPadding, yPos, leftPadding+1, yPos+1)
-	rightArrowWidget.SetRect(navBoxEnd+1, yPos, navBoxEnd+2, yPos+1)
-
-	ui.Render(navBox, leftArrowWidget, rightArrowWidget)
-	yPos++
-
-	// Content section
-	contentBox := widgets.NewParagraph()
-	contentBox.Text = content
-	contentBox.Border = true
-	contentBox.WrapText = true
-	fixedHeight := 30
-	contentBox.SetRect(0, yPos, pd.width, yPos+fixedHeight)
-	ui.Render(contentBox)
-	yPos += fixedHeight + 2
-
-	return yPos
-}
-
-func (pd *PolicyDisplay) savePolicyToFile(policy string) string {
-	metadata, content := pd.extractPolicyParts(policy)
-	name := strings.TrimSpace(strings.Split(metadata, "\n")[0][6:])
-	namespace := strings.TrimSpace(strings.Split(metadata, "\n")[1][11:])
-	filePath := "out/discovered"
-	fileName := fmt.Sprintf("%s/%s_%s.yaml", filePath, name, namespace)
-
-	err := os.MkdirAll(filePath, os.ModePerm)
-	if err != nil {
-		log.WithError(err).Error("failed to create directory")
-	}
-
-	if json.Valid([]byte(content)) {
-		var jsonObj interface{}
-		err := json.Unmarshal([]byte(content), &jsonObj)
-		if err != nil {
-			log.WithError(err).Error("failed to unmarshal")
-		} else {
-			yamlContent, err := yaml.Marshal(jsonObj)
-			if err != nil {
-				log.WithError(err).Error("failed to convert JSON to YAML")
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			app.Stop()
+		}
+		if event.Rune() == 'q' || event.Key() == tcell.KeyEscape {
+			app.Stop()
+		}
+		if event.Key() == tcell.KeyLeft {
+			if app.GetFocus() == policyDetailsView {
+				app.SetFocus(policyTree)
 			} else {
-				content = string(yamlContent)
+				app.SetFocus(namespaceList)
 			}
+		}
+		return event
+	})
+
+	if err := app.SetRoot(grid, true).Run(); err != nil {
+		// TODO: Fallback to standard display in case TUI fails
+		log.WithError(err).Errorf("failed to start TUI: %v", err)
+	}
+}
+
+func populatePolicyTree(tree *tview.TreeView, namespace string, pf *PolicyForest) {
+	root := tree.GetRoot()
+	root.ClearChildren()
+
+	nb := pf.Namespaces[namespace]
+
+	kubearmorNode := tview.NewTreeNode("KubeArmor Policies").
+		SetColor(tcell.ColorYellow).
+		SetSelectable(false)
+	root.AddChild(kubearmorNode)
+
+	for action, policies := range nb.KubearmorPolicies.Actions {
+		actionNode := tview.NewTreeNode(fmt.Sprintf("Action: %s (%d)", action, len(policies))).
+			SetColor(tcell.ColorGreen).SetSelectable(false)
+		kubearmorNode.AddChild(actionNode)
+		for _, policy := range policies {
+			policyNode := tview.NewTreeNode(policy.Metadata.Name).
+				SetReference(policy)
+			actionNode.AddChild(policyNode)
 		}
 	}
 
-	err = os.WriteFile(fileName, []byte(content), 0644)
+	for label, policies := range nb.KubearmorPolicies.Labels {
+		labelNode := tview.NewTreeNode(fmt.Sprintf("Label: %s (%d)", label, len(policies))).
+			SetColor(tcell.ColorGreen).SetSelectable(false)
+		kubearmorNode.AddChild(labelNode)
+		for _, policy := range policies {
+			policyNode := tview.NewTreeNode(policy.Metadata.Name).
+				SetReference(policy)
+			labelNode.AddChild(policyNode)
+		}
+	}
+
+	networkPolicyNode := tview.NewTreeNode("Network Policies").
+		SetColor(tcell.ColorYellow).
+		SetSelectable(false)
+	root.AddChild(networkPolicyNode)
+
+	for typ, policies := range nb.NetworkPolicies.Types {
+		typeNode := tview.NewTreeNode(fmt.Sprintf("Type: %s (%d)", typ, len(policies))).
+			SetColor(tcell.ColorGreen).SetSelectable(false)
+		networkPolicyNode.AddChild(typeNode)
+		for _, policy := range policies {
+			policyNode := tview.NewTreeNode(policy.ObjectMeta.Name).
+				SetReference(policy)
+			typeNode.AddChild(policyNode)
+		}
+	}
+
+	for protocol, policies := range nb.NetworkPolicies.Protocols {
+		protocolNode := tview.NewTreeNode(fmt.Sprintf("Protocol: %s (%d)", protocol, len(policies))).
+			SetColor(tcell.ColorGreen).SetSelectable(false)
+		networkPolicyNode.AddChild(protocolNode)
+		for _, policy := range policies {
+			policyNode := tview.NewTreeNode(policy.ObjectMeta.Name).
+				SetReference(policy)
+			protocolNode.AddChild(policyNode)
+		}
+	}
+
+	tree.SetCurrentNode(root)
+}
+
+func kubearmorPolicyToString(policy *policyType.KubeArmorPolicy) string {
+	jsonBytes, err := json.Marshal(policy)
 	if err != nil {
-		log.WithError(err).Error("failed to write/save the policy")
+		return fmt.Sprintf("error marshalling policy to JSON: %v", err)
 	}
 
-	pd.savedPolicies[pd.currentPolicyIndex] = true
+	yamlBytes, err := yaml.JSONToYAML(jsonBytes)
+	if err != nil {
+		return fmt.Sprintf("error marshalling policy to YAML: %v", err)
+	}
 
-	return "Saved policy " + fileName
+	return string(yamlBytes)
 }
 
-func (pd *PolicyDisplay) getCueText() string {
-	if pd.savedPolicies[pd.currentPolicyIndex] {
-		metadata, _ := pd.extractPolicyParts(pd.data[pd.currentPolicyIndex])
-		name := strings.TrimSpace(strings.Split(metadata, "\n")[0][6:])
-		namespace := strings.TrimSpace(strings.Split(metadata, "\n")[1][11:])
-		return "Saved policy to out/discovered/" + name + "_" + namespace + ".yaml"
-	}
-	return "Press 's' to save this policy"
-}
-
-func (pd *PolicyDisplay) Display(p Options) error {
-	if len(pd.data) == 0 {
-		log.WithFields(log.Fields{
-			"kind":           p.Kind,
-			"format":         p.Format,
-			"namespace":      p.Namespace,
-			"labels":         p.Labels,
-			"fromSource":     p.Source,
-			"gRPC":           p.GRPC,
-			"includeNetwork": p.IncludeNetwork,
-		}).Warn("no policies found")
-		return nil
+func networkPolicyToString(policy *networkingv1.NetworkPolicy) string {
+	jsonBytes, err := json.Marshal(policy)
+	if err != nil {
+		return fmt.Sprintf("error marshalling policy to JSON: %v", err)
 	}
 
-	if err := ui.Init(); err != nil {
-		log.Warnf("failed to initialize termui: %v", err)
-		log.Warn("falling back to standard display...")
-		for idx, policy := range pd.data {
-			prettyOutput := prettifyPolicy(policy, idx+1, len(pd.data))
-			fmt.Println(prettyOutput)
-		}
-		return nil
-	}
-	defer ui.Close()
-
-	renderCurrentPolicy := func() {
-		ui.Clear()
-		yPos := 0
-		yPos = pd.renderPolicyBox(pd.data[pd.currentPolicyIndex], yPos)
-
-		cueBox := widgets.NewParagraph()
-		cueBox.Text = pd.getCueText()
-		cueBox.Border = false
-		cueBox.WrapText = false
-		if pd.savedPolicies[pd.currentPolicyIndex] {
-			cueBox.TextStyle.Fg = ui.ColorGreen
-		} else {
-			cueBox.TextStyle.Fg = ui.ColorRed
-		}
-		cueBox.SetRect(0, yPos, pd.width, yPos+1)
-		ui.Render(cueBox)
+	yamlBytes, err := yaml.JSONToYAML(jsonBytes)
+	if err != nil {
+		return fmt.Sprintf("error marshalling policy to YAML: %v", err)
 	}
 
-	renderCurrentPolicy()
-
-	for e := range ui.PollEvents() {
-		needsRedraw := false
-
-		switch e.ID {
-		case "q", "<C-c>":
-			return nil
-		case "<Up>":
-			if pd.scrollOffset > 0 {
-				pd.scrollOffset--
-				needsRedraw = true
-			} else if pd.page > 0 {
-				pd.page--
-				pd.scrollOffset = pd.linesPerPage - 1
-				needsRedraw = true
-			}
-		case "<Down>":
-			_, terminalHeight := ui.TerminalDimensions()
-			maxVisibleLines := terminalHeight - 10
-			totalLines := len(strings.Split(pd.data[pd.currentPolicyIndex], "\n"))
-			linesLeft := totalLines - (pd.page*pd.linesPerPage + pd.scrollOffset)
-
-			if pd.scrollOffset < pd.linesPerPage-1 && pd.scrollOffset < maxVisibleLines-1 && linesLeft > 1 {
-				pd.scrollOffset++
-				needsRedraw = true
-			} else if (pd.page+1)*pd.linesPerPage < totalLines && linesLeft > pd.linesPerPage {
-				pd.page++
-				pd.scrollOffset = 0
-				needsRedraw = true
-			}
-		case "<Right>":
-			if pd.currentPolicyIndex < len(pd.data)-1 {
-				pd.rightArrowColor = ui.ColorGreen
-				renderCurrentPolicy()
-				time.Sleep(150 * time.Millisecond)
-				pd.rightArrowColor = ui.ColorWhite
-
-				pd.currentPolicyIndex++
-				pd.scrollOffset = 0
-				pd.page = 0
-				needsRedraw = true
-			}
-
-		case "<Left>":
-			if pd.currentPolicyIndex > 0 {
-				pd.leftArrowColor = ui.ColorGreen
-				renderCurrentPolicy()
-				time.Sleep(150 * time.Millisecond)
-				pd.leftArrowColor = ui.ColorWhite
-
-				pd.currentPolicyIndex--
-				pd.scrollOffset = 0
-				pd.page = 0
-				needsRedraw = true
-			}
-		case "s":
-			if !pd.savedPolicies[pd.currentPolicyIndex] {
-				pd.savePolicyToFile(pd.data[pd.currentPolicyIndex])
-			}
-			needsRedraw = true
-		}
-
-		if needsRedraw {
-			renderCurrentPolicy()
-		}
-	}
-
-	return nil
+	return string(yamlBytes)
 }
