@@ -6,6 +6,7 @@ import (
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/schollz/progressbar/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v2"
@@ -20,6 +21,7 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 	fmt.Println("Generating recommended hardening policies...")
 	policyBucket := NewPolicyBucket()
 
+	var bar *progressbar.ProgressBar
 	var data []string
 
 	gRPC, err := common.ConnectGrpc(c, o.Grpc)
@@ -51,6 +53,10 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 			return err
 		}
 		if resp != nil {
+			if bar == nil {
+				bar = initializeProgressBar(len(resp.Policies)) // Initialize the progress bar
+			}
+
 			for _, policy := range resp.Policies {
 				policyString := string(policy.Yaml)
 				var kaPolicy policyType.KubeArmorPolicy
@@ -61,6 +67,8 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 
 				data = append(data, policyString)
 				policyBucket.AddPolicy(policy.Namespace, &kaPolicy)
+
+				bar.Add(1)
 			}
 		}
 		return nil
@@ -75,6 +83,10 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 			return err
 		}
 		if resp != nil {
+			if bar == nil {
+				bar = initializeProgressBar(len(resp.Policies)) // Initialize the progress bar
+			}
+
 			for _, policy := range resp.Policies {
 				policyString := string(policy.Yaml)
 				var kaPolicy policyType.KubeArmorPolicy
@@ -85,7 +97,10 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 
 				data = append(data, policyString)
 				policyBucket.AddPolicy(policy.Namespace, &kaPolicy)
+
+				bar.Add(1)
 			}
+
 		}
 
 		return nil
@@ -141,6 +156,9 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 		return nil, nil
 	}
 
+	if bar != nil {
+		bar.Finish()
+	}
 	StartTUI(policyBucket)
 	return data, nil
 }
@@ -158,4 +176,17 @@ func getAllNamespaces(client *k8s.Client) ([]string, error) {
 	}
 
 	return namespaces, nil
+}
+
+func initializeProgressBar(totalCount int) *progressbar.ProgressBar {
+	bar := progressbar.NewOptions(
+		totalCount,
+		progressbar.OptionSetDescription("Processing policies..."),
+		progressbar.OptionSpinnerType(14),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionSetPredictTime(false),
+		progressbar.OptionSetWidth(10),
+		progressbar.OptionClearOnFinish(),
+	)
+	return bar
 }

@@ -41,5 +41,5 @@ func init() {
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Namespace, "namespace", "n", []string{}, "Filter by Namespace")
 	recommendCmd.Flags().StringVarP(&recommendOptions.Outdir, "outdir", "o", "out", "Output folder to write policies")
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Tags, "tag", "t", []string{}, "Tags to apply. Eg. PCI-DSS,MITRE")
-	recommendCmd.Flags().IntVarP(&recommendOptions.Severity, "severity", "s", 0, "Severity level")
+	recommendCmd.Flags().StringVarP(&recommendOptions.Grpc, "gRPC", "", "", "gRPC address of discovery engine")
 }

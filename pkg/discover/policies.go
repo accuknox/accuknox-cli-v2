@@ -24,7 +24,7 @@ import (
 // Global variable for the gRPC connection
 var connection *grpc.ClientConn
 
-func initConnection(c *k8s.Client, p *Options, bar *progressbar.ProgressBar) error {
+func initConnection(c *k8s.Client, p *Options) error {
 	var err error
 	gRPC, err := common.ConnectGrpc(c, p.GRPC)
 	if err != nil {
@@ -37,7 +37,6 @@ func initConnection(c *k8s.Client, p *Options, bar *progressbar.ProgressBar) err
 		return err
 	}
 
-	bar.Add(1)
 	return nil
 }
 
@@ -52,7 +51,7 @@ func disconnect() {
 	}
 }
 
-func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progressbar.ProgressBar) error {
+func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
 		Type: PolicyType,           // discovered
@@ -64,6 +63,8 @@ func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progress
 	}
 
 	if resp != nil {
+		bar := initializeProgressBar(len(resp.Policies))
+
 		var wg sync.WaitGroup
 		for _, policy := range resp.Policies {
 			wg.Add(1)
@@ -90,12 +91,13 @@ func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progress
 			}(policy)
 		}
 		wg.Wait()
+		bar.Finish()
 	}
 
 	return nil
 }
 
-func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progressbar.ProgressBar) error {
+func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
 		Type: PolicyType,              // discovered
@@ -107,6 +109,8 @@ func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progressb
 	}
 
 	if resp != nil {
+		bar := initializeProgressBar(len(resp.Policies))
+
 		var wg sync.WaitGroup
 		for _, policy := range resp.Policies {
 			wg.Add(1)
@@ -133,12 +137,13 @@ func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progressb
 			}(policy)
 		}
 		wg.Wait()
+		bar.Finish()
 	}
 
 	return nil
 }
 
-func getKaPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progressbar.ProgressBar) error {
+func getKaPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
 		Type: PolicyType,          // discovered
@@ -150,6 +155,8 @@ func getKaPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progressbar.P
 	}
 
 	if resp != nil {
+		bar := initializeProgressBar(len(resp.Policies))
+
 		var wg sync.WaitGroup
 		for _, policy := range resp.Policies {
 			wg.Add(1)
@@ -176,6 +183,7 @@ func getKaPolicy(c *k8s.Client, p *Options, pf *PolicyForest, bar *progressbar.P
 			}(policy)
 		}
 		wg.Wait()
+		bar.Finish()
 	}
 
 	return nil
@@ -430,4 +438,17 @@ func prettifyPolicy(formattedPolicy string, policyNumber int, totalPolicies int)
 	prettyOutput += bottomSeparator + "\n"
 
 	return prettyOutput
+}
+
+func initializeProgressBar(totalCount int) *progressbar.ProgressBar {
+	bar := progressbar.NewOptions(
+		totalCount,
+		progressbar.OptionSetDescription("Processing policies..."),
+		progressbar.OptionSpinnerType(14),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionSetPredictTime(false),
+		progressbar.OptionSetWidth(10),
+		progressbar.OptionClearOnFinish(),
+	)
+	return bar
 }

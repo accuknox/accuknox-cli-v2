@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -26,22 +26,31 @@ func Recommend(c *k8s.Client, o *Options) error {
 		return err
 	}
 
-	errorSlice := []string{}
+	var wg sync.WaitGroup
+	errorChan := make(chan error, len(toProcess))
+
 	for kind, process := range toProcess {
-		if !process {
-			continue
+		if process {
+			wg.Add(1)
+			go func(kind string, handler policyHandler) {
+				defer wg.Done()
+				_, err := fetchPolicyData(policies, kind, c, o)
+				if err != nil {
+					errorChan <- err
+				}
+			}(kind, policies[kind])
 		}
-		_, err := fetchPolicyData(policies, kind, c, o)
+	}
+
+	go func() {
+		wg.Wait()
+		close(errorChan)
+	}()
+
+	var errorSlice []string
+	for err := range errorChan {
 		if err != nil {
-			log.WithFields(log.Fields{
-				"policy":    o.Policy,
-				"namespace": o.Namespace,
-				"labels":    o.Labels,
-				"outdir":    o.Outdir,
-				"tags":      o.Tags,
-			}).Warn("failed to process/fetch policies")
 			errorSlice = append(errorSlice, err.Error())
-			continue
 		}
 	}
 

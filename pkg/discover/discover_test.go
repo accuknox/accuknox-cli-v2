@@ -5,10 +5,9 @@ import (
 	"testing"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/schollz/progressbar/v3"
 )
 
-var mockPolicyHandler = policyHandler{fn: func(c *k8s.Client, p *Options, pf *PolicyForest, bar *progressbar.ProgressBar) error {
+var mockPolicyHandler = policyHandler{fn: func(c *k8s.Client, p *Options, pf *PolicyForest) error {
 	return nil
 }}
 

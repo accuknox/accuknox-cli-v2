@@ -14,7 +14,7 @@ import (
 )
 
 func StartTUI(pb *PolicyBucket) {
-	app := tview.NewApplication()
+	app := tview.NewApplication().EnableMouse(true)
 
 	grid := tview.NewGrid().
 		SetRows(1, 0, 1, 1).

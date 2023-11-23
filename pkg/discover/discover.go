@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/schollz/progressbar/v3"
 )
 
 const (
@@ -23,24 +22,14 @@ const (
 )
 
 type policyHandler struct {
-	fn func(*k8s.Client, *Options, *PolicyForest, *progressbar.ProgressBar) error
+	fn func(*k8s.Client, *Options, *PolicyForest) error
 }
 
 func Policy(c *k8s.Client, parsedArgs *Options) error {
 	defer disconnect()
 	fmt.Println("Discovering policies...")
 
-	bar := progressbar.NewOptions(
-		-1,
-		progressbar.OptionSetDescription("Processing discovered policies..."),
-		progressbar.OptionSpinnerType(14),
-		progressbar.OptionFullWidth(),
-		progressbar.OptionSetPredictTime(false),
-		progressbar.OptionSetWidth(10),
-		progressbar.OptionClearOnFinish(),
-	)
-
-	err := initConnection(c, parsedArgs, bar)
+	err := initConnection(c, parsedArgs)
 	if err != nil {
 		return err
 	}
@@ -63,7 +52,7 @@ func Policy(c *k8s.Client, parsedArgs *Options) error {
 			go func(kind string, handler policyHandler) {
 				defer wg.Done()
 
-				err := handler.fn(c, parsedArgs, policyForest, bar)
+				err := handler.fn(c, parsedArgs, policyForest)
 				if err != nil {
 					errorChan <- err
 				}
@@ -74,8 +63,6 @@ func Policy(c *k8s.Client, parsedArgs *Options) error {
 	go func() {
 		wg.Wait()
 		close(errorChan)
-
-		bar.Finish()
 	}()
 
 	wg.Wait()

@@ -26,3 +26,5 @@ accuknoxS
 accuknox-cli-v2
 
 *.pprof
+*.prof 
+*.pdf

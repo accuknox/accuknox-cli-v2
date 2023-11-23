@@ -13,9 +13,8 @@ type Options struct {
 	Labels    []string `flag:"labels"`
 	Tags      []string `flag:"tags"`
 	Policy    []string `flag:"policy"`
-	Severity  int      `flag:"severity"`
 	Outdir    string   `flag:"out"`
-	Grpc      string   `flag:"grpc"`
+	Grpc      string   `flag:"gRPC"`
 
 	NamespaceRegex []*regexp.Regexp
 	LabelsRegex    []*regexp.Regexp
