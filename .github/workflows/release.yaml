@@ -15,6 +15,7 @@ jobs:
     env:
       GOPRIVATE: github.com/accuknox/*
       GH_ACCESS_TOKEN: ${{ secrets.AK_PAT_REPO_SCOPE }}
+      GIT_KEY: ${{ secrets.GIT_KEY }}
     steps:
       -
         name: Checkout
@@ -32,11 +33,18 @@ jobs:
 
       - name: Setup access for private go modules
         run: |
-          git config --global url."https://${GH_ACCESS_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-      
-
+          sudo apt update -y
+          sudo apt install -y make gcc musl-dev git
+          mkdir ~/.ssh || true
+          printf '[url "git@github.com:"] \n        insteadOf = https://github.com/' > ~/.gitconfig
+          echo "${{ secrets.GIT_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          touch ~/.ssh/known_hosts 
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 
+          export GOPRIVATE="github.com/accuknox"
+          sudo cat ~/.gitconfig
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest
