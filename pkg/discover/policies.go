@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/accuknox/accuknox-cli-v2/pkg"
-	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/clarketm/json"
 	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/utils"
+	"github.com/schollz/progressbar/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"sigs.k8s.io/yaml"
@@ -18,45 +18,26 @@ import (
 	dev2policy "github.com/accuknox/dev2/api/grpc/v1/policy"
 	policyType "github.com/accuknox/dev2/discover/pkg/common"
 	log "github.com/sirupsen/logrus"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
-var matchLabels = map[string]string{"app": pkg.ServiceName}
+// Global variable for the gRPC connection
 var connection *grpc.ClientConn
 
-func initClientConnection(c *k8s.Client, o Options) error {
-	if connection != nil {
-		return nil
-	}
+func initConnection(c *k8s.Client, p *Options) error {
 	var err error
-	connection, err = getClientConnection(c, o)
+	gRPC, err := common.ConnectGrpc(c, p.GRPC)
 	if err != nil {
+		log.WithError(err).Error("failed to initialize gRPC connection")
 		return err
 	}
-	log.Info("Connected to discovery engine")
-	return nil
-}
-
-func getClientConnection(c *k8s.Client, o Options) (*grpc.ClientConn, error) {
-	gRPC := ""
-	targetSvc := pkg.ServiceName
-
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		pf, err := utils.InitiatePortForward(c, pkg.Port, pkg.Port, matchLabels, targetSvc)
-		if err != nil {
-			return nil, err
-		}
-		gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
-		log.Info(gRPC)
-	}
-
-	conn, err := grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	connection, err = grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, err
+		log.WithError(err).Error("failed to connect to discovery engine")
+		return err
 	}
 
-	return conn, nil
+	return nil
 }
 
 func disconnect() {
@@ -65,263 +46,282 @@ func disconnect() {
 		if err != nil {
 			log.WithError(err).Error("failed to close connection")
 		} else {
-			log.Info("Disconnected successfully from discovery engine")
+			fmt.Println("Disconnected successfully from discovery engine")
 		}
 	}
 }
 
-func getNetworkPolicy(c *k8s.Client, o Options) ([]string, error) {
-	var data []string
-
-	err := initClientConnection(c, o)
-	if err != nil {
-		log.WithError(err).Error("failed to connect to discovery engine")
-		return nil, err
-	}
-
+func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
-		Type: PolicyType, // discovered
-		Kind: o.Kind,     // NetworkPolicy
+		Type: PolicyType,           // discovered
+		Kind: KindK8sNetworkPolicy, // NetworkPolicy
 	})
 	if err != nil {
 		log.WithError(err).Error("failed to fetch response from discovery engine")
-		return nil, err
+		return err
 	}
 
 	if resp != nil {
+		bar := initializeProgressBar(len(resp.Policies))
+
+		var wg sync.WaitGroup
 		for _, policy := range resp.Policies {
-			policyString := string(policy.Yaml)
+			wg.Add(1)
 
-			var networkPolicy policyType.KnoxNetworkPolicy
-			err := yaml.Unmarshal([]byte(policyString), &networkPolicy)
-			if err != nil {
-				log.WithError(err).Error("failed to unmarshal " + KindK8sNetworkPolicy)
-				continue
-			}
+			go func(policy *dev2policy.Policy) {
+				defer wg.Done()
 
-			if !networkPolicyFilter(networkPolicy, o) {
-				continue
-			}
+				var networkPolicy networkingv1.NetworkPolicy
+				err := yaml.Unmarshal(policy.Yaml, &networkPolicy)
+				if err != nil {
+					log.WithError(err).Error("failed to unmarshal " + KindK8sNetworkPolicy)
+					return
+				}
 
-			formattedPolicy, err := formatPolicy(networkPolicy, o)
-			if err != nil {
-				log.WithError(err).Error("failed to format " + KindK8sNetworkPolicy)
-				return nil, err
-			}
+				if !networkPolicyFilter(networkPolicy, p) {
+					return
+				}
 
-			data = append(data, formattedPolicy)
+				pf.Lock()
+				pf.AddNetworkPolicy(networkPolicy.ObjectMeta.Namespace, &networkPolicy)
+				pf.Unlock()
+
+				bar.Add(1)
+			}(policy)
 		}
-		return data, err
+		wg.Wait()
+		bar.Finish()
 	}
 
-	return data, err
+	return nil
 }
 
-func getKaHostPolicy(c *k8s.Client, o Options) ([]string, error) {
-	var data []string
-
-	err := initClientConnection(c, o)
-	if err != nil {
-		log.WithError(err).Error("failed to connect to discovery engine")
-		return nil, err
-	}
-
+func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
-		Type: PolicyType, // discovered
-		Kind: o.Kind,     // KAHostPolicy
+		Type: PolicyType,              // discovered
+		Kind: KindKubeArmorHostPolicy, // KAHostPolicy
 	})
 	if err != nil {
 		log.WithError(err).Error("failed to fetch response from discovery engine")
-		return nil, err
+		return err
 	}
 
 	if resp != nil {
+		bar := initializeProgressBar(len(resp.Policies))
+
+		var wg sync.WaitGroup
 		for _, policy := range resp.Policies {
-			policyString := string(policy.Yaml)
+			wg.Add(1)
 
-			var kaHostPolicy policyType.KubeArmorPolicy
-			err := yaml.Unmarshal([]byte(policyString), &kaHostPolicy)
-			if err != nil {
-				log.WithError(err).Error("failed to unmarshal " + KindKubeArmorHostPolicy)
-				continue
-			}
+			go func(policy *dev2policy.Policy) {
+				defer wg.Done()
 
-			if !kaPolicyFilter(kaHostPolicy, o) {
-				continue
-			}
+				var kaHostPolicy policyType.KubeArmorPolicy
+				err := json.Unmarshal(policy.Yaml, &kaHostPolicy)
+				if err != nil {
+					log.WithError(err).Error("failed to unmarshal " + KindKubeArmorHostPolicy)
+					return
+				}
 
-			formattedPolicy, err := formatPolicy(kaHostPolicy, o)
-			if err != nil {
-				log.WithError(err).Error("failed to format " + KindKubeArmorHostPolicy)
-				continue
-			}
+				if !kaPolicyFilter(kaHostPolicy, p) {
+					return
+				}
 
-			data = append(data, formattedPolicy)
+				pf.Lock()
+				pf.AddKubearmorPolicy(kaHostPolicy.Metadata.Namespace, &kaHostPolicy)
+				pf.Unlock()
+
+				bar.Add(1)
+			}(policy)
 		}
-		return data, err
+		wg.Wait()
+		bar.Finish()
 	}
 
-	return data, nil
+	return nil
 }
 
-func getKaPolicy(c *k8s.Client, o Options) ([]string, error) {
-	var data []string
-
-	err := initClientConnection(c, o)
-	if err != nil {
-		log.WithError(err).Error("failed to connect to discovery engine")
-		return nil, err
-	}
-
+func getKaPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 	client := dev2policy.NewGetPolicyClient(connection)
 	resp, err := client.GetPolicy(context.Background(), &dev2policy.PolicyRequest{
-		Type: PolicyType, // discovered
-		Kind: o.Kind,     // KAPolicy
+		Type: PolicyType,          // discovered
+		Kind: KindKubeArmorPolicy, // KAPolicy
 	})
 	if err != nil {
 		log.WithError(err).Error("failed to fetch response from discovery engine")
-		return nil, err
+		return err
 	}
 
 	if resp != nil {
+		bar := initializeProgressBar(len(resp.Policies))
+
+		var wg sync.WaitGroup
 		for _, policy := range resp.Policies {
-			policyString := string(policy.Yaml)
+			wg.Add(1)
 
-			var kaPolicy policyType.KubeArmorPolicy
-			err := yaml.Unmarshal([]byte(policyString), &kaPolicy)
-			if err != nil {
-				log.WithError(err).Error("failed to unmarshal " + KindKubeArmorPolicy)
-				continue
-			}
+			go func(policy *dev2policy.Policy) {
+				defer wg.Done()
 
-			if !kaPolicyFilter(kaPolicy, o) {
-				continue
-			}
+				var kaPolicy policyType.KubeArmorPolicy
+				err := yaml.Unmarshal(policy.Yaml, &kaPolicy)
+				if err != nil {
+					log.WithError(err).Error("failed to unmarshal " + KindKubeArmorPolicy)
+					return
+				}
 
-			formattedPolicy, err := formatPolicy(kaPolicy, o)
-			if err != nil {
-				log.WithError(err).Error("failed to format " + KindKubeArmorPolicy)
-				return nil, err
-			}
+				if !kaPolicyFilter(kaPolicy, p) {
+					return
+				}
 
-			data = append(data, formattedPolicy)
+				pf.Lock()
+				pf.AddKubearmorPolicy(kaPolicy.Metadata.Namespace, &kaPolicy)
+				pf.Unlock()
+
+				bar.Add(1)
+			}(policy)
 		}
-		return data, err
+		wg.Wait()
+		bar.Finish()
 	}
 
-	return data, nil
+	return nil
 }
 
-// Centralized filteration based on user options,
-// OR based logic, in case there are multiple options defined
-// the filter will return true if anyone of them is met.
-func kaPolicyFilter(policy policyType.KubeArmorPolicy, o Options) bool {
+// Centralized filteration based on user options
+// OR based filter at flag level and AND based filter at command level.
+func kaPolicyFilter(policy policyType.KubeArmorPolicy, p *Options) bool {
 	// If no filters are provided, return true
-	if o.Namespace == "" && o.Labels == "" && o.Fromsource == "" && !o.IncludeNetwork {
+	if p.noFilters() {
 		return true
 	}
 
+	namespaceMatched := len(p.Namespace) == 0 && p.NamespaceRegex == nil
+	labelMatched := len(p.Labels) == 0 && p.LabelsRegex == nil
+	sourceMatched := len(p.Source) == 0 && p.SourceRegex == nil
+	includeNetworkMatched := !p.IncludeNetwork || len(policy.Spec.Network.MatchProtocols) > 0
+
 	// Namespace filtering
-	if o.Namespace != "" {
-		if policy.Metadata.Namespace == o.Namespace {
-			log.Infof("Found namespace '%s'", o.Namespace)
-			return true
-		} else {
-			log.Infof("Looking for '%s'.\n", o.Namespace)
+	if !namespaceMatched {
+		for _, ns := range p.Namespace {
+			if policy.Metadata.Namespace == ns {
+				namespaceMatched = true
+				break
+			}
+		}
+		if p.NamespaceRegex != nil && !namespaceMatched {
+			for _, regex := range p.NamespaceRegex {
+				if regex.MatchString(policy.Metadata.Namespace) {
+					namespaceMatched = true
+					break
+				}
+			}
 		}
 	}
 
-	// Label filtering
-	if o.Labels != "" {
-		labelMatched := false
-		providedLabels := strings.Split(o.Labels, ",")
-		for _, label := range providedLabels {
+	// Labels filtering
+	if !labelMatched {
+		for _, label := range p.Labels {
 			keyVal := strings.Split(label, "=")
 			if len(keyVal) == 2 {
-				if policyValue, exists := policy.Metadata.Labels[keyVal[0]]; exists && policyValue == keyVal[1] {
+				if policyValue, exists := policy.Spec.Selector.MatchLabels[keyVal[0]]; exists && policyValue == keyVal[1] {
 					labelMatched = true
 					break
 				}
 			}
 		}
-		if labelMatched {
-			return true
-		} else {
-			log.Info("Provided labels may not exists, please check again.")
+		if p.LabelsRegex != nil && !labelMatched {
+			for _, regex := range p.LabelsRegex {
+				for k, v := range policy.Spec.Selector.MatchLabels {
+					if regex.MatchString(k + "=" + v) {
+						labelMatched = true
+						break
+					}
+				}
+				if labelMatched {
+					break
+				}
+			}
 		}
 	}
 
 	// FromSource filtering
-	if o.Fromsource != "" {
-		sourceMatched := false
+	if !sourceMatched {
 		for _, path := range policy.Spec.Process.MatchPaths {
 			for _, fromSource := range path.FromSource {
-				if fromSource.Path == o.Fromsource || fromSource.Dir == o.Fromsource {
-					sourceMatched = true
+				for _, src := range p.Source {
+					if fromSource.Path == src || fromSource.Dir == src {
+						sourceMatched = true
+						break
+					}
+				}
+				if sourceMatched {
+					break
+				}
+				if p.SourceRegex != nil {
+					for _, regex := range p.SourceRegex {
+						if regex.MatchString(fromSource.Path) || regex.MatchString(fromSource.Dir) {
+							sourceMatched = true
+							break
+						}
+					}
+				}
+				if sourceMatched {
+					break
+				}
+			}
+			if sourceMatched {
+				break
+			}
+		}
+		if !sourceMatched {
+			for _, dir := range policy.Spec.File.MatchDirectories {
+				for _, fromSource := range dir.FromSource {
+					for _, src := range p.Source {
+						if fromSource.Path == src || fromSource.Dir == src {
+							sourceMatched = true
+							break
+						}
+					}
+					if sourceMatched {
+						break
+					}
+					if p.SourceRegex != nil {
+						for _, regex := range p.SourceRegex {
+							if regex.MatchString(fromSource.Path) || regex.MatchString(fromSource.Dir) {
+								sourceMatched = true
+								break
+							}
+						}
+					}
+					if sourceMatched {
+						break
+					}
+				}
+				if sourceMatched {
 					break
 				}
 			}
 		}
-		for _, dir := range policy.Spec.File.MatchDirectories {
-			for _, fromSource := range dir.FromSource {
-				if fromSource.Path == o.Fromsource || fromSource.Dir == o.Fromsource {
-					sourceMatched = true
-					break
-				}
-			}
-		}
-		if sourceMatched {
-			return true
-		} else {
-			log.Infof("FromSource '%s' not found.\n", o.Fromsource)
-		}
 	}
 
-	// IncludeNetwork filtering
-	if o.IncludeNetwork && len(policy.Spec.Network.MatchProtocols) > 0 {
-		return true
-	} else if o.IncludeNetwork {
-		log.Info("No network match protocols found.")
-	}
-
-	// If none of the criteria are met
-	return false
+	return namespaceMatched && labelMatched && sourceMatched && includeNetworkMatched
 }
 
-func networkPolicyFilter(policy policyType.KnoxNetworkPolicy, o Options) bool {
-	// Metadata Label filtering
-	if o.Labels != "" {
-		providedLabels := strings.Split(o.Labels, ",")
-		for _, label := range providedLabels {
-			keyVal := strings.Split(label, "=")
-			if len(keyVal) == 2 {
-				if policyValue, exists := policy.Metadata[keyVal[0]]; exists && policyValue == keyVal[1] {
-					return true
-				}
-			}
-		}
+func formatPolicy(policy interface{}, p *Options) (string, error) {
+	if p.Format == "" {
+		p.Format = "yaml"
 	}
 
-	// Namespace filtering from Metadata
-	if o.Namespace != "" && policy.Metadata["namespace"] == o.Namespace {
-		return true
-	}
-
-	// If none of the criteria are met
-	return false
-}
-
-func formatPolicy(policy interface{}, o Options) (string, error) {
 	var formattedPolicy string
-	if o.Format == FmtJSON {
+	if p.Format == FmtJSON {
 		arr, err := json.MarshalIndent(policy, "", "    ")
 		if err != nil {
 			return "", err
 		}
 		formattedPolicy = string(arr)
-	} else if o.Format == FmtYAML {
+	} else if p.Format == FmtYAML {
 		arr, err := json.Marshal(policy)
 		if err != nil {
 			return "", err
@@ -345,6 +345,62 @@ func formatPolicy(policy interface{}, o Options) (string, error) {
 	}
 
 	return metadata + formattedPolicy, nil
+}
+
+func networkPolicyFilter(policy networkingv1.NetworkPolicy, p *Options) bool {
+	if p.noFilters() {
+		return true
+	}
+
+	labelMatched := len(p.Labels) == 0 && p.LabelsRegex == nil
+	namespaceMatched := len(p.Namespace) == 0 && p.NamespaceRegex == nil
+
+	// Metadata Label filtering
+	if !labelMatched {
+		for _, label := range p.Labels {
+			keyVal := strings.Split(label, "=")
+			if len(keyVal) == 2 {
+				if policyValue, exists := policy.Labels[keyVal[0]]; exists && policyValue == keyVal[1] {
+					labelMatched = true
+					break
+				}
+			}
+		}
+		if p.LabelsRegex != nil && !labelMatched {
+			for _, regex := range p.LabelsRegex {
+				for key, value := range policy.Labels {
+					if regex.MatchString(key + "=" + value) {
+						labelMatched = true
+						break
+					}
+				}
+				if labelMatched {
+					break
+				}
+			}
+		}
+	}
+
+	// Namespace filtering from ObjectMeta
+	if !namespaceMatched {
+		for _, ns := range p.Namespace {
+			if policy.ObjectMeta.Namespace == ns {
+				namespaceMatched = true
+				break
+			}
+		}
+		if p.NamespaceRegex != nil && !namespaceMatched {
+			for _, regex := range p.NamespaceRegex {
+				if regex.MatchString(policy.ObjectMeta.Namespace) {
+					namespaceMatched = true
+					break
+				}
+			}
+		}
+	}
+
+	// If both criteria are met
+	return labelMatched && namespaceMatched
 }
 
 func prettifyPolicy(formattedPolicy string, policyNumber int, totalPolicies int) string {
@@ -382,4 +438,17 @@ func prettifyPolicy(formattedPolicy string, policyNumber int, totalPolicies int)
 	prettyOutput += bottomSeparator + "\n"
 
 	return prettyOutput
+}
+
+func initializeProgressBar(totalCount int) *progressbar.ProgressBar {
+	bar := progressbar.NewOptions(
+		totalCount,
+		progressbar.OptionSetDescription("Processing policies..."),
+		progressbar.OptionSpinnerType(14),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionSetPredictTime(false),
+		progressbar.OptionSetWidth(10),
+		progressbar.OptionClearOnFinish(),
+	)
+	return bar
 }

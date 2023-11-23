@@ -4,7 +4,9 @@
 // Package main is responsible for the execution of CLI
 package main
 
-import "github.com/accuknox/accuknox-cli-v2/cmd"
+import (
+	"github.com/accuknox/accuknox-cli-v2/cmd"
+)
 
 func main() {
 	cmd.Execute()

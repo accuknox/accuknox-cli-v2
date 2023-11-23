@@ -1,7 +1,7 @@
 package discoveryengine
 
 import (
-	"github.com/accuknox/accuknox-cli-v2/pkg"
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -33,8 +33,8 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:    pkg.SumEngine,
-							Image:   pkg.SumEngineImage,
+							Name:    common.SumEngine,
+							Image:   common.SumEngineImage,
 							Command: []string{"/usr/bin/sumengine"},
 							Args:    []string{"--config", "/var/lib/sumengine/app.yaml", "--kmux-config", "/var/lib/sumengine/kmux.yaml"},
 							Resources: corev1.ResourceRequirements{
@@ -56,14 +56,14 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 							},
 						},
 						{
-							Name:    pkg.Offlaoder,
-							Image:   pkg.OffloaderImage,
+							Name:    common.Offlaoder,
+							Image:   common.OffloaderImage,
 							Command: []string{"/usr/bin/offloader"},
 							Args:    []string{"--config", "/var/lib/offloader/app.yaml", "--kmux-config", "/var/lib/offloader/kmux.yaml"},
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: pkg.GRPCPort,
-									Name:          pkg.GRPC,
+									ContainerPort: common.GRPCPort,
+									Name:          common.GRPC,
 								},
 							},
 							Resources: corev1.ResourceRequirements{
@@ -85,8 +85,8 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 							},
 						},
 						{
-							Name:    pkg.Discover,
-							Image:   pkg.DiscoverImage,
+							Name:    common.Discover,
+							Image:   common.DiscoverImage,
 							Command: []string{"/usr/bin/discover"},
 							Args:    []string{"--config", "/var/lib/discover/app.yaml", "--kmux-config", "/var/lib/discover/kmux.yaml"},
 							Ports: []corev1.ContainerPort{
@@ -114,16 +114,16 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 							},
 						},
 						{
-							Name:  pkg.Rabbitmq,
-							Image: pkg.RabbitmqImage,
+							Name:  common.Rabbitmq,
+							Image: common.RabbitmqImage,
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: pkg.AMQPPort,
-									Name:          pkg.AMQP,
+									ContainerPort: common.AMQPPort,
+									Name:          common.AMQP,
 								},
 								{
-									ContainerPort: pkg.ManagementPort,
-									Name:          pkg.Management,
+									ContainerPort: common.ManagementPort,
+									Name:          common.Management,
 								},
 							},
 							Resources: corev1.ResourceRequirements{
@@ -138,8 +138,8 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 							},
 						},
 						{
-							Name:    pkg.Hardening,
-							Image:   pkg.HardeningImage,
+							Name:    common.Hardening,
+							Image:   common.HardeningImage,
 							Command: []string{"/usr/bin/hardening", "start"},
 							Args:    []string{"--config", "/var/lib/hardening/app.yaml", "--kmux-config", "/var/lib/hardening/kmux.yaml"},
 							Resources: corev1.ResourceRequirements{
@@ -167,7 +167,7 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: pkg.SumengineConfmap,
+										Name: common.SumengineConfmap,
 									},
 								},
 							},
@@ -177,7 +177,7 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: pkg.OffloaderConfMap,
+										Name: common.OffloaderConfMap,
 									},
 								},
 							},
@@ -187,7 +187,7 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: pkg.DiscoverConfMap,
+										Name: common.DiscoverConfMap,
 									},
 								},
 							},
@@ -197,7 +197,7 @@ func getDeployments(accountName string, ns string) *appsv1.Deployment {
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: pkg.HardeningConfMap,
+										Name: common.HardeningConfMap,
 									},
 								},
 							},

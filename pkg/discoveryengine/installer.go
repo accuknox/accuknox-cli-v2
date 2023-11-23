@@ -9,7 +9,7 @@ import (
 	"time"
 
 	// pb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/license"
-	"github.com/accuknox/accuknox-cli-v2/pkg"
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/utils"
 	"google.golang.org/grpc"
@@ -36,7 +36,7 @@ func InstallLicense(client *k8s.Client, key string, user string) error {
 	if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
 		gRPC = val
 	} else {
-		pf, err := utils.InitiatePortForward(client, port, port, pkg.MatchLabels, targetSvc)
+		pf, err := utils.InitiatePortForward(client, port, port, common.MatchLabels, targetSvc)
 		if err != nil {
 			return err
 		}
@@ -66,7 +66,7 @@ func InstallLicense(client *k8s.Client, key string, user string) error {
 
 func CheckPods(client *k8s.Client) int {
 	cursor := [4]string{"|", "/", "—", "\\"}
-	fmt.Printf("\r😋\tChecking if DiscoveryEngine pods are running ...")
+	fmt.Printf("\r😋\tChecking if Discovery Engine pods are running ...")
 	stime := time.Now()
 	otime := stime.Add(600 * time.Second)
 	for {
@@ -152,7 +152,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	//Custom resource definition
 	fmt.Println("🔥\tSetting CRD's ")
 	crd := GetCRD()
-	_, err = c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), pkg.CRDName, metav1.GetOptions{})
+	_, err = c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), common.CRDName, metav1.GetOptions{})
 	if err != nil {
 		_, err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Create(context.TODO(), crd, metav1.CreateOptions{})
 		if err != nil {
@@ -163,7 +163,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	//service account
-	accountName := pkg.ServiceAccountName
+	accountName := common.ServiceAccountName
 	fmt.Println("💫\tCreating Service Account ")
 	serviceAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
@@ -187,7 +187,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	clusterRoleView := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pkg.ClusterRoleViewName,
+			Name: common.ClusterRoleViewName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -212,42 +212,42 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	clusterRoleManage := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pkg.ClusterRoleManageName,
+			Name: common.ClusterRoleManageName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{pkg.APIGroupCilium},
+				APIGroups: []string{common.APIGroupCilium},
 				Resources: []string{"ciliumnetworkpolicies"},
 				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				APIGroups: []string{pkg.APIGroupNetworking},
+				APIGroups: []string{common.APIGroupNetworking},
 				Resources: []string{"networkpolicies"},
 				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				APIGroups: []string{pkg.APIGroupKubearmorSecurity},
+				APIGroups: []string{common.APIGroupKubearmorSecurity},
 				Resources: []string{"discoveredpolicies"},
 				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				APIGroups: []string{pkg.APIGroupKubearmorSecurity},
+				APIGroups: []string{common.APIGroupKubearmorSecurity},
 				Resources: []string{"discoveredpolicies/finalizers"},
 				Verbs:     []string{"update"},
 			},
 			{
-				APIGroups: []string{pkg.APIGroupKubearmorSecurity},
+				APIGroups: []string{common.APIGroupKubearmorSecurity},
 				Resources: []string{"discoveredpolicies/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
-				APIGroups: []string{pkg.APIGroupKubearmorSecurity},
+				APIGroups: []string{common.APIGroupKubearmorSecurity},
 				Resources: []string{"kubearmorpolicies"},
 				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 		},
 	}
-	_, err = c.K8sClientset.RbacV1().ClusterRoles().Get(context.TODO(), pkg.ClusterRoleViewName, metav1.GetOptions{})
+	_, err = c.K8sClientset.RbacV1().ClusterRoles().Get(context.TODO(), common.ClusterRoleViewName, metav1.GetOptions{})
 	if err != nil {
 		_, err = c.K8sClientset.RbacV1().ClusterRoles().Create(context.TODO(), clusterRoleView, metav1.CreateOptions{})
 		if err != nil {
@@ -257,7 +257,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		fmt.Println("ℹ️\tCluster roles already exists  ")
 	}
 
-	_, err = c.K8sClientset.RbacV1().ClusterRoles().Get(context.TODO(), pkg.ClusterRoleManageName, metav1.GetOptions{})
+	_, err = c.K8sClientset.RbacV1().ClusterRoles().Get(context.TODO(), common.ClusterRoleManageName, metav1.GetOptions{})
 	if err != nil {
 		_, err = c.K8sClientset.RbacV1().ClusterRoles().Create(context.TODO(), clusterRoleManage, metav1.CreateOptions{})
 		if err != nil {
@@ -272,16 +272,16 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	clusterRoleBindingView := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pkg.ClusterRoleViewName,
+			Name: common.ClusterRoleViewName,
 		},
 		RoleRef: rbacv1.RoleRef{
-			APIGroup: pkg.APIGroupRBACAuth,
-			Kind:     pkg.ClusterRole,
-			Name:     pkg.ClusterRoleViewName,
+			APIGroup: common.APIGroupRBACAuth,
+			Kind:     common.ClusterRole,
+			Name:     common.ClusterRoleViewName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				Kind:      pkg.ServiceAccount,
+				Kind:      common.ServiceAccount,
 				Name:      accountName,
 				Namespace: ns,
 			},
@@ -290,22 +290,22 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	clusterRoleBindingManage := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pkg.ClusterRoleManageName,
+			Name: common.ClusterRoleManageName,
 		},
 		RoleRef: rbacv1.RoleRef{
-			APIGroup: pkg.APIGroupRBACAuth,
-			Kind:     pkg.ClusterRole,
-			Name:     pkg.ClusterRoleManageName,
+			APIGroup: common.APIGroupRBACAuth,
+			Kind:     common.ClusterRole,
+			Name:     common.ClusterRoleManageName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				Kind:      pkg.ServiceAccount,
+				Kind:      common.ServiceAccount,
 				Name:      accountName,
 				Namespace: ns,
 			},
 		},
 	}
-	_, err = c.K8sClientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), pkg.ClusterRoleViewName, metav1.GetOptions{})
+	_, err = c.K8sClientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), common.ClusterRoleViewName, metav1.GetOptions{})
 	if err != nil {
 		_, err = c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterRoleBindingView, metav1.CreateOptions{})
 		if err != nil {
@@ -315,7 +315,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		fmt.Println("ℹ️\tCluster role bindings already exists  ")
 	}
 
-	_, err = c.K8sClientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), pkg.ClusterRoleManageName, metav1.GetOptions{})
+	_, err = c.K8sClientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), common.ClusterRoleManageName, metav1.GetOptions{})
 	if err != nil {
 		_, err = c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterRoleBindingManage, metav1.CreateOptions{})
 		if err != nil {
@@ -355,16 +355,16 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
-					Name:       pkg.GRPC,
-					Port:       pkg.GRPCPort,
+					Name:       common.GRPC,
+					Port:       common.GRPCPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(int(pkg.GRPCPort)),
+					TargetPort: intstr.FromInt(int(common.GRPCPort)),
 				},
 				{
-					Name:       pkg.AMQP,
-					Port:       pkg.AMQPPort,
+					Name:       common.AMQP,
+					Port:       common.AMQPPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(int(pkg.AMQPPort)),
+					TargetPort: intstr.FromInt(int(common.AMQPPort)),
 				},
 			},
 			Selector: map[string]string{

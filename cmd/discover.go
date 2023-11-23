@@ -4,11 +4,15 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/accuknox/accuknox-cli-v2/pkg/discover"
 	"github.com/spf13/cobra"
 )
 
-var discoverOptions discover.Options
+var parseArgs discover.Options
 
 // discoverCmd represents the discover command
 var discoverCmd = &cobra.Command{
@@ -16,20 +20,28 @@ var discoverCmd = &cobra.Command{
 	Short: "Discover applicable policies",
 	Long:  `Discover applicable policies`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := discover.Policy(client, discoverOptions); err != nil {
+		rawArgs := strings.Join(os.Args[2:], " ")
+
+		parseArgs, err := discover.ProcessArgs(rawArgs)
+		if err != nil {
+			return fmt.Errorf("error processing args: %v", err)
+		}
+
+		if err := discover.Policy(client, parseArgs); err != nil {
 			return err
 		}
+
 		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(discoverCmd)
-	discoverCmd.Flags().StringVar(&discoverOptions.GRPC, "gRPC", "", "gRPC server information")
-	discoverCmd.Flags().StringVarP(&discoverOptions.Format, "format", "f", "yaml", "Format: json or yaml")
-	discoverCmd.Flags().StringVarP(&discoverOptions.Kind, "policy", "p", "KubeArmorPolicy", "Type of policies to be discovered: NetworkPolicy|KubeArmorPolicy|KubeArmorHostPolicy")
-	discoverCmd.Flags().StringVarP(&discoverOptions.Namespace, "namespace", "n", "", "Filter by Namespace")
-	discoverCmd.Flags().StringVarP(&discoverOptions.Labels, "labels", "l", "", "Filter by policy Label")
-	discoverCmd.Flags().StringVarP(&discoverOptions.Fromsource, "fromsource", "s", "", "Filter by policy FromSource")
-	discoverCmd.Flags().BoolVar(&discoverOptions.IncludeNetwork, "network", false, "Include network rules in system policies")
+	discoverCmd.Flags().StringVar(&parseArgs.GRPC, "gRPC", "", "gRPC server information")
+	discoverCmd.Flags().StringVarP(&parseArgs.Format, "format", "f", "", "Format: json or yaml")
+	discoverCmd.Flags().StringSliceVarP(&parseArgs.Kind, "policy", "p", []string{"KubeArmorPolicy"}, "Type of policies to be discovered: NetworkPolicy|KubeArmorPolicy|KubeArmorHostPolicy")
+	discoverCmd.Flags().StringSliceVarP(&parseArgs.Namespace, "namespace", "n", []string{}, "Filter by Namespace")
+	discoverCmd.Flags().StringSliceVarP(&parseArgs.Labels, "labels", "l", []string{}, "Filter by policy Label")
+	discoverCmd.Flags().StringSliceVarP(&parseArgs.Source, "source", "s", []string{}, "Filter by policy FromSource")
+	discoverCmd.Flags().BoolVar(&parseArgs.IncludeNetwork, "includenet", false, "Include network rules in system policies")
 }

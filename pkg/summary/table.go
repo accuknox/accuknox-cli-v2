@@ -2,216 +2,97 @@ package summary
 
 import (
 	"fmt"
-	"net"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/olekukonko/tablewriter"
 )
 
-var (
-	// SysProcHeader variable contains source process, destination process path, count, timestamp and status
-	SysProcHeader = []string{"Src Process", "Destination Process Path", "Count", "Last Updated Time", "Status"}
-	// SysFileHeader variable contains source process, destination file path, count, timestamp and status
-	SysFileHeader = []string{"Src Process", "Destination File Path", "Count", "Last Updated Time", "Status"}
-	// SysNwHeader variable contains protocol, command, POD/SVC/IP, Port, Namespace, and Labels
-	SysNwHeader = []string{"Protocol", "Command", "POD/SVC/IP", "Port", "Namespace", "Labels", "Count", "Last Updated Time"}
-	// SysBindNwHeader variable contains protocol, command, Bind Port, Bind Address, count and timestamp
-	SysBindNwHeader = []string{"Protocol", "Command", "Bind Port", "Bind Address", "Count", "Last Updated Time"}
-)
-
-// DisplaySummaryOutput function
-//func DisplaySummaryOutput(events *summary.Events, revDNSLookup bool, requestType string) {
-//
-//	if len(events.Process) <= 0 && len(events.File) <= 0 && len(events.Ingress) <= 0 && len(events.Egress) <= 0 {
-//		return
-//	}
-//
-//	writePodInfoToTable(resp.PodName, resp.Namespace, resp.ClusterName, resp.ContainerName, resp.Label)
-//
-//	// Colored Status for Allow and Deny
-//	agc := ansi.ColorFunc("green")
-//	arc := ansi.ColorFunc("red")
-//	ayc := ansi.ColorFunc("yellow")
-//
-//	if strings.Contains(requestType, "process") {
-//		if len(resp.ProcessData) > 0 {
-//			procRowData := [][]string{}
-//			// Display process data
-//			fmt.Printf("\nProcess Data\n")
-//			for _, procData := range resp.ProcessData {
-//				procStrSlice := []string{}
-//				procStrSlice = append(procStrSlice, procData.Source)
-//				procStrSlice = append(procStrSlice, procData.Destination)
-//				procStrSlice = append(procStrSlice, procData.Count)
-//				procStrSlice = append(procStrSlice, procData.UpdatedTime)
-//				if procData.Status == "Allow" {
-//					procStrSlice = append(procStrSlice, agc(procData.Status))
-//				} else if procData.Status == "Audit" {
-//					procStrSlice = append(procStrSlice, ayc(procData.Status))
-//				} else {
-//					procStrSlice = append(procStrSlice, arc(procData.Status))
-//				}
-//				procRowData = append(procRowData, procStrSlice)
-//			}
-//			sort.Slice(procRowData[:], func(i, j int) bool {
-//				for x := range procRowData[i] {
-//					if procRowData[i][x] == procRowData[j][x] {
-//						continue
-//					}
-//					return procRowData[i][x] < procRowData[j][x]
-//				}
-//				return false
-//			})
-//			WriteTable(SysProcHeader, procRowData)
-//			fmt.Printf("\n")
-//		}
-//	}
-//
-//	if strings.Contains(requestType, "file") {
-//		if len(resp.FileData) > 0 {
-//			fmt.Printf("\nFile Data\n")
-//			// Display file data
-//			fileRowData := [][]string{}
-//			for _, fileData := range resp.FileData {
-//				fileStrSlice := []string{}
-//				fileStrSlice = append(fileStrSlice, fileData.Source)
-//				fileStrSlice = append(fileStrSlice, fileData.Destination)
-//				fileStrSlice = append(fileStrSlice, fileData.Count)
-//				fileStrSlice = append(fileStrSlice, fileData.UpdatedTime)
-//				if fileData.Status == "Allow" {
-//					fileStrSlice = append(fileStrSlice, agc(fileData.Status))
-//				} else if fileData.Status == "Audit" {
-//					fileStrSlice = append(fileStrSlice, ayc(fileData.Status))
-//				} else {
-//					fileStrSlice = append(fileStrSlice, arc(fileData.Status))
-//				}
-//				fileRowData = append(fileRowData, fileStrSlice)
-//			}
-//			sort.Slice(fileRowData[:], func(i, j int) bool {
-//				for x := range fileRowData[i] {
-//					if fileRowData[i][x] == fileRowData[j][x] {
-//						continue
-//					}
-//					return fileRowData[i][x] < fileRowData[j][x]
-//				}
-//				return false
-//			})
-//			WriteTable(SysFileHeader, fileRowData)
-//			fmt.Printf("\n")
-//		}
-//	}
-//
-//	if strings.Contains(requestType, "network") {
-//		if len(resp.IngressConnection) > 0 {
-//			fmt.Printf("\nIngress connections\n")
-//			// Display server conn data
-//			inNwRowData := [][]string{}
-//			for _, ingressConnection := range resp.IngressConnection {
-//				inNwStrSlice := []string{}
-//				domainName := dnsLookup(ingressConnection.IP, revDNSLookup)
-//				inNwStrSlice = append(inNwStrSlice, ingressConnection.Protocol)
-//				inNwStrSlice = append(inNwStrSlice, ingressConnection.Command)
-//				inNwStrSlice = append(inNwStrSlice, domainName)
-//				inNwStrSlice = append(inNwStrSlice, ingressConnection.Port)
-//				inNwStrSlice = append(inNwStrSlice, ingressConnection.Namespace)
-//				inNwStrSlice = append(inNwStrSlice, ingressConnection.Labels)
-//				inNwStrSlice = append(inNwStrSlice, ingressConnection.Count)
-//				inNwStrSlice = append(inNwStrSlice, ingressConnection.UpdatedTime)
-//				inNwRowData = append(inNwRowData, inNwStrSlice)
-//			}
-//			WriteTable(SysNwHeader, inNwRowData)
-//			fmt.Printf("\n")
-//		}
-//
-//		if len(resp.EgressConnection) > 0 {
-//			fmt.Printf("\nEgress connections\n")
-//			// Display server conn data
-//			outNwRowData := [][]string{}
-//			for _, egressConnection := range resp.EgressConnection {
-//				outNwStrSlice := []string{}
-//				domainName := dnsLookup(egressConnection.IP, revDNSLookup)
-//				outNwStrSlice = append(outNwStrSlice, egressConnection.Protocol)
-//				outNwStrSlice = append(outNwStrSlice, egressConnection.Command)
-//				outNwStrSlice = append(outNwStrSlice, domainName)
-//				outNwStrSlice = append(outNwStrSlice, egressConnection.Port)
-//				outNwStrSlice = append(outNwStrSlice, egressConnection.Namespace)
-//				outNwStrSlice = append(outNwStrSlice, egressConnection.Labels)
-//				outNwStrSlice = append(outNwStrSlice, egressConnection.Count)
-//				outNwStrSlice = append(outNwStrSlice, egressConnection.UpdatedTime)
-//				outNwRowData = append(outNwRowData, outNwStrSlice)
-//			}
-//			WriteTable(SysNwHeader, outNwRowData)
-//			fmt.Printf("\n")
-//		}
-//
-//		if len(resp.BindConnection) > 0 {
-//			fmt.Printf("\nBind Points\n")
-//			// Display bind connections details
-//			bindNwRowData := [][]string{}
-//			for _, bindConnection := range resp.BindConnection {
-//				bindNwStrSlice := []string{}
-//				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Protocol)
-//				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Command)
-//				bindNwStrSlice = append(bindNwStrSlice, bindConnection.BindPort)
-//				bindNwStrSlice = append(bindNwStrSlice, bindConnection.BindAddress)
-//				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Count)
-//				bindNwStrSlice = append(bindNwStrSlice, bindConnection.UpdatedTime)
-//				bindNwRowData = append(bindNwRowData, bindNwStrSlice)
-//			}
-//			WriteTable(SysBindNwHeader, bindNwRowData)
-//			fmt.Printf("\n")
-//		}
-//	}
-//}
-
-func dnsLookup(ip string, revDNSLookup bool) string {
-	if revDNSLookup {
-		if strings.Contains(ip, "svc") || strings.Contains(ip, "pod") {
-			return ip
-		}
-		dns, err := net.LookupAddr(ip)
-		if err != nil {
-			return ip
-		}
-		if dns[0] != "" {
-			return dns[0]
-		}
+func displayWorkloadInTable(workload *Workload) {
+	for clusterName, cluster := range workload.Clusters {
+		fmt.Printf("Cluster: %s\n", clusterName)
+		displayClusterInTable(cluster)
 	}
-	return ip
 }
 
-// WriteTable function
-func WriteTable(header []string, data [][]string) {
+func displayClusterInTable(cluster *Cluster) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(header)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	for _, v := range data {
-		table.Append(v)
+	table.SetHeader([]string{"Namespace", "Workload Type", "File Events", "Process Events", "Ingress Events", "Egress Events", "Bind Events"})
+
+	for nsName, namespace := range cluster.Namespaces {
+		for wtName, workloadType := range namespace.WorkloadTypes {
+			fileEvents := len(workloadType.Events.File)
+			processEvents := len(workloadType.Events.Process)
+			ingressEvents := len(workloadType.Events.Ingress)
+			egressEvents := len(workloadType.Events.Egress)
+			bindEvents := len(workloadType.Events.Bind)
+
+			row := []string{
+				nsName,
+				wtName,
+				fmt.Sprintf("%d", fileEvents),
+				fmt.Sprintf("%d", processEvents),
+				fmt.Sprintf("%d", ingressEvents),
+				fmt.Sprintf("%d", egressEvents),
+				fmt.Sprintf("%d", bindEvents),
+			}
+			table.Append(row)
+		}
 	}
+
 	table.Render()
+	fmt.Println()
 }
 
-func writePodInfoToTable(podname, namespace, clustername, containername, labels string) {
-
-	fmt.Printf("\n")
-
-	podinfo := [][]string{
-		{"Pod Name", podname},
-		{"Namespace Name", namespace},
-		{"Cluster Name", clustername},
-		{"Container Name", containername},
-		{"Labels", labels},
+func writeTableToFile(workload *Workload) error {
+	outDir := "out"
+	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
 	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetBorder(false)
-	table.SetTablePadding("\t")
-	table.SetCenterSeparator("")
-	table.SetColumnSeparator("")
-	table.SetRowSeparator("")
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	for _, v := range podinfo {
-		table.Append(v)
+
+	fileName := "summary.txt"
+	filePath := filepath.Join(outDir, fileName)
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
 	}
+	defer file.Close()
+
+	for clusterName, cluster := range workload.Clusters {
+		fmt.Fprintf(file, "Cluster: %s\n", clusterName)
+		writeClusterToTable(cluster, file)
+	}
+
+	fmt.Printf("Summary written to %s\n", filePath)
+	return nil
+}
+
+func writeClusterToTable(cluster *Cluster, file *os.File) {
+	table := tablewriter.NewWriter(file)
+	table.SetHeader([]string{"Namespace", "Workload Type", "File Events", "Process Events", "Ingress Events", "Egress Events", "Bind Events"})
+
+	for nsName, namespace := range cluster.Namespaces {
+		for wtName, workloadType := range namespace.WorkloadTypes {
+			fileEvents := len(workloadType.Events.File)
+			processEvents := len(workloadType.Events.Process)
+			ingressEvents := len(workloadType.Events.Ingress)
+			egressEvents := len(workloadType.Events.Egress)
+			bindEvents := len(workloadType.Events.Bind)
+
+			row := []string{
+				nsName,
+				wtName,
+				fmt.Sprintf("%d", fileEvents),
+				fmt.Sprintf("%d", processEvents),
+				fmt.Sprintf("%d", ingressEvents),
+				fmt.Sprintf("%d", egressEvents),
+				fmt.Sprintf("%d", bindEvents),
+			}
+			table.Append(row)
+		}
+	}
+
 	table.Render()
+	fmt.Fprintln(file)
 }
