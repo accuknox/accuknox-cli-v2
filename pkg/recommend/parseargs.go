@@ -50,7 +50,7 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 		case flag == "policy" || flag == "p":
 			parsedOption.Policy, err = parser.ParseStringSlice(rawArgs, flag)
 
-		case flag == "grpc" || flag == "g":
+		case flag == "gRPC" || flag == "g":
 			parsedOption.Grpc, err = parser.ParseString(rawArgs, flag)
 
 		case flag == "severity" || flag == "s":
