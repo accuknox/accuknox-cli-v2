@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/dev2/api/grpc/v2/summary"
@@ -68,17 +71,7 @@ func GetSummary(c *k8s.Client, o Options) (*Workload, error) {
 
 	client := summary.NewSummaryClient(conn)
 
-	bar := progressbar.NewOptions(
-		-1,
-		progressbar.OptionSetDescription("Processing workload data..."),
-		progressbar.OptionSpinnerType(14),
-		progressbar.OptionFullWidth(),
-		progressbar.OptionSetPredictTime(false),
-		progressbar.OptionSetWidth(10),
-		progressbar.OptionClearOnFinish(),
-	)
-
-	sumResp, err := o.getSummaryPerWorkload(client, data, bar)
+	sumResp, err := o.getSummaryPerWorkload(client, data)
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +89,8 @@ func Summary(c *k8s.Client, o Options) error {
 		return err
 	}
 
-	if workload != nil && o.Format == "glance" {
+	if workload != nil && o.Glance {
 		glance(workload)
-		return nil
 	}
 
 	if !o.noFilters() {
@@ -106,19 +98,39 @@ func Summary(c *k8s.Client, o Options) error {
 	}
 
 	if workload != nil {
-		if o.Format == "table" {
+		switch {
+		case o.View == "table":
 			displayWorkloadInTable(workload)
+
+		case o.View == "json":
+			jsonData, err := json.MarshalIndent(workload, "", "    ")
+			if err != nil {
+				log.WithError(err).Error("Failed to format workload as JSON")
+				return err
+			}
+			fmt.Println(string(jsonData))
+
+		case o.Dump:
 			writeTableToFile(workload)
-		} else if o.Format == "json" {
 			jsonData, err := json.MarshalIndent(workload, "", "    ")
 			if err != nil {
 				log.WithError(err).Error("Failed to format workload as JSON")
 				return err
 			}
 
-			fmt.Println(string(jsonData))
-			return nil
-		} else { // default
+			dirPath := "knoxctl_out"
+			if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
+				log.WithError(err).Errorf("Failed to create directory '%s': %v", dirPath, err)
+				return err
+			}
+
+			filePath := filepath.Join(dirPath, "summary.json")
+			if err := os.WriteFile(filePath, jsonData, 0644); err != nil {
+				log.WithError(err).Errorf("Failed to write JSON to file '%s': %v", filePath, err)
+				return err
+			}
+
+		default:
 			StartTUI(workload)
 		}
 	} else {
@@ -128,7 +140,7 @@ func Summary(c *k8s.Client, o Options) error {
 	return nil
 }
 
-func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *summary.SummaryRequest, bar *progressbar.ProgressBar) (*Workload, error) {
+func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *summary.SummaryRequest) (*Workload, error) {
 	workloadReq := &summary.WorkloadRequest{}
 
 	workloads, err := client.GetWorkloads(context.Background(), workloadReq)
@@ -141,20 +153,26 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 		Clusters: make(map[string]*Cluster),
 	}
 
+	errChan := make(chan error)
 	sumRespChan := make(chan *summary.SummaryResponse)
 	done := make(chan struct{})
 	var wg sync.WaitGroup
+
+	bar := initializeProgressBar("Processing Workloads...", len(workloads.Workloads))
 
 	for _, w := range workloads.Workloads {
 		wg.Add(1)
 		go func(w *summary.Workload) {
 			defer wg.Done()
 
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30) // 30-second timeout
+			defer cancel()
+
 			sumReq.Namespaces = []string{w.Namespace}
 			sumReq.Clusters = []string{w.Cluster}
-			sumResp, err := client.GetSummaryEvent(context.Background(), sumReq) // <sumresp.cluster.namespace.workloadevents.labels>
+			sumResp, err := client.GetSummaryEvent(ctx, sumReq)
 			if err != nil {
-				log.WithError(err).Errorf("error while fetching summary for workload: %s in namespace: %s, error: %s", w.Name, w.Namespace, err.Error())
+				errChan <- err
 				return
 			}
 			sumRespChan <- sumResp
@@ -165,14 +183,30 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 	go func() {
 		wg.Wait()
 		close(sumRespChan)
-		close(done)
-
+		close(errChan)
 		bar.Finish()
 	}()
 
 	go func() {
-		for sumResp := range sumRespChan {
-			processSummaryResponse(rootWorkload, sumResp, workloads.Workloads) // error is here, we need to pass the value here
+		for {
+			select {
+			case sumResp, ok := <-sumRespChan:
+				if !ok {
+					sumRespChan = nil
+				} else {
+					processSummaryResponse(rootWorkload, sumResp, workloads.Workloads)
+				}
+
+			case _, ok := <-errChan:
+				if !ok {
+					errChan = nil
+				}
+			}
+
+			if sumRespChan == nil && errChan == nil {
+				close(done)
+				break
+			}
 		}
 	}()
 
@@ -251,4 +285,19 @@ func convertWorkloadEvents(wt *WorkloadType, eventsMap map[string]*summary.Workl
 			wt.Events.AddBindEvent(bi)
 		}
 	}
+}
+
+func initializeProgressBar(description string, max int) *progressbar.ProgressBar {
+	return progressbar.NewOptions(
+		max,
+		progressbar.OptionSetDescription(description),
+		progressbar.OptionSetRenderBlankState(true),
+		progressbar.OptionSpinnerType(9),
+		progressbar.OptionSetPredictTime(true),
+		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetElapsedTime(true),
+		progressbar.OptionShowCount(),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionShowIts(),
+	)
 }

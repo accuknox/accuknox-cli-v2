@@ -7,6 +7,7 @@
 kubearmor*
 accuknoxcli
 out/
+knoxctl_out/*
 .vscode
 .idea
 # Test binary, built with `go test -c`

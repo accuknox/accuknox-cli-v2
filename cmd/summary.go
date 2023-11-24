@@ -42,6 +42,8 @@ func init() {
 	summaryCmd.Flags().StringArrayVarP(&summaryOptions.Namespace, "namespace", "n", []string{}, "Namespace")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Operation, "operation", "o", "", "Summary filter type : process|file|network ")
 	summaryCmd.Flags().BoolVar(&summaryOptions.RevDNSLookup, "rev-dns-lookup", false, "Reverse DNS Lookup")
-	summaryCmd.Flags().StringVarP(&summaryOptions.Format, "format", "f", "json", "Print data on console in JSON format")
+	summaryCmd.Flags().StringVarP(&summaryOptions.View, "view", "v", "json", "Print data on console in table or json format")
+	summaryCmd.Flags().BoolVar(&summaryOptions.Dump, "dump", false, "Dump json data to knoxctl_out directory and skip TUI")
+	summaryCmd.Flags().BoolVar(&summaryOptions.Glance, "glance", false, "Glance at the summary data")
 	//summaryCmd.Flags().BoolVar(&summaryOptions.Aggregation, "agg", false, "Aggregate destination files/folder path")
 }

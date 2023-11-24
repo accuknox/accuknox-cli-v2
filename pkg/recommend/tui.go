@@ -51,7 +51,7 @@ func StartTUI(pb *PolicyBucket) {
 		SetDynamicColors(true)
 
 	navigationCues := tview.NewTextView().
-		SetText("Navigate: Arrows | Select: Enter | Exit: Q/Esc").
+		SetText("Navigate: Arrows | Select: Click | Exit: Q/Esc").
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true)
 

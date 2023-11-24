@@ -15,6 +15,7 @@ type Options struct {
 	Policy    []string `flag:"policy"`
 	Outdir    string   `flag:"out"`
 	Grpc      string   `flag:"gRPC"`
+	Dump      bool     `flag:"dump"`
 
 	NamespaceRegex []*regexp.Regexp
 	LabelsRegex    []*regexp.Regexp
@@ -67,6 +68,9 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 		case flag == "labels" || flag == "l":
 			parsedOption.Labels, regexList, err = parser.ParseRegexSlice(values, rawArgs, flag)
 			parsedOption.LabelsRegex = regexList
+
+		case flag == "dump":
+			parsedOption.Dump = true
 
 		default:
 			return nil, wrapErr(fmt.Errorf("unknown flag: %v", flag))
