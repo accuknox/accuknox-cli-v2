@@ -75,6 +75,8 @@ func Policy(c *k8s.Client, parsedArgs *Options) error {
 		return nil
 	}
 
+	StartTUI(policyForest)
+
 	var errorSlice []string
 	for err := range errorChan {
 		if err != nil {
