@@ -71,7 +71,7 @@ func CheckPods(client *k8s.Client) int {
 	otime := stime.Add(600 * time.Second)
 	for {
 		time.Sleep(200 * time.Millisecond)
-		pods, _ := client.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "app=dev2", FieldSelector: "status.phase!=Running"})
+		pods, _ := client.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: common.DELabel, FieldSelector: "status.phase!=Running"})
 		podno := len(pods.Items)
 		fmt.Printf("\r")
 		clearLine(90)

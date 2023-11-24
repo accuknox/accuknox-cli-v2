@@ -444,11 +444,14 @@ func initializeProgressBar(totalCount int) *progressbar.ProgressBar {
 	bar := progressbar.NewOptions(
 		totalCount,
 		progressbar.OptionSetDescription("Processing policies..."),
-		progressbar.OptionSpinnerType(14),
-		progressbar.OptionFullWidth(),
-		progressbar.OptionSetPredictTime(false),
-		progressbar.OptionSetWidth(10),
+		progressbar.OptionSetRenderBlankState(true),
+		progressbar.OptionSpinnerType(9),
+		progressbar.OptionSetPredictTime(true),
 		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetElapsedTime(true),
+		progressbar.OptionShowCount(),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionShowIts(),
 	)
 	return bar
 }

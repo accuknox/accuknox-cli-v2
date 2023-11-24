@@ -70,8 +70,9 @@ func Policy(c *k8s.Client, parsedArgs *Options) error {
 	if len(policyForest.Namespaces) == 0 {
 		fmt.Println("No discovered policies were found.")
 		return nil
-	} else {
-		StartTUI(policyForest)
+	} else if parsedArgs.Dump {
+		dump(policyForest)
+		return nil
 	}
 
 	var errorSlice []string

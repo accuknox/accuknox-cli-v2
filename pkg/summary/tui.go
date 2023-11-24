@@ -17,6 +17,8 @@ func StartTUI(workload *Workload) {
 		SetColumns(15, 40, 0, 85).
 		SetBorders(true)
 
+	detailsList := tview.NewList().ShowSecondaryText(false)
+
 	clusterHeader := tview.NewTextView().SetText("Clusters").SetTextColor(tcell.ColorYellow)
 	namespaceHeader := tview.NewTextView().SetText("Namespaces/Workloads").SetTextColor(tcell.ColorYellow)
 	detailsHeader := tview.NewTextView().SetText("Event Summary").SetTextColor(tcell.ColorYellow)
@@ -26,6 +28,7 @@ func StartTUI(workload *Workload) {
 	grid.AddItem(namespaceHeader, 0, 1, 1, 1, 0, 0, false)
 	grid.AddItem(detailsHeader, 0, 2, 1, 1, 0, 0, false)
 	grid.AddItem(eventsHeader, 0, 3, 1, 1, 0, 0, false)
+	grid.AddItem(detailsList, 1, 2, 1, 1, 0, 0, false)
 
 	clusterList := tview.NewList()
 	for clusterName := range workload.Clusters {
@@ -41,7 +44,7 @@ func StartTUI(workload *Workload) {
 
 	grid.AddItem(clusterList, 1, 0, 1, 1, 0, 0, true)
 	grid.AddItem(namespaceTree, 1, 1, 1, 1, 0, 0, false)
-	grid.AddItem(detailsView, 1, 2, 1, 1, 0, 0, false)
+	grid.AddItem(detailsList, 1, 2, 1, 1, 0, 0, true)
 	grid.AddItem(eventDetailsView, 1, 3, 1, 1, 0, 0, false)
 
 	accuKnoxLabel := tview.NewTextView().
@@ -50,7 +53,7 @@ func StartTUI(workload *Workload) {
 		SetDynamicColors(true)
 
 	navigationCues := tview.NewTextView().
-		SetText("Navigate: Arrows | Select: Enter | Exit: Q/Esc").
+		SetText("Navigate: Arrows | Select: Click | Exit: Q/Esc").
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true)
 
@@ -67,14 +70,14 @@ func StartTUI(workload *Workload) {
 		if reference != nil {
 			if wt, ok := reference.(*WorkloadType); ok {
 				workloadTypeName := node.GetText()
-				displayWorkloadTypeDetails(workloadTypeName, wt, detailsView, eventDetailsView)
+				populateDetailsList(workloadTypeName, wt, detailsList, eventDetailsView)
 			}
 		}
 		children := node.GetChildren()
 		if len(children) > 0 && !node.IsExpanded() {
 			node.SetExpanded(!node.IsExpanded())
 		} else if len(children) == 0 {
-			app.SetFocus(detailsView)
+			app.SetFocus(detailsList)
 		}
 	}
 
@@ -127,7 +130,7 @@ func StartTUI(workload *Workload) {
 
 	namespaceTree.SetChangedFunc(func(node *tview.TreeNode) {
 		if wt, ok := node.GetReference().(*WorkloadType); ok {
-			displayWorkloadTypeDetails(node.GetText(), wt, detailsView, eventDetailsView)
+			populateDetailsList(node.GetText(), wt, detailsList, eventDetailsView)
 		}
 	})
 
@@ -192,20 +195,20 @@ func displayWorkloadTypeDetails(workloadTypeName string, wt *WorkloadType, detai
 	})
 }
 
-func displayEventDetails(eventType string, eventData interface{}, eventDetailsView *tview.TextView) {
-	header := fmt.Sprintf("[::b]%s Events[::-]\n", eventType)
-	details := formatEventDetails(eventData)
-	eventDetailsView.SetText(header + details)
+func displayEventDetails(eventType string, events interface{}, eventDetailsView *tview.TextView) {
+	eventDetails := formatEventDetails(events)
+	eventDetailsView.Clear()
+	eventDetailsView.SetText(fmt.Sprintf("%s Events:\n%s", eventType, eventDetails))
 	eventDetailsView.ScrollToBeginning()
 }
 
 func createEventSummary(events *Events) string {
 	var summary strings.Builder
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "File Events (f)", len(events.File)))
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Process Events (p)", len(events.Process)))
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Ingress Events (i)", len(events.Ingress)))
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Egress Events (e)", len(events.Egress)))
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Bind Events (b)", len(events.Bind)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "File Events", len(events.File)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Process Events", len(events.Process)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Ingress Events", len(events.Ingress)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Egress Events", len(events.Egress)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Bind Events", len(events.Bind)))
 
 	return summary.String()
 }
@@ -216,4 +219,42 @@ func formatEventDetails(eventData interface{}) string {
 		return fmt.Sprintf("Error formatting details: %v", err)
 	}
 	return string(eventJSON)
+}
+
+func populateDetailsList(workloadTypeName string, wt *WorkloadType, detailsList *tview.List, eventDetailsView *tview.TextView) {
+	detailsList.Clear()
+
+	detailsList.AddItem(fmt.Sprintf("File Events (f) - %d", len(wt.Events.File)), "", 0, func() {
+		displayEventDetails("File", wt.Events.File, eventDetailsView)
+	})
+	detailsList.AddItem(fmt.Sprintf("Process Events (p) - %d", len(wt.Events.Process)), "", 0, func() {
+		displayEventDetails("Process", wt.Events.Process, eventDetailsView)
+	})
+	detailsList.AddItem(fmt.Sprintf("Ingress Events (i) - %d", len(wt.Events.Ingress)), "", 0, func() {
+		displayEventDetails("Ingress", wt.Events.Ingress, eventDetailsView)
+	})
+	detailsList.AddItem(fmt.Sprintf("Egress Events (e) - %d", len(wt.Events.Egress)), "", 0, func() {
+		displayEventDetails("Egress", wt.Events.Egress, eventDetailsView)
+	})
+	detailsList.AddItem(fmt.Sprintf("Bind Events (b) - %d", len(wt.Events.Bind)), "", 0, func() {
+		displayEventDetails("Bind", wt.Events.Bind, eventDetailsView)
+	})
+
+	detailsList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
+		displayEventDetailsFromList(mainText, wt, eventDetailsView)
+	})
+}
+
+func displayEventDetailsFromList(itemLabel string, wt *WorkloadType, eventDetailsView *tview.TextView) {
+	if strings.Contains(itemLabel, "File Events") {
+		displayEventDetails("File", wt.Events.File, eventDetailsView)
+	} else if strings.Contains(itemLabel, "Process Events") {
+		displayEventDetails("Process", wt.Events.Process, eventDetailsView)
+	} else if strings.Contains(itemLabel, "Ingress Events") {
+		displayEventDetails("Ingress", wt.Events.Ingress, eventDetailsView)
+	} else if strings.Contains(itemLabel, "Egress Events") {
+		displayEventDetails("Egress", wt.Events.Egress, eventDetailsView)
+	} else if strings.Contains(itemLabel, "Bind Events") {
+		displayEventDetails("Bind", wt.Events.Bind, eventDetailsView)
+	}
 }

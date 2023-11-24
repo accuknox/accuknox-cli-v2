@@ -13,6 +13,7 @@ import (
 type Options struct {
 	GRPC           string   `flag:"grpc"`
 	Format         string   `flag:"format"`
+	Dump           bool     `flag:"dump"`
 	Kind           []string `flag:"policy"`
 	Namespace      []string `flag:"namespace"`
 	Labels         []string `flag:"labels"`
@@ -53,6 +54,9 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 				return nil, wrapErr(fmt.Errorf("invalid format"))
 			}
 			parsed.Format, err = parser.ParseString(rawArgs, flag)
+
+		case flag == "dump":
+			parsed.Dump = true
 
 		case flag == "policy" || flag == "p":
 			parsed.Kind, err = parser.ParseStringSlice(rawArgs, flag)

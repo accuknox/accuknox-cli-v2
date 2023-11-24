@@ -10,14 +10,17 @@ import (
 
 // Options Structure
 type Options struct {
-	GRPC         string
-	Labels       []string
-	Namespace    []string
-	Source       []string
-	Destination  []string
-	Operation    string
-	Format       string
-	RevDNSLookup bool // I dont really know how we integrate this
+	GRPC         string   `flag:"gRPC"`
+	Labels       []string `flag:"labels"`
+	Namespace    []string `flag:"namespace"`
+	Source       []string `flag:"source"`
+	Destination  []string `flag:"destination"`
+	Operation    string   `flag:"operation"`
+	View         string   `flag:"view"`
+	Outdir       string   `flag:"outdir"`
+	Dump         bool     `flag:"dump"`
+	Glance       bool     `flag:"glance"`
+	RevDNSLookup bool     // I dont really know how we integrate this
 
 	LabelsRegex      []*regexp.Regexp
 	NamespaceRegex   []*regexp.Regexp
@@ -61,8 +64,8 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 		case flag == "operation" || flag == "o":
 			parsed.Operation, err = parser.ParseString(rawArgs, flag)
 
-		case flag == "format" || flag == "f":
-			parsed.Format, err = parser.ParseString(rawArgs, flag)
+		case flag == "view" || flag == "v":
+			parsed.View, err = parser.ParseString(rawArgs, flag)
 
 		case flag == "labels" || flag == "l":
 			parsed.Labels, regexList, err = parser.ParseRegexSlice(value, rawArgs, value)
@@ -80,8 +83,17 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 			parsed.Destination, regexList, err = parser.ParseRegexSlice(value, rawArgs, flag)
 			parsed.DestinationRegex = regexList
 
+		case flag == "outdir" || flag == "o":
+			parsed.Outdir, err = parser.ParseString(rawArgs, flag)
+
 		case flag == "revdnslookup":
 			parsed.RevDNSLookup = true
+
+		case flag == "dump":
+			parsed.Dump = true
+
+		case flag == "glance":
+			parsed.Glance = true
 
 		default:
 			return nil, wrapErr(fmt.Errorf("unknown flag: %s", flag))

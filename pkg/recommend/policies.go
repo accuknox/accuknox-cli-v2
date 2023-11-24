@@ -159,6 +159,12 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 	if bar != nil {
 		bar.Finish()
 	}
+
+	if o.Dump {
+		dump(policyBucket)
+		return nil, nil
+	}
+
 	StartTUI(policyBucket)
 	return data, nil
 }
@@ -182,11 +188,14 @@ func initializeProgressBar(totalCount int) *progressbar.ProgressBar {
 	bar := progressbar.NewOptions(
 		totalCount,
 		progressbar.OptionSetDescription("Processing policies..."),
-		progressbar.OptionSpinnerType(14),
-		progressbar.OptionFullWidth(),
-		progressbar.OptionSetPredictTime(false),
-		progressbar.OptionSetWidth(10),
+		progressbar.OptionSetRenderBlankState(true),
+		progressbar.OptionSpinnerType(9),
+		progressbar.OptionSetPredictTime(true),
 		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetElapsedTime(true),
+		progressbar.OptionShowCount(),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionShowIts(),
 	)
 	return bar
 }

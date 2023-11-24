@@ -39,9 +39,9 @@ func init() {
 	rootCmd.AddCommand(discoverCmd)
 	discoverCmd.Flags().StringVar(&parseArgs.GRPC, "gRPC", "", "gRPC server information")
 	discoverCmd.Flags().StringVarP(&parseArgs.Format, "format", "f", "", "Format: json or yaml")
+	discoverCmd.Flags().BoolVar(&parseArgs.Dump, "dump", false, "Dump policies to knoxctl_out directory and skip TUI")
 	discoverCmd.Flags().StringSliceVarP(&parseArgs.Kind, "policy", "p", []string{"KubeArmorPolicy"}, "Type of policies to be discovered: NetworkPolicy|KubeArmorPolicy|KubeArmorHostPolicy")
 	discoverCmd.Flags().StringSliceVarP(&parseArgs.Namespace, "namespace", "n", []string{}, "Filter by Namespace")
 	discoverCmd.Flags().StringSliceVarP(&parseArgs.Labels, "labels", "l", []string{}, "Filter by policy Label")
 	discoverCmd.Flags().StringSliceVarP(&parseArgs.Source, "source", "s", []string{}, "Filter by policy FromSource")
-	discoverCmd.Flags().BoolVar(&parseArgs.IncludeNetwork, "includenet", false, "Include network rules in system policies")
 }
