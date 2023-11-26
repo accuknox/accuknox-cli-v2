@@ -274,7 +274,7 @@ func TestParseRegexSlice(t *testing.T) {
 
 	p := NewParser()
 	for _, test := range tests {
-		strResults, rgxResults, err := p.ParseRegexSlice(test.value, test.input, test.flagName)
+		strResults, rgxResults, err := p.ParseRegexSlice(test.value, test.flagName)
 
 		if (err != nil) != test.err {
 			t.Errorf("ParseRegexSlice() error = %v, wantErr %v", err, test.err)

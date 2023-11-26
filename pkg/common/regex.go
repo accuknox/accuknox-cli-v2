@@ -55,7 +55,7 @@ type Parser struct {
 // If the args parameter is not empty, it will parse the string flags and store them in the parsedFlags map.
 func NewParser() *Parser {
 	return &Parser{
-		stringPattern:          regexp.MustCompile(`-{1,2}(?P<flag>[a-zA-Z0-9-_:]+)(?:=|\s+)(?P<value>r:"[^"]+"|r:'[^']+'|".+?"|'.+?'|[^"'\s]+)`),
+		stringPattern:          regexp.MustCompile(`-{1,2}(?P<flag>[a-zA-Z0-9-_:]+)(?:=|\s+)(?P<value>".+?"|'.+?'|[^"'\s]+)`),
 		boolFlagPattern:        regexp.MustCompile(`-{1,2}([a-zA-Z-]+)(?:[ \t]+(?P<value>true|false))?`),
 		stringSliceFlagPattern: regexp.MustCompile(`-{1,2}(?P<flag>[a-zA-Z0-9_-]+)(?:=|\s+)["']?(?P<value>([\w-=:]+(,[\w-=:]+)*))["']?(?: |$)`),
 		intFlagPattern:         regexp.MustCompile(`-{1,2}(?P<flag>[a-zA-Z-]+)(?:=|\s+)["']?(?P<value>[\d,]+)["']?$`),
@@ -199,42 +199,28 @@ func (p *Parser) ParseRegex(input, flagName string) (*regexp.Regexp, error) {
 
 // TODO: Modular
 
-// ParseRegexSlice handles flags that have a "r:" prefix that is an argument that can be of type
-// regex or a string slice, it can handle both the cases of a string slice or a regex slice
-// in consolidated way.
-func (p *Parser) ParseRegexSlice(value, rawArgs, flag string) ([]string, []*regexp.Regexp, error) {
+// ParseRegexSlice extracts and returns the values of a string slice flag from the input string.
+// It also handles regex patterns.
+func (p *Parser) ParseRegexSlice(value, flag string) ([]string, []*regexp.Regexp, error) {
 	var parsedSlice []string
 	var parsedRegexList []*regexp.Regexp
-	var err error
 
-	if strings.HasPrefix(value, "r:") {
-		argsList := strings.Split(rawArgs, " ")
-		for i, arg := range argsList {
-			if strings.HasPrefix(arg, "--"+flag+"=r:") || strings.HasPrefix(arg, "-"+flag+"=r:") {
-				regexPattern := strings.TrimPrefix(arg, "--"+flag+"=r:")
-				regexPattern = strings.Trim(regexPattern, `"`)
-				parsedRegex, err := regexp.Compile(regexPattern)
-				if err != nil {
-					return nil, nil, err
-				}
-				parsedRegexList = append(parsedRegexList, parsedRegex)
-			} else if arg == "--"+flag || arg == "-"+flag {
-				if i+1 < len(argsList) && strings.HasPrefix(argsList[i+1], "r:") {
-					regexPattern := strings.TrimPrefix(argsList[i+1], "r:")
-					regexPattern = strings.Trim(regexPattern, `"`)
-					parsedRegex, err := regexp.Compile(regexPattern)
-					if err != nil {
-						return nil, nil, err
-					}
-					parsedRegexList = append(parsedRegexList, parsedRegex)
-				}
+	if strings.ContainsAny(value, SpecialRegexChars) {
+		parsedRegex, err := regexp.Compile(value)
+		if err != nil {
+			return nil, nil, err
+		}
+		parsedRegexList = append(parsedRegexList, parsedRegex)
+	} else {
+		for _, val := range strings.Split(value, ",") {
+			trimmedVal := strings.TrimSpace(val)
+			if trimmedVal != "" {
+				parsedSlice = append(parsedSlice, trimmedVal)
 			}
 		}
-	} else {
-		parsedSlice, err = p.ParseStringSlice(rawArgs, flag)
 	}
 
-	return parsedSlice, parsedRegexList, err
+	return parsedSlice, parsedRegexList, nil
 }
 
 // TODO: Optimize the function. Current time complexity is roughly O(mk + kn),
@@ -302,10 +288,12 @@ func (p *Parser) FlagsToMap(input string, targetStruct interface{}) (map[string]
 				if name == "flag" {
 					flagName = strings.Trim(matches[i], "-")
 				} else if name == "value" {
-					if strings.HasPrefix(matches[i], "r:") {
+					if strings.HasPrefix(matches[i], "'") && strings.HasSuffix(matches[i], "'") {
 						flagValue = matches[i]
+					} else if strings.HasPrefix(matches[i], "\"") && strings.HasSuffix(matches[i], "\"") {
+						flagValue = strings.Trim(matches[i], "\"")
 					} else {
-						flagValue = strings.Trim(matches[i], "\"'")
+						flagValue = matches[i]
 					}
 				}
 			}
