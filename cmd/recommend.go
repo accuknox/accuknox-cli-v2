@@ -43,4 +43,5 @@ func init() {
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Tags, "tag", "t", []string{}, "Tags to apply. Eg. PCI-DSS,MITRE")
 	recommendCmd.Flags().StringVarP(&recommendOptions.Grpc, "gRPC", "", "", "gRPC address of discovery engine")
 	recommendCmd.Flags().BoolVar(&recommendOptions.Dump, "dump", false, "Dump policies to knoxctl_out directory and skip TUI")
+	recommendCmd.Flags().StringVarP(&recommendOptions.View, "view", "v", "", "View policies as table, yaml or json. Eg. table,json")
 }

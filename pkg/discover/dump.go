@@ -7,57 +7,43 @@ import (
 
 	policyType "github.com/accuknox/dev2/discover/pkg/common"
 	networkingv1 "k8s.io/api/networking/v1"
-	"k8s.io/klog/v2"
 )
 
-func dump(forest *PolicyForest) error {
-	dirPath := "knoxctl_out"
-	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create directory: %v", err)
+func dump(pf *PolicyForest) error {
+	baseDir := "knoxctl_out/discovered/policies"
+	if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create base directory %s: %v", baseDir, err)
 	}
 
-	klog.Info("Len of forest.Namespaces: ", len(forest.Namespaces))
-	for ns, nsBucket := range forest.Namespaces {
-		nsDirPath := filepath.Join(dirPath, ns)
-		if err := os.MkdirAll(nsDirPath, os.ModePerm); err != nil {
-			return fmt.Errorf("failed to create namespace directory '%s': %v", nsDirPath, err)
-		}
+	allPolicies := pf.GetAllPolicies()
 
-		for _, policies := range nsBucket.KubearmorPolicies.Labels {
-			for _, policy := range policies {
-				filename := fmt.Sprintf("%s-KAP-Label-%s.yaml", ns, policy.Metadata.Name)
-				if err := writePolicyToFile(policy, nsDirPath, filename); err != nil {
-					continue
-				}
+	for ns, nsPolicies := range allPolicies {
+		kubearmorPolicies := nsPolicies["KubearmorPolicies"].([]*policyType.KubeArmorPolicy)
+		networkPolicies := nsPolicies["NetworkPolicies"].([]*networkingv1.NetworkPolicy)
+
+		for _, policy := range kubearmorPolicies {
+			kubearmorDir := filepath.Join(baseDir, "kubearmor_policy", ns)
+			if err := os.MkdirAll(kubearmorDir, os.ModePerm); err != nil {
+				return fmt.Errorf("failed to create directory %s: %v", kubearmorDir, err)
+			}
+
+			filename := fmt.Sprintf("%s.yaml", policy.Metadata.Name)
+
+			if err := writePolicyToFile(policy, kubearmorDir, filename); err != nil {
+				return fmt.Errorf("failed to write policy to file %s: %v", filename, err)
 			}
 		}
 
-		// Handle KubeArmorPolicies in Actions
-		for _, policies := range nsBucket.KubearmorPolicies.Actions {
-			for _, policy := range policies {
-				filename := fmt.Sprintf("%s-KAP-Action-%s.yaml", ns, policy.Metadata.Name)
-				if err := writePolicyToFile(policy, nsDirPath, filename); err != nil {
-					continue
-				}
+		for _, policy := range networkPolicies {
+			networkDir := filepath.Join(baseDir, "network_policy", ns)
+			if err := os.MkdirAll(networkDir, os.ModePerm); err != nil {
+				return fmt.Errorf("failed to create directory %s: %v", networkDir, err)
 			}
-		}
 
-		// Handle NetworkPolicies in Types
-		for typeKey, policies := range nsBucket.NetworkPolicies.Types {
-			for _, policy := range policies {
-				filename := fmt.Sprintf("%s-NP-Type-%s-%s.yaml", ns, typeKey, policy.ObjectMeta.Name)
-				if err := writeNetworkPolicyToFile(policy, nsDirPath, filename); err != nil {
-					continue
-				}
-			}
-		}
-		// Handle NetworkPolicies in Protocols
-		for protocolKey, policies := range nsBucket.NetworkPolicies.Protocols {
-			for _, policy := range policies {
-				filename := fmt.Sprintf("%s-NP-Protocol-%s-%s.yaml", ns, protocolKey, policy.ObjectMeta.Name)
-				if err := writeNetworkPolicyToFile(policy, nsDirPath, filename); err != nil {
-					continue
-				}
+			filename := fmt.Sprintf("%s.yaml", policy.Name)
+
+			if err := writeNetworkPolicyToFile(policy, networkDir, filename); err != nil {
+				return fmt.Errorf("failed to write policy to file %s: %v", filename, err)
 			}
 		}
 	}
@@ -68,8 +54,6 @@ func dump(forest *PolicyForest) error {
 func writePolicyToFile(policy *policyType.KubeArmorPolicy, nsDirPath, filename string) error {
 	yamlStr := kubearmorPolicyToString(policy)
 
-	fmt.Println(yamlStr) // Print to terminal
-
 	filePath := filepath.Join(nsDirPath, filename)
 	return os.WriteFile(filePath, []byte(yamlStr), 0644)
 }
@@ -77,8 +61,6 @@ func writePolicyToFile(policy *policyType.KubeArmorPolicy, nsDirPath, filename s
 func writeNetworkPolicyToFile(policy *networkingv1.NetworkPolicy, nsDirPath, filename string) error {
 	yamlStr := networkPolicyToString(policy)
 
-	fmt.Println(yamlStr) // Print to terminal
-
 	filePath := filepath.Join(nsDirPath, filename)
-	return os.WriteFile(filePath, []byte(yamlStr+"---\n"), 0644) // Appending '---\n' at the end of each policy
+	return os.WriteFile(filePath, []byte(yamlStr), 0644)
 }

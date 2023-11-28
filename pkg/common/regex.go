@@ -86,7 +86,7 @@ func (p *Parser) parse(input, flagName string, pattern *regexp.Regexp) (string, 
 		}
 	}
 
-	return "", fmt.Errorf("flag %s not found", flagName)
+	return "", fmt.Errorf("flag %s not found (please use standalone flags at the end of the command, if applicable)", flagName)
 }
 
 // ParseString extracts and returns the value of a string flag from the input string.

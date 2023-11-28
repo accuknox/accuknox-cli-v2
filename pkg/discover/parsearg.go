@@ -13,12 +13,14 @@ import (
 type Options struct {
 	GRPC           string   `flag:"grpc"`
 	Format         string   `flag:"format"`
+	View           string   `flag:"view"`
 	Dump           bool     `flag:"dump"`
 	Kind           []string `flag:"policy"`
 	Namespace      []string `flag:"namespace"`
 	Labels         []string `flag:"labels"`
 	Source         []string `flag:"source"`
 	IncludeNetwork bool     `flag:"includenet"`
+	Glance         bool     `flag:"glance"`
 
 	NamespaceRegex []*regexp.Regexp
 	LabelsRegex    []*regexp.Regexp
@@ -73,8 +75,14 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 			parsed.Source, regexList, err = parser.ParseRegexSlice(value, rawArgs, flag)
 			parsed.SourceRegex = regexList
 
+		case flag == "view" || flag == "v":
+			parsed.View, err = parser.ParseString(rawArgs, flag)
+
 		case flag == "includenet":
 			parsed.IncludeNetwork = true
+
+		case flag == "glance":
+			parsed.Glance = true
 
 		default:
 			// This condition will never be hit since cobra will sort this out, just for unit tests

@@ -78,7 +78,7 @@ func writeTableToFile(workload *Workload) error {
 	fmt.Println()
 	fmt.Println("Writing summary to file...")
 
-	outDir := "knoxctl_out"
+	outDir := "knoxctl_out/summary/table"
 	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}

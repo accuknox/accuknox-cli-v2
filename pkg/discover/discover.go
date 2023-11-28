@@ -17,8 +17,9 @@ const (
 
 	PolicyType = "discovered"
 
-	FmtYAML = "yaml"
-	FmtJSON = "json"
+	FmtYAML  = "yaml"
+	FmtJSON  = "json"
+	FmtTable = "table"
 )
 
 type policyHandler struct {
@@ -67,15 +68,26 @@ func Policy(c *k8s.Client, parsedArgs *Options) error {
 
 	wg.Wait()
 
-	if len(policyForest.Namespaces) == 0 {
-		fmt.Println("No discovered policies were found.")
-		return nil
-	} else if parsedArgs.Dump {
-		dump(policyForest)
-		return nil
-	}
+	if len(policyForest.Namespaces) != 0 {
+		switch {
+		case parsedArgs.View == FmtYAML:
+			printYAML(policyForest)
 
-	StartTUI(policyForest)
+		case parsedArgs.View == FmtJSON:
+			printJSON(policyForest)
+
+		case parsedArgs.View == FmtTable:
+			printTable(policyForest)
+
+		case parsedArgs.Dump:
+			dump(policyForest)
+
+		default:
+			StartTUI(policyForest)
+		}
+	} else {
+		fmt.Println("No policies found.")
+	}
 
 	var errorSlice []string
 	for err := range errorChan {

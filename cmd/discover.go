@@ -44,4 +44,5 @@ func init() {
 	discoverCmd.Flags().StringSliceVarP(&parseArgs.Namespace, "namespace", "n", []string{}, "Filter by Namespace")
 	discoverCmd.Flags().StringSliceVarP(&parseArgs.Labels, "labels", "l", []string{}, "Filter by policy Label")
 	discoverCmd.Flags().StringSliceVarP(&parseArgs.Source, "source", "s", []string{}, "Filter by policy FromSource")
+	discoverCmd.Flags().StringVarP(&parseArgs.View, "view", "v", "", "View policies as table, yaml or json.")
 }

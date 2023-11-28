@@ -160,12 +160,23 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 		bar.Finish()
 	}
 
-	if o.Dump {
-		dump(policyBucket)
-		return nil, nil
+	switch {
+	case o.View == "yaml":
+		printYAML(policyBucket)
+
+	case o.View == "json":
+		printJSON(policyBucket)
+
+	case o.View == "table":
+		printTable(policyBucket, o, c)
+
+	case o.Dump:
+		dump(policyBucket, o, c)
+
+	default:
+		StartTUI(policyBucket)
 	}
 
-	StartTUI(policyBucket)
 	return data, nil
 }
 

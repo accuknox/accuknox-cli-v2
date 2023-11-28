@@ -15,6 +15,7 @@ type Options struct {
 	Policy    []string `flag:"policy"`
 	Outdir    string   `flag:"out"`
 	Grpc      string   `flag:"gRPC"`
+	View      string   `flag:"view"`
 	Dump      bool     `flag:"dump"`
 
 	NamespaceRegex []*regexp.Regexp
@@ -53,6 +54,9 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 
 		case flag == "gRPC" || flag == "g":
 			parsedOption.Grpc, err = parser.ParseString(rawArgs, flag)
+
+		case flag == "view" || flag == "v":
+			parsedOption.View, err = parser.ParseString(rawArgs, flag)
 
 		case flag == "severity" || flag == "s":
 			parsedOption.SeveritySlice, err = parser.ParseInt(rawArgs, flag)

@@ -2,13 +2,11 @@ package discover
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
-	"github.com/clarketm/json"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/schollz/progressbar/v3"
 	"google.golang.org/grpc"
@@ -119,7 +117,7 @@ func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 				defer wg.Done()
 
 				var kaHostPolicy policyType.KubeArmorPolicy
-				err := json.Unmarshal(policy.Yaml, &kaHostPolicy)
+				err := yaml.Unmarshal(policy.Yaml, &kaHostPolicy)
 				if err != nil {
 					log.WithError(err).Error("failed to unmarshal " + KindKubeArmorHostPolicy)
 					return
@@ -309,44 +307,6 @@ func kaPolicyFilter(policy policyType.KubeArmorPolicy, p *Options) bool {
 	return namespaceMatched && labelMatched && sourceMatched && includeNetworkMatched
 }
 
-func formatPolicy(policy interface{}, p *Options) (string, error) {
-	if p.Format == "" {
-		p.Format = "yaml"
-	}
-
-	var formattedPolicy string
-	if p.Format == FmtJSON {
-		arr, err := json.MarshalIndent(policy, "", "    ")
-		if err != nil {
-			return "", err
-		}
-		formattedPolicy = string(arr)
-	} else if p.Format == FmtYAML {
-		arr, err := json.Marshal(policy)
-		if err != nil {
-			return "", err
-		}
-		yamlArr, err := yaml.JSONToYAML(arr)
-		if err != nil {
-			return "", err
-		}
-		formattedPolicy = string(yamlArr)
-	} else {
-		return "", errors.New("only JSON and YAML formatting supported")
-	}
-
-	var metadata string
-	if kPolicy, ok := policy.(policyType.KubeArmorPolicy); ok {
-		metadata = fmt.Sprintf("Name:%s|Namespace:%s|Kind:KubeArmorPolicy|", kPolicy.Metadata.Name, kPolicy.Metadata.Namespace)
-	}
-
-	if nPolicy, ok := policy.(policyType.KnoxNetworkPolicy); ok {
-		metadata = fmt.Sprintf("Name:%s|Namespace:%s|Kind:NetworkPolicy|", nPolicy.Metadata["name"], nPolicy.Metadata["namespace"])
-	}
-
-	return metadata + formattedPolicy, nil
-}
-
 func networkPolicyFilter(policy networkingv1.NetworkPolicy, p *Options) bool {
 	if p.noFilters() {
 		return true
@@ -401,43 +361,6 @@ func networkPolicyFilter(policy networkingv1.NetworkPolicy, p *Options) bool {
 
 	// If both criteria are met
 	return labelMatched && namespaceMatched
-}
-
-func prettifyPolicy(formattedPolicy string, policyNumber int, totalPolicies int) string {
-	parts := strings.SplitN(formattedPolicy, "|", 4)
-	name := strings.Split(parts[0], ":")[1]
-	namespace := strings.Split(parts[1], ":")[1]
-	kind := strings.Split(parts[2], ":")[1]
-	actualPolicy := parts[3]
-
-	lines := strings.Split(actualPolicy, "\n")
-	maxLength := 0
-	for _, line := range lines {
-		if len(line) > maxLength {
-			maxLength = len(line)
-		}
-	}
-
-	maxBoundaryLength := 165
-	if maxLength > maxBoundaryLength {
-		maxLength = maxBoundaryLength
-	}
-
-	accuKnox := fmt.Sprintf("[%d/%d] AccuKnox", policyNumber, totalPolicies)
-	padding := (maxLength - len(accuKnox)) / 2
-	topSeparator := "\033[36m" + strings.Repeat("=", padding) + accuKnox + strings.Repeat("=", padding) + "\033[0m"
-	metaSeparator := "\033[36m" + strings.Repeat("-", maxLength) + "\033[0m"
-	bottomSeparator := "\033[36m" + strings.Repeat("=", maxLength) + "\033[0m"
-
-	prettyOutput := topSeparator + "\n"
-	prettyOutput += fmt.Sprintf("\033[36mName:\033[0m      %s\n", name)
-	prettyOutput += fmt.Sprintf("\033[36mNamespace:\033[0m %s\n", namespace)
-	prettyOutput += fmt.Sprintf("\033[36mKind:\033[0m      %s\n", kind) + "\n"
-	prettyOutput += metaSeparator + "\n\n"
-	prettyOutput += actualPolicy
-	prettyOutput += bottomSeparator + "\n"
-
-	return prettyOutput
 }
 
 func initializeProgressBar(totalCount int) *progressbar.ProgressBar {

@@ -3,14 +3,14 @@ package discover
 import (
 	"fmt"
 
-	networkingv1 "k8s.io/api/networking/v1"
-
-	policyType "github.com/accuknox/dev2/discover/pkg/common"
 	"github.com/clarketm/json"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
+
+	policyType "github.com/accuknox/dev2/discover/pkg/common"
+	log "github.com/sirupsen/logrus"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 func StartTUI(pf *PolicyForest) {

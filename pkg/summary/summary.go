@@ -118,7 +118,7 @@ func Summary(c *k8s.Client, o Options) error {
 				return err
 			}
 
-			dirPath := "knoxctl_out"
+			dirPath := "knoxctl_out/summary/json"
 			if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
 				log.WithError(err).Errorf("Failed to create directory '%s': %v", dirPath, err)
 				return err
