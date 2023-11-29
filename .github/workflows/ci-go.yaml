@@ -2,9 +2,9 @@ name: ci-go
 
 on:
   push:
-    branches: [main]
+    branches: [sa-test]
   pull_request:
-    branches: [main]
+    branches: [sa-test]
 
 jobs:
 
