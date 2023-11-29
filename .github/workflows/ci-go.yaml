@@ -42,7 +42,7 @@ jobs:
       - name: Setup GH Token
         env:
         run: |
-          run: echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+              echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
       - name: Build knoxctl
         run: make
@@ -59,7 +59,7 @@ jobs:
 
       - name: Setup GH Token
         run: |
-          run: echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+             echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
       - name: Run unit tests
         run: make test
