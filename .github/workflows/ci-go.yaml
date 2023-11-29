@@ -39,18 +39,11 @@ jobs:
         with:
           go-version: "v1.20"
           
-      - name: Configure Git
-        run: |
-          git config --global user.email "sanjay@accuknox.com"
-          git config --global user.name "sanjay-ba"
-          git config --global credential.helper '!f() { echo "username=sanjay-ba"; echo "password=${{ secrets.SA-GT }}"; }; f'
-   
-      - name: Enable Git debug output
-        run: git config --global http.extraheader "AUTHORIZATION: basic ***"
-
           
       - name: Build knoxctl
-        run: make
+        run: |
+          echo "machine github.com login sanjay-ba password ${{ secrets.SA-GT }}" > ~/.netrc
+          make
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -62,14 +55,8 @@ jobs:
         with:
           go-version: "v1.20"
           
-      - name: Configure Git
-        run: |
-          git config --global user.email "sanjay@accuknox.com"
-          git config --global user.name "sanjay-ba"
-          git config --global credential.helper '!f() { echo "username=sanjay-ba"; echo "password=${{ secrets.SA-GT }}"; }; f'
-
-      - name: Enable Git debug output
-        run: git config --global http.extraheader "AUTHORIZATION: basic ***"
         
       - name: Run unit tests
-        run: make test
+        run: |
+          echo "machine github.com login sanjay-ba password ${{ secrets.SA-GT }}" > ~/.netrc
+          make test
