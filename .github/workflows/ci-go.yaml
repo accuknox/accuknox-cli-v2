@@ -46,11 +46,8 @@ jobs:
           git config --global credential.helper '!f() { echo "username=sanjay-ba"; echo "password=${{ secrets.SA_GT }}"; }; f'
 
           
-      - name: Check Git configuration
-        run: |
-          git config --global --get user.email
-          git config --global --get user.name
-          git config --global --get-all credential.helper
+      - name: Print Git configuration
+        run: cat $HOME/.gitconfig
 
         
       - name: Build knoxctl
