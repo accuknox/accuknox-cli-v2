@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  go-build:
+  build-knoxctl:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
