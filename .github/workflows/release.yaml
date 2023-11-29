@@ -32,17 +32,14 @@ jobs:
         uses: sigstore/cosign-installer@main
 
       - name: Setup access for private go modules
+        env:
+          GOPRIVATE: github.com/accuknox/*
+          USER: accuknox-user
+          TOKEN: ${{ secrets.AK_PAT_REPO_SCOPE }}
         run: |
-          sudo apt update -y
-          sudo apt install -y make gcc musl-dev git
-          mkdir ~/.ssh || true
-          printf '[url "git@github.com:"] \n        insteadOf = https://github.com/' > ~/.gitconfig
-          echo "${{ secrets.GIT_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          touch ~/.ssh/known_hosts 
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 
-          export GOPRIVATE="github.com/accuknox"
-          sudo cat ~/.gitconfig
+          git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
+          
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:

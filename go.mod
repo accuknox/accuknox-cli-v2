@@ -64,7 +64,6 @@ require (
 	github.com/ThalesIgnite/crypto11 v1.2.5 // indirect
 	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277 // indirect
 	github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277 // indirect
-	github.com/accuknox/dev2 v0.1.8 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alibabacloud-go/alibabacloud-gateway-spi v0.0.4 // indirect
 	github.com/alibabacloud-go/cr-20160607 v1.0.1 // indirect

@@ -38,7 +38,7 @@ func TestProcessArgs(t *testing.T) {
 		},
 		{
 			name:    "Valid Namespace and Source Regex Flags",
-			rawArgs: "--namespace r:kube_* --source r:log_* --labels app=web,fly=high,name=what",
+			rawArgs: "--namespace kube_* --source log_* --labels app=web,fly=high,name=what",
 			expected: &Options{
 				NamespaceRegex: []*regexp.Regexp{regexp.MustCompile("kube_*")},
 				SourceRegex:    []*regexp.Regexp{regexp.MustCompile("log_*")},
@@ -65,7 +65,7 @@ func TestProcessArgs(t *testing.T) {
 		},
 		{
 			name:    "A Bit More Complex",
-			rawArgs: "--includenet -n r:\"accu-*\" --format=yaml -g 0.0.0.0:8090 --labels=app=web,first=class",
+			rawArgs: "--includenet -n accu-* --format=yaml -g 0.0.0.0:8090 --labels=app=web,first=class",
 			expected: &Options{
 				GRPC:           "0.0.0.0:8090",
 				Format:         "yaml",

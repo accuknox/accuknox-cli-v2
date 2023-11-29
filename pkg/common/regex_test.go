@@ -263,8 +263,8 @@ func TestParseRegexSlice(t *testing.T) {
 		err         bool
 	}{
 		{
-			input:       "-g localhost:8080 -n r:\"log_*\"",
-			value:       "r:\"log_*\"",
+			input:       "-g localhost:8080 -n \"log_*\"",
+			value:       "log_*",
 			flagName:    "n",
 			expectedStr: nil,
 			expectedRgx: []*regexp.Regexp{regexp.MustCompile(`log_*`)},
@@ -317,7 +317,7 @@ var tests = []struct {
 		err:      false,
 	},
 	{
-		input:    "-s 'world' -i 456 -b false",
+		input:    "-s world -i 456 -b false",
 		target:   &SampleConfig{},
 		expected: map[string]string{"s": "world", "i": "456", "b": "false"},
 		err:      false,

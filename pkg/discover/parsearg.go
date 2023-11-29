@@ -41,9 +41,9 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 	}
 
 	for flag, value := range flags {
-		if flag != "gRPC" && !isRegexAllowed(flag) && strings.ContainsAny(value, common.SpecialRegexChars) {
-			allowedFlags := getRegexAllowedFlags()
-			return nil, fmt.Errorf("found special regex characters: `%s`, regex is not allowed for the flag: %s, currently allowed flags are: %s", common.SpecialRegexChars, flag, strings.Join(allowedFlags, ", "))
+		if !isRegexAllowed(flag) && strings.ContainsAny(value, common.SpecialRegexChars) {
+			//allowedFlags := getRegexAllowedFlags()
+			//return nil, fmt.Errorf("found special regex characters: `%s`, regex is not allowed for the flag: %s, currently allowed flags are: %s", common.SpecialRegexChars, flag, strings.Join(allowedFlags, ", "))
 		}
 
 		var regexList []*regexp.Regexp

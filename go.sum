@@ -676,8 +676,6 @@ github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277/go.mod h1:Y06giCyLHz+sBHmytse7Rj1d4gSX2JnetkQ9tikmFwo=
 github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277 h1:s+u6ka+QjkxBfsbPlPQsy0+9b5ntl/JjLC5gNNrdksk=
 github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277/go.mod h1:FSQvW8Rqxd9Xic0fbd1R0w+dzS2hOj5+L9NOu4aa+jc=
-github.com/accuknox/dev2 v0.1.8 h1:hnx74Np8xKDzsPZiSZJJbi8JuuETVyzoo21QgZP8opA=
-github.com/accuknox/dev2 v0.1.8/go.mod h1:YbtOabHMW7uovoeum/q4QfvVUttpu0BuFnKqhLrw520=
 github.com/accuknox/dev2/api v0.0.0-20231026051927-56fe5412ae0d h1:d/abhv84kTQU4VW5K+7qUwOdVYQ3vUKKhIaVwQZ5MWQ=
 github.com/accuknox/dev2/api v0.0.0-20231026051927-56fe5412ae0d/go.mod h1:4F+gGKkjbWpplrorOKY7gznLCH96yh9QblZaiZkBqSc=
 github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d h1:bnJ/LH5A5zRzc8kWV0HWJn+sMP5iGwVV+mZCnS6MHjc=
