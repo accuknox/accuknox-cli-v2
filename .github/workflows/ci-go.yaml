@@ -40,7 +40,6 @@ jobs:
           go-version: "v1.20"
 
       - name: Setup GH Token
-        env:
         run: |
               echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
