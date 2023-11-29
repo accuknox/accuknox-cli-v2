@@ -16,13 +16,15 @@ func StartTUI(workload *Workload) {
 		SetRows(1, 0, 1, 1).
 		SetColumns(15, 40, 0, 85).
 		SetBorders(true)
+	grid.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	detailsList := tview.NewList().ShowSecondaryText(false)
+	detailsList.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
-	clusterHeader := tview.NewTextView().SetText("Clusters").SetTextColor(tcell.ColorYellow)
-	namespaceHeader := tview.NewTextView().SetText("Namespaces/Workloads").SetTextColor(tcell.ColorYellow)
-	detailsHeader := tview.NewTextView().SetText("Event Summary").SetTextColor(tcell.ColorYellow)
-	eventsHeader := tview.NewTextView().SetText("Event Details").SetTextColor(tcell.ColorYellow)
+	clusterHeader := tview.NewTextView().SetText("Clusters").SetTextAlign(tview.AlignCenter)
+	namespaceHeader := tview.NewTextView().SetText("Namespaces/Workloads").SetTextAlign(tview.AlignCenter)
+	detailsHeader := tview.NewTextView().SetText("Event Summary").SetTextAlign(tview.AlignCenter)
+	eventsHeader := tview.NewTextView().SetText("Event Details").SetTextAlign(tview.AlignCenter)
 
 	grid.AddItem(clusterHeader, 0, 0, 1, 1, 0, 0, false)
 	grid.AddItem(namespaceHeader, 0, 1, 1, 1, 0, 0, false)
@@ -34,13 +36,18 @@ func StartTUI(workload *Workload) {
 	for clusterName := range workload.Clusters {
 		clusterList.AddItem(clusterName, "", 0, nil)
 	}
+	clusterList.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	namespaceTree := tview.NewTreeView()
 	root := tview.NewTreeNode("Root").SetSelectable(false)
 	namespaceTree.SetRoot(root)
+	namespaceTree.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	detailsView := tview.NewTextView().SetDynamicColors(true).SetRegions(true).SetWordWrap(true)
+	detailsView.SetBackgroundColor(tcell.ColorBlack.TrueColor())
+
 	eventDetailsView := tview.NewTextView().SetDynamicColors(true).SetRegions(true).SetWordWrap(true)
+	eventDetailsView.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	grid.AddItem(clusterList, 1, 0, 1, 1, 0, 0, true)
 	grid.AddItem(namespaceTree, 1, 1, 1, 1, 0, 0, false)
@@ -142,12 +149,12 @@ func StartTUI(workload *Workload) {
 func populateNamespaceTree(treeView *tview.TreeView, cluster *Cluster, clusterName string, detailsView, eventDetailsView *tview.TextView) {
 	sortedNamespaceNames := sortNamespacesByEvents(cluster)
 
-	root := tview.NewTreeNode(clusterName).SetSelectable(false)
+	root := tview.NewTreeNode(clusterName).SetSelectable(false).SetColor(tcell.ColorGreen)
 	treeView.SetRoot(root)
 
 	for _, nsName := range sortedNamespaceNames {
 		ns := cluster.Namespaces[nsName]
-		nsNode := tview.NewTreeNode(nsName).SetSelectable(false)
+		nsNode := tview.NewTreeNode(nsName).SetSelectable(false).SetColor(tcell.ColorYellow)
 		root.AddChild(nsNode)
 
 		for wtName, wt := range ns.WorkloadTypes {

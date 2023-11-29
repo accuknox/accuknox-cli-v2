@@ -20,18 +20,22 @@ func StartTUI(pb *PolicyBucket) {
 		SetRows(1, 0, 1, 1).
 		SetColumns(25, 0, 90).
 		SetBorders(true)
+	grid.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	policyTree := tview.NewTreeView().
 		SetRoot(tview.NewTreeNode("Policy Tree")).
 		SetCurrentNode(tview.NewTreeNode("Policy Tree"))
+	policyTree.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	namespaceList := tview.NewList()
+	namespaceList.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	policyDetailsView := tview.NewTextView().
 		SetDynamicColors(true).
 		SetRegions(true).
 		SetWordWrap(true).
 		SetScrollable(true)
+	policyDetailsView.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	for ns := range pb.Namespaces {
 		namespaceList.AddItem(ns, "", 0, nil)
