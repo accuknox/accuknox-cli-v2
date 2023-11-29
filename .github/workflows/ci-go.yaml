@@ -42,7 +42,7 @@ jobs:
           
       - name: Build knoxctl
         run: |
-          echo "machine github.com login sanjay-ba password ${{ secrets.SA-GT }}" > ~/.netrc
+          echo "machine github.com login sanjay-ba password ${{ secrets.SA_GT }}" > ~/.netrc
           make
 
   unit-tests:
@@ -58,5 +58,5 @@ jobs:
         
       - name: Run unit tests
         run: |
-          echo "machine github.com login sanjay-ba password ${{ secrets.SA-GT }}" > ~/.netrc
+          echo "machine github.com login sanjay-ba password ${{ secrets.SA_GT }}" > ~/.netrc
           make test
