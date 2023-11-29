@@ -1,4 +1,4 @@
-name: goreleaser
+name: Release knoxctl
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 jobs:
-  goreleaser:
+  knoxctl-release:
     runs-on: ubuntu-latest
     env:
       GOPRIVATE: github.com/accuknox/*
