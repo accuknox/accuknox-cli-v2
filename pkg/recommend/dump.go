@@ -40,5 +40,5 @@ func dump(bucket *PolicyBucket, o *Options, c *k8s.Client) error {
 func writeKubearmorPolicyToFile(policy *policyType.KubeArmorPolicy, nsDirPath, filename string) error {
 	yamlStr := policyToString(policy)
 	filePath := filepath.Join(nsDirPath, filename)
-	return os.WriteFile(filePath, []byte(yamlStr), 0644)
+	return os.WriteFile(filePath, []byte(yamlStr), 0600)
 }

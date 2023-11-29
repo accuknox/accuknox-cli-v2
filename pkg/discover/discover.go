@@ -80,7 +80,10 @@ func Policy(c *k8s.Client, parsedArgs *Options) error {
 			printTable(policyForest)
 
 		case parsedArgs.Dump:
-			dump(policyForest)
+			err := dump(policyForest)
+			if err != nil {
+				return fmt.Errorf("failed to dump policies: %v", err)
+			}
 
 		default:
 			StartTUI(policyForest)

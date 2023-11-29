@@ -55,12 +55,12 @@ func writePolicyToFile(policy *policyType.KubeArmorPolicy, nsDirPath, filename s
 	yamlStr := kubearmorPolicyToString(policy)
 
 	filePath := filepath.Join(nsDirPath, filename)
-	return os.WriteFile(filePath, []byte(yamlStr), 0644)
+	return os.WriteFile(filePath, []byte(yamlStr), 0600)
 }
 
 func writeNetworkPolicyToFile(policy *networkingv1.NetworkPolicy, nsDirPath, filename string) error {
 	yamlStr := networkPolicyToString(policy)
 
 	filePath := filepath.Join(nsDirPath, filename)
-	return os.WriteFile(filePath, []byte(yamlStr), 0644)
+	return os.WriteFile(filePath, []byte(yamlStr+"---\n"), 0600) // Appending '---\n' at the end of each policy
 }

@@ -85,11 +85,14 @@ func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 				pf.AddNetworkPolicy(networkPolicy.ObjectMeta.Namespace, &networkPolicy)
 				pf.Unlock()
 
-				bar.Add(1)
+				_ = bar.Add(1)
 			}(policy)
 		}
 		wg.Wait()
-		bar.Finish()
+		err := bar.Finish()
+		if err != nil {
+			fmt.Println("Failed to finish progress bar")
+		}
 	}
 
 	return nil
@@ -131,11 +134,14 @@ func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 				pf.AddKubearmorPolicy(kaHostPolicy.Metadata.Namespace, &kaHostPolicy)
 				pf.Unlock()
 
-				bar.Add(1)
+				_ = bar.Add(1)
 			}(policy)
 		}
 		wg.Wait()
-		bar.Finish()
+		err := bar.Finish()
+		if err != nil {
+			fmt.Println("Failed to finish progress bar")
+		}
 	}
 
 	return nil
@@ -177,11 +183,14 @@ func getKaPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 				pf.AddKubearmorPolicy(kaPolicy.Metadata.Namespace, &kaPolicy)
 				pf.Unlock()
 
-				bar.Add(1)
+				_ = bar.Add(1)
 			}(policy)
 		}
 		wg.Wait()
-		bar.Finish()
+		err := bar.Finish()
+		if err != nil {
+			fmt.Println("Failed to finish progress bar")
+		}
 	}
 
 	return nil

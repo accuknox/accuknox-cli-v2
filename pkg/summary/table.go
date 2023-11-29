@@ -86,6 +86,11 @@ func writeTableToFile(workload *Workload) error {
 	fileName := "summary.txt"
 	filePath := filepath.Join(outDir, fileName)
 
+	filePath = filepath.Clean(filePath)
+	if filepath.IsAbs(filePath) {
+		return fmt.Errorf("invalid file path: path must not be absolute")
+	}
+
 	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
@@ -156,7 +161,10 @@ func writeEventsToFile(title string, table *tablewriter.Table, file *os.File, ns
 		}
 	}
 
-	bar.Add(1)
+	err := bar.Add(1)
+	if err != nil {
+		fmt.Printf("Error incrementing progress bar: %s\n", err)
+	}
 	table.Render()
 	fmt.Fprintln(file)
 }

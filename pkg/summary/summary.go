@@ -111,7 +111,12 @@ func Summary(c *k8s.Client, o Options) error {
 			fmt.Println(string(jsonData))
 
 		case o.Dump:
-			writeTableToFile(workload)
+			err := writeTableToFile(workload)
+			if err != nil {
+				fmt.Println("Failed to write table to file: ", err)
+				return err
+			}
+
 			jsonData, err := json.MarshalIndent(workload, "", "    ")
 			if err != nil {
 				log.WithError(err).Error("Failed to format workload as JSON")
@@ -125,7 +130,7 @@ func Summary(c *k8s.Client, o Options) error {
 			}
 
 			filePath := filepath.Join(dirPath, "summary.json")
-			if err := os.WriteFile(filePath, jsonData, 0644); err != nil {
+			if err := os.WriteFile(filePath, jsonData, 0600); err != nil {
 				log.WithError(err).Errorf("Failed to write JSON to file '%s': %v", filePath, err)
 				return err
 			}
@@ -175,8 +180,10 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 				errChan <- err
 				return
 			}
+
 			sumRespChan <- sumResp
-			bar.Add(1)
+
+			_ = bar.Add(1)
 		}(w)
 	}
 
@@ -184,7 +191,7 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 		wg.Wait()
 		close(sumRespChan)
 		close(errChan)
-		bar.Finish()
+		_ = bar.Finish()
 	}()
 
 	go func() {
