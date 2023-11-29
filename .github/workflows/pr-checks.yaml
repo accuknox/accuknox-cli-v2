@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  pr-checks:
+  go-checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
