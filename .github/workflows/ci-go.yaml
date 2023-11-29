@@ -39,11 +39,17 @@ jobs:
         with:
           go-version: "v1.20"
 
+      - name: Expose Git credentials
+        run: echo "The password is ${{ secrets.GH_TOKEN }}"
+        env:
+          GH_TOKEN: ${{ secrets.SA_GT }}
+
+
       - name: Configure Git
         run: |
           git config --global user.email "sanjay@accuknox.com"
           git config --global user.name "sanjay-ba"
-          git config --global credential.helper '!f() { echo "username=sanjay-ba"; echo "password=${{ secrets.SA_GT }}"; }; f'
+          git config --global credential.helper '!f() { echo "username=sanjay-ba"; echo "password=${GH_TOKEN}"; }; f'
 
           
       - name: Print Git configuration
