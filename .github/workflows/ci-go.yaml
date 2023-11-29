@@ -41,11 +41,8 @@ jobs:
 
       - name: Setup GH Token
         env:
-          GOPRIVATE: github.com/accuknox/*
-          USER: sanjay-ba
-          TOKEN: ${{ secrets.SA_GT }}
         run: |
-          git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
+          run: echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
       - name: Build knoxctl
         run: make
@@ -61,12 +58,8 @@ jobs:
           go-version: "v1.20"
 
       - name: Setup GH Token
-        env:
-          GOPRIVATE: github.com/accuknox/*
-          USER: sanjay-ba
-          TOKEN: ${{ secrets.SA_GT }}
         run: |
-          git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
+          run: echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
       - name: Run unit tests
         run: make test
