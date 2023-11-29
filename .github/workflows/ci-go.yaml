@@ -42,7 +42,7 @@ jobs:
       - name: Setup GH Token
         env:
           GOPRIVATE: github.com/accuknox/*
-          USER: knoxuser
+          USER: accuknox-user
           TOKEN: ${{ secrets.AK_PAT_REPO_SCOPE }}
         run: |
           git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
@@ -63,7 +63,7 @@ jobs:
       - name: Setup GH Token
         env:
           GOPRIVATE: github.com/accuknox/*
-          USER: knoxuser
+          USER: accuknox-user
           TOKEN: ${{ secrets.AK_PAT_REPO_SCOPE }}
         run: |
           git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
