@@ -38,6 +38,9 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: "v1.20"
+          
+      - name: Create SSH directory
+        run: mkdir -p $HOME/.ssh
 
       - name: Setup GH Token
         run: echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
@@ -54,6 +57,9 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: "v1.20"
+          
+      - name: Create SSH directory
+        run: mkdir -p $HOME/.ssh
 
       - name: Setup GH Token
         run: echo "${{ secrets.GIT-KEY }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
