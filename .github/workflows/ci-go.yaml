@@ -44,6 +44,10 @@ jobs:
           git config --global user.email "sanjay@accuknox.com"
           git config --global user.name "sanjay-ba"
           git config --global credential.helper '!f() { echo "username=sanjay-ba"; echo "password=${{ secrets.SA-GT }}"; }; f'
+   
+      - name: Enable Git debug output
+        run: git config --global http.extraheader "AUTHORIZATION: basic ***"
+
           
       - name: Build knoxctl
         run: make
@@ -64,5 +68,8 @@ jobs:
           git config --global user.name "sanjay-ba"
           git config --global credential.helper '!f() { echo "username=sanjay-ba"; echo "password=${{ secrets.SA-GT }}"; }; f'
 
+      - name: Enable Git debug output
+        run: git config --global http.extraheader "AUTHORIZATION: basic ***"
+        
       - name: Run unit tests
         run: make test
