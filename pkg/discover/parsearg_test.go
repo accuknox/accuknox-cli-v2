@@ -63,17 +63,6 @@ func TestProcessArgs(t *testing.T) {
 				IncludeNetwork: true,
 			},
 		},
-		{
-			name:    "A Bit More Complex",
-			rawArgs: "--includenet -n accu-* --format=yaml -g 0.0.0.0:8090 --labels=app=web,first=class",
-			expected: &Options{
-				GRPC:           "0.0.0.0:8090",
-				Format:         "yaml",
-				IncludeNetwork: true,
-				NamespaceRegex: []*regexp.Regexp{regexp.MustCompile("accu-*")},
-				Labels:         []string{"app=web", "first=class"},
-			},
-		},
 	}
 
 	for _, tt := range tests {

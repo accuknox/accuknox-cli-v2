@@ -16,8 +16,6 @@ import (
 	"github.com/schollz/progressbar/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var globalConn *grpc.ClientConn
@@ -26,7 +24,7 @@ func disconnect() {
 	if globalConn != nil {
 		err := globalConn.Close()
 		if err != nil {
-			log.WithError(err).Error("failed to close connection")
+			fmt.Println("Failed to close connection: ", err)
 		}
 	}
 }
@@ -52,7 +50,6 @@ func getGRPCConnection(address string) (*grpc.ClientConn, error) {
 func GetSummary(c *k8s.Client, o Options) (*Workload, error) {
 	gRPC, err := common.ConnectGrpc(c, o.GRPC)
 	if err != nil {
-		log.WithError(err).Errorf("failed to connect to grpc: %v", err)
 		return nil, err
 	}
 
@@ -85,7 +82,6 @@ func Summary(c *k8s.Client, o Options) error {
 	fmt.Println("Summarizing data...")
 	workload, err := GetSummary(c, o)
 	if err != nil {
-		log.WithError(err).Error("Failed to get summary")
 		return err
 	}
 
@@ -105,7 +101,6 @@ func Summary(c *k8s.Client, o Options) error {
 		case o.View == "json":
 			jsonData, err := json.MarshalIndent(workload, "", "    ")
 			if err != nil {
-				log.WithError(err).Error("Failed to format workload as JSON")
 				return err
 			}
 			fmt.Println(string(jsonData))
@@ -119,25 +114,26 @@ func Summary(c *k8s.Client, o Options) error {
 
 			jsonData, err := json.MarshalIndent(workload, "", "    ")
 			if err != nil {
-				log.WithError(err).Error("Failed to format workload as JSON")
 				return err
 			}
 
 			dirPath := "knoxctl_out/summary/json"
 			if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
-				log.WithError(err).Errorf("Failed to create directory '%s': %v", dirPath, err)
 				return err
 			}
 
 			filePath := filepath.Join(dirPath, "summary.json")
 			if err := os.WriteFile(filePath, jsonData, 0600); err != nil {
-				log.WithError(err).Errorf("Failed to write JSON to file '%s': %v", filePath, err)
 				return err
 			}
 			fmt.Println("JSON summary written to ", filePath)
 
 		default:
-			StartTUI(workload)
+			if len(workload.Clusters) != 0 {
+				StartTUI(workload)
+			} else {
+				fmt.Println("Summary data not found.")
+			}
 		}
 	} else {
 		fmt.Println("No workloads found.")
@@ -151,7 +147,6 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 
 	workloads, err := client.GetWorkloads(context.Background(), workloadReq)
 	if err != nil {
-		log.WithError(err).Errorf("failed to get workloads: %v", err)
 		return nil, err
 	}
 

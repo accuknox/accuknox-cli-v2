@@ -18,8 +18,8 @@ var karmorDumpOptions karmorSysdump.Options
 // sysdumpCmd represents the get command
 var sysdumpCmd = &cobra.Command{
 	Use:   "sysdump",
-	Short: "Collect system dump information for troubleshooting and error report",
-	Long:  `Collect system dump information for troubleshooting and error reports`,
+	Short: "Collect system dump",
+	Long:  `Collect system dump information for troubleshooting and error reports from accuknox-agents and KubeArmor`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := karmorSysdump.Collect(client, karmorDumpOptions); err != nil {
 			return err

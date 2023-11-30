@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	policyType "github.com/accuknox/dev2/discover/pkg/common"
-	log "github.com/sirupsen/logrus"
 	terminal "golang.org/x/term"
 	networkingv1 "k8s.io/api/networking/v1"
 )
@@ -129,8 +128,8 @@ func StartTUI(pf *PolicyForest) {
 	})
 
 	if err := app.SetRoot(grid, true).Run(); err != nil {
-		// TODO: Fallback to standard display in case TUI fails
-		log.WithError(err).Errorf("failed to start TUI: %v", err)
+		fmt.Printf("Error running TUI: %v\nStarting native terminal view.", err)
+		printTable(pf)
 	}
 
 	dumpPolicies()
@@ -333,21 +332,18 @@ func dumpPolicies() {
 
 		err := os.MkdirAll(nsDirPath, 0750)
 		if err != nil {
-			log.Errorf("Failed to create directory %s: %v", nsDirPath, err)
 			continue
 		}
 
 		if p.PolicyType == "kubearmor_policy" {
 			policy, ok := p.Policy.(*policyType.KubeArmorPolicy)
 			if !ok {
-				log.Errorf("Invalid policy type for policy: %s", p.Name)
 				continue
 			}
 			err = writePolicyToFile(policy, nsDirPath, filename)
 		} else if p.PolicyType == "network_policy" {
 			policy, ok := p.Policy.(*networkingv1.NetworkPolicy)
 			if !ok {
-				log.Errorf("Invalid policy type for policy: %s", p.Name)
 				continue
 			}
 			err = writeNetworkPolicyToFile(policy, nsDirPath, filename)

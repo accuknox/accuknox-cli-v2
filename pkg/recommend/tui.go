@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	policyType "github.com/accuknox/dev2/hardening/pkg/types"
-	log "github.com/sirupsen/logrus"
 )
 
 func StartTUI(pb *PolicyBucket) {
@@ -100,8 +99,8 @@ func StartTUI(pb *PolicyBucket) {
 	})
 
 	if err := app.SetRoot(grid, true).Run(); err != nil {
-		// TODO: Fallback to standard display in case TUI fails
-		log.WithError(err).Errorf("failed to start TUI: %v", err)
+		fmt.Println("Failed to start TUI: \nStarting native terminal view.", err)
+		printTable(pb)
 	}
 }
 

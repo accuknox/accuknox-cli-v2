@@ -13,26 +13,22 @@ import (
 
 	dev2policy "github.com/accuknox/dev2/api/grpc/v1/policy"
 	policyType "github.com/accuknox/dev2/hardening/pkg/types"
-	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
+func getKaPolicy(c *k8s.Client, o *Options) error {
 	fmt.Println("Generating recommended hardening policies...")
 	policyBucket := NewPolicyBucket()
 
 	var bar *progressbar.ProgressBar
-	var data []string
 
 	gRPC, err := common.ConnectGrpc(c, o.Grpc)
 	if err != nil {
-		log.WithError(err).Error("failed to init gRPC connection")
-		return nil, err
+		return err
 	}
 	connection, err := grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.WithError(err).Error("failed to connect to discovery engine")
-		return nil, err
+		return err
 	}
 	defer connection.Close()
 
@@ -62,10 +58,9 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 				var kaPolicy policyType.KubeArmorPolicy
 				err := yaml.Unmarshal([]byte(policyString), &kaPolicy)
 				if err != nil {
-					log.WithError(err).Error("failed to unmarshal policy")
+					continue
 				}
 
-				data = append(data, policyString)
 				policyBucket.AddPolicy(policy.Namespace, &kaPolicy)
 
 				_ = bar.Add(1)
@@ -95,7 +90,6 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 					return err
 				}
 
-				data = append(data, policyString)
 				policyBucket.AddPolicy(policy.Namespace, &kaPolicy)
 
 				_ = bar.Add(1)
@@ -109,8 +103,7 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 	if o.noFilter() {
 		err := getAllPolicies()
 		if err != nil {
-			log.WithError(err).Error("failed to fetch all policies")
-			return nil, err
+			return err
 		}
 	} else {
 		var allNamespaces []string
@@ -118,8 +111,7 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 		if len(o.NamespaceRegex) > 0 {
 			allNamespaces, err = getAllNamespaces(c)
 			if err != nil {
-				log.WithError(err).Error("failed to get namespaces")
-				return nil, err
+				return err
 			}
 		} else {
 			allNamespaces = o.Namespace
@@ -131,7 +123,6 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 					if regex.MatchString(ns) {
 						err := fetchPolicies(ns)
 						if err != nil {
-							log.WithError(err).Error("failed to fetch policy for namespace regex " + regex.String())
 							continue
 						}
 					}
@@ -139,28 +130,20 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 			} else {
 				err := fetchPolicies(ns)
 				if err != nil {
-					log.WithError(err).Error("failed to fetch policy for namespace " + ns)
 					continue
 				}
 			}
 		}
 	}
 
-	val, err := policyBucket.RetrievePolicies(c, o)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(val) == 0 {
-		fmt.Println("No hardening policies found. Please check discovery engine logs.")
-		return nil, nil
-	}
-
 	if bar != nil {
-		err := bar.Finish()
-		if err != nil {
-			fmt.Println("Failed to finish progress bar")
-		}
+		_ = bar.Finish()
+	}
+
+	ab := policyBucket.Namespaces
+	if len(ab) == 0 {
+		fmt.Println("No hardening policies found.")
+		return nil
 	}
 
 	switch {
@@ -171,25 +154,24 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 		printJSON(policyBucket)
 
 	case o.View == "table":
-		printTable(policyBucket, o, c)
+		printTable(policyBucket)
 
 	case o.Dump:
-		err := dump(policyBucket, o, c)
+		err := dump(policyBucket)
 		if err != nil {
-			return nil, fmt.Errorf("failed to dump policies: %v", err)
+			return fmt.Errorf("failed to dump policies: %v", err)
 		}
 
 	default:
 		StartTUI(policyBucket)
 	}
 
-	return data, nil
+	return nil
 }
 
 func getAllNamespaces(client *k8s.Client) ([]string, error) {
 	namespaceList, err := client.K8sClientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		log.WithError(err).Error("failed to list namespaces")
 		return nil, err
 	}
 
