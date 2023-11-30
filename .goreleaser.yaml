@@ -1,7 +1,7 @@
 project_name: accuknoxcli
 
 builds:
-  - binary: accuknoxcli
+  - binary: knoxctl
     goos:
       - darwin
       - linux
