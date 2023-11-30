@@ -41,6 +41,7 @@ func (o *Options) noFilters() bool {
 
 	return lr == 0 && nr == 0 && sr == 0 && dr == 0 && l == 0 && n == 0 && s == 0 && d == 0
 }
+
 func ProcessArgs(rawArgs string) (*Options, error) {
 	parsed := &Options{}
 	parser := common.NewParser()
@@ -51,9 +52,9 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 	}
 
 	for flag, value := range flags {
-		if strings.HasPrefix(value, "r:") && !isRegexAllowed(flag) {
+		if flag != "gRPC" && !isRegexAllowed(flag) && strings.ContainsAny(value, common.SpecialRegexChars) {
 			allowedFlags := getRegexAllowedFlags()
-			return nil, fmt.Errorf("regex is not allowed for the flag: %s, currently supported regex flags are: %s", flag, strings.Join(allowedFlags, ", "))
+			return nil, fmt.Errorf("found special regex characters: `%s`, regex is not allowed for the flag: %s, currently allowed flags are: %s", common.SpecialRegexChars, flag, strings.Join(allowedFlags, ", "))
 		}
 
 		var regexList []*regexp.Regexp
@@ -68,19 +69,19 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 			parsed.View, err = parser.ParseString(rawArgs, flag)
 
 		case flag == "labels" || flag == "l":
-			parsed.Labels, regexList, err = parser.ParseRegexSlice(value, rawArgs, value)
+			parsed.Labels, regexList, err = parser.ParseRegexSlice(value, value)
 			parsed.LabelsRegex = regexList
 
 		case flag == "namespace" || flag == "n":
-			parsed.Namespace, regexList, err = parser.ParseRegexSlice(value, rawArgs, flag)
+			parsed.Namespace, regexList, err = parser.ParseRegexSlice(value, flag)
 			parsed.NamespaceRegex = regexList
 
 		case flag == "source" || flag == "s":
-			parsed.Source, regexList, err = parser.ParseRegexSlice(value, rawArgs, flag)
+			parsed.Source, regexList, err = parser.ParseRegexSlice(value, flag)
 			parsed.SourceRegex = regexList
 
 		case flag == "destination" || flag == "d":
-			parsed.Destination, regexList, err = parser.ParseRegexSlice(value, rawArgs, flag)
+			parsed.Destination, regexList, err = parser.ParseRegexSlice(value, flag)
 			parsed.DestinationRegex = regexList
 
 		case flag == "outdir" || flag == "o":

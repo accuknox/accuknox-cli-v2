@@ -4,17 +4,19 @@
 package cmd
 
 import (
-	"github.com/kubearmor/kubearmor-client/selfupdate"
+	"github.com/accuknox/accuknox-cli-v2/pkg/update"
 	"github.com/spf13/cobra"
 )
+
+var options update.Option
 
 // selfUpdateCmd represents the get command
 var selfUpdateCmd = &cobra.Command{
 	Use:   "selfupdate",
-	Short: "selfupdate this cli tool",
-	Long:  `selfupdate this cli tool for checking the latest release on the github`,
+	Short: "update knoxctl",
+	Long:  `update knoxctl to sync with latest and greatest updates`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := selfupdate.SelfUpdate(client); err != nil {
+		if err := update.SelfUpdate(client, &options); err != nil {
 			return err
 		}
 		return nil
@@ -23,4 +25,6 @@ var selfUpdateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(selfUpdateCmd)
+	selfUpdateCmd.Flags().StringVar(&options.GitPATPath, "git-pat", "", "Path to your personal access token")
+	selfUpdateCmd.Flags().BoolVarP(&options.DoUpdate, "yes", "y", false, "Force update to latest version")
 }

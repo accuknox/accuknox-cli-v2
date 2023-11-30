@@ -68,7 +68,7 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 				data = append(data, policyString)
 				policyBucket.AddPolicy(policy.Namespace, &kaPolicy)
 
-				bar.Add(1)
+				_ = bar.Add(1)
 			}
 		}
 		return nil
@@ -98,7 +98,7 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 				data = append(data, policyString)
 				policyBucket.AddPolicy(policy.Namespace, &kaPolicy)
 
-				bar.Add(1)
+				_ = bar.Add(1)
 			}
 
 		}
@@ -157,15 +157,32 @@ func getKaPolicy(c *k8s.Client, o *Options) ([]string, error) {
 	}
 
 	if bar != nil {
-		bar.Finish()
+		err := bar.Finish()
+		if err != nil {
+			fmt.Println("Failed to finish progress bar")
+		}
 	}
 
-	if o.Dump {
-		dump(policyBucket)
-		return nil, nil
+	switch {
+	case o.View == "yaml":
+		printYAML(policyBucket)
+
+	case o.View == "json":
+		printJSON(policyBucket)
+
+	case o.View == "table":
+		printTable(policyBucket, o, c)
+
+	case o.Dump:
+		err := dump(policyBucket, o, c)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump policies: %v", err)
+		}
+
+	default:
+		StartTUI(policyBucket)
 	}
 
-	StartTUI(policyBucket)
 	return data, nil
 }
 

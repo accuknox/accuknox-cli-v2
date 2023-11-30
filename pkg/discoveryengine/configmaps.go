@@ -29,7 +29,15 @@ func GetConfigmap(ns string) ([]ConfigMapStruct, error) {
 			continue
 		}
 
-		data, err := os.ReadFile(filepath.Join(configMapDir, file.Name()))
+		fileName := file.Name()
+		if fileName != filepath.Base(fileName) {
+			return configMaps, fmt.Errorf("invalid file name: %s", fileName)
+		}
+
+		filePath := filepath.Join(configMapDir, fileName)
+		filePath = filepath.Clean(filePath)
+
+		data, err := os.ReadFile(filePath)
 		if err != nil {
 			return configMaps, fmt.Errorf("error reading the yaml file. error: %v", err)
 		}

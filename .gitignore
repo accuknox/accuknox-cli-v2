@@ -10,6 +10,7 @@ out/
 knoxctl_out/*
 .vscode
 .idea
+*.tar.gz
 # Test binary, built with `go test -c`
 *.test
 

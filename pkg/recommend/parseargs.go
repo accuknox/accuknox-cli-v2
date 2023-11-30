@@ -15,6 +15,7 @@ type Options struct {
 	Policy    []string `flag:"policy"`
 	Outdir    string   `flag:"out"`
 	Grpc      string   `flag:"gRPC"`
+	View      string   `flag:"view"`
 	Dump      bool     `flag:"dump"`
 
 	NamespaceRegex []*regexp.Regexp
@@ -37,9 +38,9 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 	}
 
 	for flag, values := range flags {
-		if strings.HasPrefix(values, "r:") && !isRegexAllowed(flag) {
+		if flag != "gRPC" && !isRegexAllowed(flag) && strings.ContainsAny(values, common.SpecialRegexChars) {
 			allowedFlags := getRegexAllowedFlags()
-			return nil, fmt.Errorf("regex is not allowed for the flag: %s, currently allowed flags are: %s", flag, strings.Join(allowedFlags, ", "))
+			return nil, fmt.Errorf("found special regex characters: `%s`, regex is not allowed for the flag: %s, currently allowed flags are: %s", common.SpecialRegexChars, flag, strings.Join(allowedFlags, ", "))
 		}
 
 		var regexList []*regexp.Regexp
@@ -54,19 +55,22 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 		case flag == "gRPC" || flag == "g":
 			parsedOption.Grpc, err = parser.ParseString(rawArgs, flag)
 
+		case flag == "view" || flag == "v":
+			parsedOption.View, err = parser.ParseString(rawArgs, flag)
+
 		case flag == "severity" || flag == "s":
 			parsedOption.SeveritySlice, err = parser.ParseInt(rawArgs, flag)
 
 		case flag == "namespace" || flag == "n":
-			parsedOption.Namespace, regexList, err = parser.ParseRegexSlice(values, rawArgs, flag)
+			parsedOption.Namespace, regexList, err = parser.ParseRegexSlice(values, flag)
 			parsedOption.NamespaceRegex = regexList
 
 		case flag == "tags" || flag == "t":
-			parsedOption.Tags, regexList, err = parser.ParseRegexSlice(values, rawArgs, flag)
+			parsedOption.Tags, regexList, err = parser.ParseRegexSlice(values, flag)
 			parsedOption.TagsRegex = regexList
 
 		case flag == "labels" || flag == "l":
-			parsedOption.Labels, regexList, err = parser.ParseRegexSlice(values, rawArgs, flag)
+			parsedOption.Labels, regexList, err = parser.ParseRegexSlice(values, flag)
 			parsedOption.LabelsRegex = regexList
 
 		case flag == "dump":

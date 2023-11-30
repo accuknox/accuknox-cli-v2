@@ -13,12 +13,14 @@ import (
 type Options struct {
 	GRPC           string   `flag:"grpc"`
 	Format         string   `flag:"format"`
+	View           string   `flag:"view"`
 	Dump           bool     `flag:"dump"`
 	Kind           []string `flag:"policy"`
 	Namespace      []string `flag:"namespace"`
 	Labels         []string `flag:"labels"`
 	Source         []string `flag:"source"`
 	IncludeNetwork bool     `flag:"includenet"`
+	Glance         bool     `flag:"glance"`
 
 	NamespaceRegex []*regexp.Regexp
 	LabelsRegex    []*regexp.Regexp
@@ -39,9 +41,9 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 	}
 
 	for flag, value := range flags {
-		if strings.HasPrefix(value, "r:") && !isRegexAllowed(flag) {
-			allowedFlags := getRegexAllowedFlags()
-			return nil, fmt.Errorf("regex is not allowed for the flag: %s, currently supported regex flags are: %s", flag, strings.Join(allowedFlags, ", "))
+		if !isRegexAllowed(flag) && strings.ContainsAny(value, common.SpecialRegexChars) {
+			//allowedFlags := getRegexAllowedFlags()
+			//return nil, fmt.Errorf("found special regex characters: `%s`, regex is not allowed for the flag: %s, currently allowed flags are: %s", common.SpecialRegexChars, flag, strings.Join(allowedFlags, ", "))
 		}
 
 		var regexList []*regexp.Regexp
@@ -62,19 +64,25 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 			parsed.Kind, err = parser.ParseStringSlice(rawArgs, flag)
 
 		case flag == "namespace" || flag == "n":
-			parsed.Namespace, regexList, err = parser.ParseRegexSlice(value, rawArgs, flag)
+			parsed.Namespace, regexList, err = parser.ParseRegexSlice(value, flag)
 			parsed.NamespaceRegex = regexList
 
 		case flag == "labels" || flag == "l":
-			parsed.Labels, regexList, err = parser.ParseRegexSlice(value, rawArgs, flag)
+			parsed.Labels, regexList, err = parser.ParseRegexSlice(value, flag)
 			parsed.LabelsRegex = regexList
 
 		case flag == "source" || flag == "s":
-			parsed.Source, regexList, err = parser.ParseRegexSlice(value, rawArgs, flag)
+			parsed.Source, regexList, err = parser.ParseRegexSlice(value, flag)
 			parsed.SourceRegex = regexList
+
+		case flag == "view" || flag == "v":
+			parsed.View, err = parser.ParseString(rawArgs, flag)
 
 		case flag == "includenet":
 			parsed.IncludeNetwork = true
+
+		case flag == "glance":
+			parsed.Glance = true
 
 		default:
 			// This condition will never be hit since cobra will sort this out, just for unit tests
@@ -85,6 +93,7 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 			return nil, wrapErr(err)
 		}
 	}
+
 	return parsed, nil
 }
 

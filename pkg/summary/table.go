@@ -76,15 +76,19 @@ func displayEvents(title string, table *tablewriter.Table, nsName string, wtName
 
 func writeTableToFile(workload *Workload) error {
 	fmt.Println()
-	fmt.Println("Writing summary to file...")
 
-	outDir := "knoxctl_out"
+	outDir := "knoxctl_out/summary/table"
 	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
 	fileName := "summary.txt"
 	filePath := filepath.Join(outDir, fileName)
+
+	filePath = filepath.Clean(filePath)
+	if filepath.IsAbs(filePath) {
+		return fmt.Errorf("invalid file path: path must not be absolute")
+	}
 
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -99,7 +103,7 @@ func writeTableToFile(workload *Workload) error {
 		writeClusterToTable(cluster, file, bar)
 	}
 
-	fmt.Printf("Summary written to %s\n", filePath)
+	fmt.Printf("Table based text summary written to %s\n", filePath)
 	return nil
 }
 
@@ -156,7 +160,10 @@ func writeEventsToFile(title string, table *tablewriter.Table, file *os.File, ns
 		}
 	}
 
-	bar.Add(1)
+	err := bar.Add(1)
+	if err != nil {
+		fmt.Printf("Error incrementing progress bar: %s\n", err)
+	}
 	table.Render()
 	fmt.Fprintln(file)
 }

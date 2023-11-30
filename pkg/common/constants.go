@@ -1,6 +1,8 @@
 package common
 
 const (
+	SpecialRegexChars = `.*+?()|[]{}^$`
+
 	ServiceName       = "discovery-engine" // Subject to change
 	Port        int64 = 8090
 	DELabel           = "app=discovery-engine"
@@ -39,6 +41,9 @@ const (
 	HardeningConfMap = "dev2-hardening"
 	OffloaderConfMap = "dev2-offloader"
 	SumengineConfmap = "dev2-sumengine"
+
+	AccuknoxGithub  = "accuknox"
+	AccuknoxCLIRepo = "accuknox-cli-v2"
 )
 
 var (

@@ -27,14 +27,11 @@ var rootCmd = &cobra.Command{
 		}
 		return nil
 	},
-	Use:   "accuknoxcli",
-	Short: "KubeArmor Client but on steroid",
-	Long: `KubeArmor Client but on steroid
-	
-AccuKnox client for KubeArmor, this client offer extra functionalities
-and integrates seamlessly with AccuKnox eco-system (License managment, Event summay, ...)
-
-This client can be used to interact with KubeArmor OSS and AccuKnox's proprietary software.
+	Use:   "knoxctl",
+	Short: "CLI tool to interact with KubeArmor and AccuKnox enterprise ecosystem.",
+	Long: `
+Interact with KubeArmor and AccuKnox enterprise feature including license management, system summary and policy management.
+Harness the capabilites of AccuKnox eco-system with ease right from the command line. 
 	`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
