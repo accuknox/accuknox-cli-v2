@@ -11,17 +11,19 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/mholt/archiver/v3"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const outputDir = "knoxctl_out/sysdump/"
 
 // Options options for sysdump
 type Options struct {
@@ -32,7 +34,7 @@ type Options struct {
 func Collect(c *k8s.Client, o Options) error {
 	var errs errgroup.Group
 
-	d, err := os.MkdirTemp("", "accuknox-sysdump")
+	d, err := os.MkdirTemp("", "accuknox-sysdump-")
 	if err != nil {
 		return err
 	}
@@ -49,18 +51,14 @@ func Collect(c *k8s.Client, o Options) error {
 		return nil
 	})
 
-	// DEv2 Pod
 	errs.Go(func() error {
-		pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
-			LabelSelector: common.DELabel,
-		})
+		pods, err := c.K8sClientset.CoreV1().Pods(common.AccuknoxAgents).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
-			fmt.Printf("discovery-engine pod not found. \n")
+			fmt.Printf("accuknox-agents pod not found. \n")
 			return nil
 		}
 
 		for _, p := range pods.Items {
-			// dev2 Logs
 			pod, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
 			if err != nil {
 				return err
@@ -90,23 +88,21 @@ func Collect(c *k8s.Client, o Options) error {
 				if _, err = io.Copy(&logs, s); err != nil {
 					return err
 				}
-				if err := writeToFile(path.Join(d, "discovery-engine-pod-"+p.Name+"-container-"+container+"-log.txt"), logs.String()); err != nil {
+				if err := writeToFile(path.Join(d, "accuknox-agents-pod-"+p.Name+"-container-"+container+"-log.txt"), logs.String()); err != nil {
 					return err
 				}
 
 			}
 
-			// dev2 Describe
-			if err := writeYaml(path.Join(d, "discovery-engine-pod-"+p.Name+".yaml"), pod); err != nil {
+			if err := writeYaml(path.Join(d, "accuknox-agents-pod-"+p.Name+".yaml"), pod); err != nil {
 				return err
 			}
 
-			// dev2 Event
 			e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, pod)
 			if err != nil {
 				return err
 			}
-			if err := writeYaml(path.Join(d, "discovery-engine-pod-events-"+p.Name+".yaml"), e); err != nil {
+			if err := writeYaml(path.Join(d, "accuknox-agents-pod-events-"+p.Name+".yaml"), e); err != nil {
 				return err
 			}
 		}
@@ -124,11 +120,17 @@ func Collect(c *k8s.Client, o Options) error {
 		return dumpError
 	}
 
+	if err := os.MkdirAll(outputDir, 0750); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+
 	sysdumpFile := ""
 	if o.Filename == "" {
-		sysdumpFile = "discovery-engine-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
+		formattedTime := strings.ReplaceAll(time.Now().Format(time.UnixDate), ":", "_")
+		formattedTime = strings.ReplaceAll(formattedTime, " ", "_")
+		sysdumpFile = outputDir + formattedTime + ".zip"
 	} else {
-		sysdumpFile = o.Filename
+		sysdumpFile = outputDir + strings.ReplaceAll(o.Filename, " ", "_")
 	}
 
 	if err := archiver.Archive([]string{d}, sysdumpFile); err != nil {

@@ -33,9 +33,8 @@ var sysdumpCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sysdumpCmd)
-	dev2File := "discovery-engine-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
+	accuknoxAgentsFile := "accuknox-agents-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
 	kubearmorFile := "kubearmor-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
 	sysdumpCmd.Flags().StringVarP(&karmorDumpOptions.Filename, "kubearmor-sysdump", "k", kubearmorFile, "output file to use for Kubearmor dump")
-	sysdumpCmd.Flags().StringVarP(&dumpOptions.Filename, "discovery-engine-sysdump", "f", dev2File, "output file to use for discovery engine dump")
-
+	sysdumpCmd.Flags().StringVarP(&dumpOptions.Filename, "discovery-engine-sysdump", "f", accuknoxAgentsFile, "output file to use for accuknox-agents dump")
 }
