@@ -3,9 +3,10 @@ package common
 const (
 	SpecialRegexChars = `.*+?()|[]{}^$`
 
-	ServiceName       = "discovery-engine" // Subject to change
-	Port        int64 = 8090
-	DELabel           = "app=discovery-engine"
+	ServiceName          = "discovery-engine" // Subject to change
+	Port           int64 = 8090
+	DELabel              = "app=discovery-engine"
+	AccuknoxAgents       = "accuknox-agents"
 
 	APIGroupCilium            = "cilium.io"
 	APIGroupKubearmorSecurity = "security.kubearmor.com"

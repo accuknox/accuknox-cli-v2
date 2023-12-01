@@ -18,8 +18,8 @@ var karmorDumpOptions karmorSysdump.Options
 // sysdumpCmd represents the get command
 var sysdumpCmd = &cobra.Command{
 	Use:   "sysdump",
-	Short: "Collect system dump information for troubleshooting and error report",
-	Long:  `Collect system dump information for troubleshooting and error reports`,
+	Short: "Collect system dump",
+	Long:  `Collect system dump information for troubleshooting and error reports from accuknox-agents and KubeArmor`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := karmorSysdump.Collect(client, karmorDumpOptions); err != nil {
 			return err
@@ -33,9 +33,8 @@ var sysdumpCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sysdumpCmd)
-	dev2File := "discovery-engine-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
+	accuknoxAgentsFile := "accuknox-agents-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
 	kubearmorFile := "kubearmor-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
 	sysdumpCmd.Flags().StringVarP(&karmorDumpOptions.Filename, "kubearmor-sysdump", "k", kubearmorFile, "output file to use for Kubearmor dump")
-	sysdumpCmd.Flags().StringVarP(&dumpOptions.Filename, "discovery-engine-sysdump", "f", dev2File, "output file to use for discovery engine dump")
-
+	sysdumpCmd.Flags().StringVarP(&dumpOptions.Filename, "discovery-engine-sysdump", "f", accuknoxAgentsFile, "output file to use for accuknox-agents dump")
 }

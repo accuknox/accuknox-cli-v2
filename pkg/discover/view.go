@@ -29,7 +29,6 @@ func printJSON(pf *PolicyForest) {
 		}
 
 		fmt.Println(string(jsonData))
-		fmt.Println(strings.Repeat("-", 3))
 	}
 }
 

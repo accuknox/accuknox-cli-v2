@@ -18,7 +18,7 @@ var summaryOptions summary.Options
 var summaryCmd = &cobra.Command{
 	Use:   "summary",
 	Short: "Observability from discovery engine",
-	Long:  `Discovery engine keeps the telemetry information from the policy enforcement engines and the accuknox-cli connects to it to provide this as observability data`,
+	Long:  `Discovery engine keeps the telemetry information from KubeArmor, knoxctl connects to it to provide this as observability data`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		rawArgs := strings.Join(os.Args[2:], " ")
 		parseArgs, err := summary.ProcessArgs(rawArgs)
@@ -38,10 +38,8 @@ func init() {
 	rootCmd.AddCommand(summaryCmd)
 
 	summaryCmd.Flags().StringVar(&summaryOptions.GRPC, "gRPC", "", "gRPC server information")
-	summaryCmd.Flags().StringArrayVarP(&summaryOptions.Labels, "labels", "l", []string{}, "Labels")
 	summaryCmd.Flags().StringArrayVarP(&summaryOptions.Namespace, "namespace", "n", []string{}, "Namespace")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Operation, "operation", "o", "", "Summary filter type : process|file|network ")
-	summaryCmd.Flags().BoolVar(&summaryOptions.RevDNSLookup, "rev-dns-lookup", false, "Reverse DNS Lookup")
 	summaryCmd.Flags().StringVarP(&summaryOptions.View, "view", "v", "json", "Print data on console in table or json format")
 	summaryCmd.Flags().BoolVar(&summaryOptions.Dump, "dump", false, "Dump json data to knoxctl_out directory and skip TUI")
 	summaryCmd.Flags().BoolVar(&summaryOptions.Glance, "glance", false, "Glance at the summary data")

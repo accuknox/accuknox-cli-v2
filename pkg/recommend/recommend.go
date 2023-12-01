@@ -16,7 +16,7 @@ const (
 )
 
 type policyHandler struct {
-	fn func(*k8s.Client, *Options) ([]string, error)
+	fn func(*k8s.Client, *Options) error
 }
 
 func Recommend(c *k8s.Client, o *Options) error {
@@ -34,7 +34,7 @@ func Recommend(c *k8s.Client, o *Options) error {
 			wg.Add(1)
 			go func(kind string, handler policyHandler) {
 				defer wg.Done()
-				_, err := fetchPolicyData(policies, kind, c, o)
+				err := fetchPolicyData(policies, kind, c, o)
 				if err != nil {
 					errorChan <- err
 				}
@@ -92,11 +92,11 @@ func determinePoliciesToProcess(o *Options, policies map[string]policyHandler) (
 	return toProcess, nil
 }
 
-func fetchPolicyData(policies map[string]policyHandler, kind string, c *k8s.Client, o *Options) ([]string, error) {
-	data, err := policies[kind].fn(c, o)
+func fetchPolicyData(policies map[string]policyHandler, kind string, c *k8s.Client, o *Options) error {
+	err := policies[kind].fn(c, o)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return data, nil
+	return nil
 }

@@ -15,7 +15,6 @@ import (
 
 	dev2policy "github.com/accuknox/dev2/api/grpc/v1/policy"
 	policyType "github.com/accuknox/dev2/discover/pkg/common"
-	log "github.com/sirupsen/logrus"
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
@@ -26,12 +25,10 @@ func initConnection(c *k8s.Client, p *Options) error {
 	var err error
 	gRPC, err := common.ConnectGrpc(c, p.GRPC)
 	if err != nil {
-		log.WithError(err).Error("failed to initialize gRPC connection")
 		return err
 	}
 	connection, err = grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.WithError(err).Error("failed to connect to discovery engine")
 		return err
 	}
 
@@ -42,9 +39,7 @@ func disconnect() {
 	if connection != nil {
 		err := connection.Close()
 		if err != nil {
-			log.WithError(err).Error("failed to close connection")
-		} else {
-			fmt.Println("Disconnected successfully from discovery engine")
+			fmt.Println("Failed to close connection")
 		}
 	}
 }
@@ -56,16 +51,23 @@ func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 		Kind: KindK8sNetworkPolicy, // NetworkPolicy
 	})
 	if err != nil {
-		log.WithError(err).Error("failed to fetch response from discovery engine")
-		return err
+		return fmt.Errorf("failed to fetch response from discovery engine: %v", err)
 	}
 
 	if resp != nil {
 		bar := initializeProgressBar(len(resp.Policies))
 
+		errorChan := make(chan error, len(resp.Policies))
 		var wg sync.WaitGroup
+
 		for _, policy := range resp.Policies {
 			wg.Add(1)
+
+			go func() {
+				for err := range errorChan {
+					fmt.Println(err)
+				}
+			}()
 
 			go func(policy *dev2policy.Policy) {
 				defer wg.Done()
@@ -73,8 +75,7 @@ func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 				var networkPolicy networkingv1.NetworkPolicy
 				err := yaml.Unmarshal(policy.Yaml, &networkPolicy)
 				if err != nil {
-					log.WithError(err).Error("failed to unmarshal " + KindK8sNetworkPolicy)
-					return
+					errorChan <- err
 				}
 
 				if !networkPolicyFilter(networkPolicy, p) {
@@ -89,6 +90,8 @@ func getNetworkPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 			}(policy)
 		}
 		wg.Wait()
+		close(errorChan)
+
 		err := bar.Finish()
 		if err != nil {
 			fmt.Println("Failed to finish progress bar")
@@ -105,12 +108,18 @@ func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 		Kind: KindKubeArmorHostPolicy, // KAHostPolicy
 	})
 	if err != nil {
-		log.WithError(err).Error("failed to fetch response from discovery engine")
-		return err
+		return fmt.Errorf("failed to fetch response from discovery engine: %v", err)
 	}
 
 	if resp != nil {
 		bar := initializeProgressBar(len(resp.Policies))
+
+		errorChan := make(chan error, len(resp.Policies))
+		go func() {
+			for err := range errorChan {
+				fmt.Println(err)
+			}
+		}()
 
 		var wg sync.WaitGroup
 		for _, policy := range resp.Policies {
@@ -122,8 +131,7 @@ func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 				var kaHostPolicy policyType.KubeArmorPolicy
 				err := yaml.Unmarshal(policy.Yaml, &kaHostPolicy)
 				if err != nil {
-					log.WithError(err).Error("failed to unmarshal " + KindKubeArmorHostPolicy)
-					return
+					errorChan <- err
 				}
 
 				if !kaPolicyFilter(kaHostPolicy, p) {
@@ -138,6 +146,8 @@ func getKaHostPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 			}(policy)
 		}
 		wg.Wait()
+		close(errorChan)
+
 		err := bar.Finish()
 		if err != nil {
 			fmt.Println("Failed to finish progress bar")
@@ -154,12 +164,18 @@ func getKaPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 		Kind: KindKubeArmorPolicy, // KAPolicy
 	})
 	if err != nil {
-		log.WithError(err).Error("failed to fetch response from discovery engine")
-		return err
+		return fmt.Errorf("failed to fetch response from discovery engine: %v", err)
 	}
 
 	if resp != nil {
 		bar := initializeProgressBar(len(resp.Policies))
+
+		errorChan := make(chan error, len(resp.Policies))
+		go func() {
+			for err := range errorChan {
+				fmt.Println(err)
+			}
+		}()
 
 		var wg sync.WaitGroup
 		for _, policy := range resp.Policies {
@@ -171,8 +187,7 @@ func getKaPolicy(c *k8s.Client, p *Options, pf *PolicyForest) error {
 				var kaPolicy policyType.KubeArmorPolicy
 				err := yaml.Unmarshal(policy.Yaml, &kaPolicy)
 				if err != nil {
-					log.WithError(err).Error("failed to unmarshal " + KindKubeArmorPolicy)
-					return
+					errorChan <- err
 				}
 
 				if !kaPolicyFilter(kaPolicy, p) {

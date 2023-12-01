@@ -1,11 +1,9 @@
 package recommend
 
 import (
-	"regexp"
 	"strings"
 
 	policyType "github.com/accuknox/dev2/hardening/pkg/types"
-	"github.com/kubearmor/kubearmor-client/k8s"
 )
 
 // Sort will essentially "bucket sort" all the policies into buckets,
@@ -67,51 +65,6 @@ func (pb *PolicyBucket) AddPolicy(namespace string, policy *policyType.KubeArmor
 	}
 }
 
-func (pb *PolicyBucket) RetrievePolicies(c *k8s.Client, o *Options) ([]*policyType.KubeArmorPolicy, error) {
-	var retrievedPolicies []*policyType.KubeArmorPolicy
-
-	validNamespaces, err := pb.getValidNamespaces(c, o)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, ns := range validNamespaces {
-		ab := pb.getOrCreate(ns)
-		retrievedPolicies = append(retrievedPolicies, filtration(ab, o)...)
-	}
-
-	return retrievedPolicies, nil
-}
-
-func (pb *PolicyBucket) getValidNamespaces(c *k8s.Client, o *Options) ([]string, error) {
-	if len(o.Namespace) == 0 && len(o.NamespaceRegex) == 0 {
-		var allNamespaces []string
-		for ns := range pb.Namespaces {
-			allNamespaces = append(allNamespaces, ns)
-		}
-		return allNamespaces, nil
-	}
-
-	validNamespaces := o.Namespace
-
-	if len(o.NamespaceRegex) > 0 {
-		allNamespaces, err := getAllNamespaces(c)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, regex := range o.NamespaceRegex {
-			for _, ns := range allNamespaces {
-				if regex.MatchString(ns) {
-					validNamespaces = append(validNamespaces, ns)
-				}
-			}
-		}
-	}
-
-	return validNamespaces, nil
-}
-
 func getAllPoliciesInBucket(ab *AttributeBucket) []*policyType.KubeArmorPolicy {
 	seen := make(map[*policyType.KubeArmorPolicy]bool)
 	var allPolicies []*policyType.KubeArmorPolicy
@@ -141,57 +94,6 @@ func getAllPoliciesInBucket(ab *AttributeBucket) []*policyType.KubeArmorPolicy {
 	return allPolicies
 }
 
-func severityMatches(policy *policyType.KubeArmorPolicy, severities []int) bool {
-	for _, sev := range severities {
-		if policy.Spec.Severity == sev {
-			return true
-		}
-	}
-	return false
-}
-
-func tagsMatch(policy *policyType.KubeArmorPolicy, tags []string, tagsRegex []*regexp.Regexp) bool {
-	for _, tag := range policy.Spec.Tags {
-		if contains(tags, tag) || regexMatch(tagsRegex, tag) {
-			return true
-		}
-	}
-	return false
-}
-
-func labelsMatch(policy *policyType.KubeArmorPolicy, labels []string, labelsRegex []*regexp.Regexp) bool {
-	serializedLabels := serializeLabels(policy.Metadata.Labels)
-	for _, label := range labels {
-		if strings.Contains(serializedLabels, label) {
-			return true
-		}
-	}
-	for _, regex := range labelsRegex {
-		if regex.MatchString(serializedLabels) {
-			return true
-		}
-	}
-	return false
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
-func regexMatch(regexes []*regexp.Regexp, item string) bool {
-	for _, regex := range regexes {
-		if regex.MatchString(item) {
-			return true
-		}
-	}
-	return false
-}
-
 func serializeLabels(labels map[string]string) string {
 	if len(labels) == 0 {
 		return ""
@@ -212,35 +114,4 @@ func serializeLabels(labels map[string]string) string {
 
 	res := sb.String()
 	return res
-}
-
-func filtration(ab *AttributeBucket, o *Options) []*policyType.KubeArmorPolicy {
-	var filteredPolicies []*policyType.KubeArmorPolicy
-
-	for _, policy := range getAllPoliciesInBucket(ab) {
-		if !matchesFilters(policy, o) {
-			continue
-		}
-
-		filteredPolicies = append(filteredPolicies, policy)
-	}
-
-	return filteredPolicies
-}
-
-func matchesFilters(policy *policyType.KubeArmorPolicy, o *Options) bool {
-	if len(o.Namespace) > 0 && !contains(o.Namespace, policy.Metadata.Namespace) {
-		return false
-	}
-	if len(o.SeveritySlice) > 0 && !severityMatches(policy, o.SeveritySlice) {
-		return false
-	}
-	if len(o.Tags) > 0 && !tagsMatch(policy, o.Tags, o.TagsRegex) {
-		return false
-	}
-	if len(o.Labels) > 0 && !labelsMatch(policy, o.Labels, o.LabelsRegex) {
-		return false
-	}
-
-	return true
 }

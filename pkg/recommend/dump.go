@@ -6,27 +6,25 @@ import (
 	"path/filepath"
 
 	policyType "github.com/accuknox/dev2/hardening/pkg/types"
-	"github.com/kubearmor/kubearmor-client/k8s"
 )
 
-func dump(bucket *PolicyBucket, o *Options, c *k8s.Client) error {
+func dump(pb *PolicyBucket) error {
 	dirPath := "knoxctl_out/recommended/policies"
 	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create directory: %v", err)
 	}
 
-	for ns := range bucket.Namespaces {
-		nsDirPath := filepath.Join(dirPath, ns)
-		if err := os.MkdirAll(nsDirPath, os.ModePerm); err != nil {
-			return fmt.Errorf("failed to create namespace directory '%s': %v", nsDirPath, err)
-		}
+	for _, ab := range pb.Namespaces {
+		policies := getAllPoliciesInBucket(ab)
 
-		allPolicies, err := bucket.RetrievePolicies(c, o)
-		if err != nil {
-			continue
-		}
+		for _, policy := range policies {
+			ns := policy.Metadata.Namespace
 
-		for _, policy := range allPolicies {
+			nsDirPath := filepath.Join(dirPath, ns)
+			if err := os.MkdirAll(nsDirPath, os.ModePerm); err != nil {
+				return fmt.Errorf("failed to create namespace directory '%s': %v", nsDirPath, err)
+			}
+
 			filename := fmt.Sprintf("%s-%s.yaml", ns, policy.Metadata.Name)
 			if err := writeKubearmorPolicyToFile(policy, nsDirPath, filename); err != nil {
 				continue

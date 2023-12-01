@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -40,17 +39,13 @@ func printYAML(pb *PolicyBucket) {
 	}
 }
 
-func printTable(pb *PolicyBucket, o *Options, c *k8s.Client) {
+func printTable(pb *PolicyBucket) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Name", "Namespace", "Labels", "Tags", "Severity", "Action", "TLDR"})
 	table.SetRowLine(true)
 
-	for ns := range pb.Namespaces {
-		policies, err := pb.RetrievePolicies(c, o)
-		if err != nil {
-			fmt.Printf("failed to retrieve policies: %v\n", err)
-			continue
-		}
+	for _, ab := range pb.Namespaces {
+		policies := getAllPoliciesInBucket(ab)
 
 		for _, policy := range policies {
 			name := strings.ReplaceAll(policy.Metadata.Name, "-", "-\n")
@@ -59,6 +54,7 @@ func printTable(pb *PolicyBucket, o *Options, c *k8s.Client) {
 			severity := fmt.Sprintf("%d", policy.Spec.Severity)
 			action := policy.Spec.Action
 			tldr := policy.Metadata.Annotations["app.accuknox.com/tldr"]
+			ns := policy.Metadata.Namespace
 
 			if tldr == "" {
 				tldr = "N/A"
