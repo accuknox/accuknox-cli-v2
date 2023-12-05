@@ -21,6 +21,7 @@ var versionCmd = &cobra.Command{
 		}
 		return nil
 	},
+	Hidden: true,
 }
 
 func init() {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"k8s.io/klog/v2"
 )
 
 func StartTUI(workload *Workload) {
@@ -95,7 +96,7 @@ func StartTUI(workload *Workload) {
 		}()
 
 		namespaceTree.GetRoot().ClearChildren()
-
+		klog.Infof("Selected cluster: %s", workload.Clusters[mainText])
 		populateNamespaceTree(namespaceTree, workload.Clusters[mainText], mainText, detailsView, eventDetailsView)
 		app.SetFocus(namespaceTree)
 	})
@@ -147,12 +148,12 @@ func StartTUI(workload *Workload) {
 }
 
 func populateNamespaceTree(treeView *tview.TreeView, cluster *Cluster, clusterName string, detailsView, eventDetailsView *tview.TextView) {
-	sortedNamespaceNames := sortNamespacesByEvents(cluster)
+	// sortedNamespaceNames := sortNamespacesByEvents(cluster)
 
 	root := tview.NewTreeNode(clusterName).SetSelectable(false).SetColor(tcell.ColorGreen)
 	treeView.SetRoot(root)
 
-	for _, nsName := range sortedNamespaceNames {
+	for nsName := range cluster.Namespaces {
 		ns := cluster.Namespaces[nsName]
 		nsNode := tview.NewTreeNode(nsName).SetSelectable(false).SetColor(tcell.ColorYellow)
 		root.AddChild(nsNode)

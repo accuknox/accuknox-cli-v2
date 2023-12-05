@@ -21,6 +21,7 @@ var selfUpdateCmd = &cobra.Command{
 		}
 		return nil
 	},
+	Hidden: true,
 }
 
 func init() {

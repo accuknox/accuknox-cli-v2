@@ -20,6 +20,10 @@ var installCmd = &cobra.Command{
 	Short: "Install Kubearmor, Discovery Engine and License",
 	Long:  `Discover applicable policies`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Replace this message once install is in place
+		fmt.Println("We are still working on install command.")
+		return nil
+
 		// Installing Kubearmor
 		if err := installOptions.Env.CheckAndSetValidEnvironmentOption(cmd.Flag("env").Value.String()); err != nil {
 			return fmt.Errorf("error in checking environment option: %v", err)
