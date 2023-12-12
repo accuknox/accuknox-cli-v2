@@ -193,7 +193,7 @@ func initializeProgressBar(totalCount int) *progressbar.ProgressBar {
 		progressbar.OptionClearOnFinish(),
 		progressbar.OptionSetElapsedTime(true),
 		progressbar.OptionShowCount(),
-		progressbar.OptionShowBytes(true),
+		progressbar.OptionShowBytes(false),
 		progressbar.OptionShowIts(),
 	)
 	return bar

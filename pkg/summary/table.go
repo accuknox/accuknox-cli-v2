@@ -3,11 +3,9 @@ package summary
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/accuknox/dev2/api/grpc/v2/summary"
 	"github.com/olekukonko/tablewriter"
-	"github.com/schollz/progressbar/v3"
 )
 
 func displayWorkloadInTable(workload *Workload) {
@@ -19,14 +17,71 @@ func displayWorkloadInTable(workload *Workload) {
 
 func displayClusterInTable(cluster *Cluster) {
 	for nsName, namespace := range cluster.Namespaces {
-		for wtName, workloadType := range namespace.WorkloadTypes {
-			displayEvents("File Events", tablewriter.NewWriter(os.Stdout), nsName, wtName, workloadType.Events.File)
-			displayEvents("Process Events", tablewriter.NewWriter(os.Stdout), nsName, wtName, workloadType.Events.Process)
-			displayEvents("Ingress Events", tablewriter.NewWriter(os.Stdout), nsName, wtName, workloadType.Events.Ingress)
-			displayEvents("Egress Events", tablewriter.NewWriter(os.Stdout), nsName, wtName, workloadType.Events.Egress)
-			displayEvents("Bind Events", tablewriter.NewWriter(os.Stdout), nsName, wtName, workloadType.Events.Bind)
+		for deploymentName, workloadEvents := range namespace.Deployments {
+			displayWorkloadEvents("File Events", tablewriter.NewWriter(os.Stdout), nsName, deploymentName, workloadEvents, "File")
+			displayWorkloadEvents("Process Events", tablewriter.NewWriter(os.Stdout), nsName, deploymentName, workloadEvents, "Process")
+			displayWorkloadEvents("Ingress Events", tablewriter.NewWriter(os.Stdout), nsName, deploymentName, workloadEvents, "Ingress")
+			displayWorkloadEvents("Egress Events", tablewriter.NewWriter(os.Stdout), nsName, deploymentName, workloadEvents, "Egress")
+			displayWorkloadEvents("Bind Events", tablewriter.NewWriter(os.Stdout), nsName, deploymentName, workloadEvents, "Bind")
+		}
+
+		for replicaSetName, workloadEvents := range namespace.ReplicaSets {
+			displayWorkloadEvents("File Events", tablewriter.NewWriter(os.Stdout), nsName, replicaSetName, workloadEvents, "File")
+			displayWorkloadEvents("Process Events", tablewriter.NewWriter(os.Stdout), nsName, replicaSetName, workloadEvents, "Process")
+			displayWorkloadEvents("Ingress Events", tablewriter.NewWriter(os.Stdout), nsName, replicaSetName, workloadEvents, "Ingress")
+			displayWorkloadEvents("Egress Events", tablewriter.NewWriter(os.Stdout), nsName, replicaSetName, workloadEvents, "Egress")
+			displayWorkloadEvents("Bind Events", tablewriter.NewWriter(os.Stdout), nsName, replicaSetName, workloadEvents, "Bind")
+		}
+
+		for statefulSetName, workloadEvents := range namespace.StatefulSets {
+			displayWorkloadEvents("File Events", tablewriter.NewWriter(os.Stdout), nsName, statefulSetName, workloadEvents, "File")
+			displayWorkloadEvents("Process Events", tablewriter.NewWriter(os.Stdout), nsName, statefulSetName, workloadEvents, "Process")
+			displayWorkloadEvents("Ingress Events", tablewriter.NewWriter(os.Stdout), nsName, statefulSetName, workloadEvents, "Ingress")
+			displayWorkloadEvents("Egress Events", tablewriter.NewWriter(os.Stdout), nsName, statefulSetName, workloadEvents, "Egress")
+			displayWorkloadEvents("Bind Events", tablewriter.NewWriter(os.Stdout), nsName, statefulSetName, workloadEvents, "Bind")
+		}
+
+		for daemonSetName, workloadEvents := range namespace.DaemonSets {
+			displayWorkloadEvents("File Events", tablewriter.NewWriter(os.Stdout), nsName, daemonSetName, workloadEvents, "File")
+			displayWorkloadEvents("Process Events", tablewriter.NewWriter(os.Stdout), nsName, daemonSetName, workloadEvents, "Process")
+			displayWorkloadEvents("Ingress Events", tablewriter.NewWriter(os.Stdout), nsName, daemonSetName, workloadEvents, "Ingress")
+			displayWorkloadEvents("Egress Events", tablewriter.NewWriter(os.Stdout), nsName, daemonSetName, workloadEvents, "Egress")
+			displayWorkloadEvents("Bind Events", tablewriter.NewWriter(os.Stdout), nsName, daemonSetName, workloadEvents, "Bind")
+		}
+
+		for jobName, workloadEvents := range namespace.Jobs {
+			displayWorkloadEvents("File Events", tablewriter.NewWriter(os.Stdout), nsName, jobName, workloadEvents, "File")
+			displayWorkloadEvents("Process Events", tablewriter.NewWriter(os.Stdout), nsName, jobName, workloadEvents, "Process")
+			displayWorkloadEvents("Ingress Events", tablewriter.NewWriter(os.Stdout), nsName, jobName, workloadEvents, "Ingress")
+			displayWorkloadEvents("Egress Events", tablewriter.NewWriter(os.Stdout), nsName, jobName, workloadEvents, "Egress")
+			displayWorkloadEvents("Bind Events", tablewriter.NewWriter(os.Stdout), nsName, jobName, workloadEvents, "Bind")
+		}
+
+		for cronJobName, workloadEvents := range namespace.CronJobs {
+			displayWorkloadEvents("File Events", tablewriter.NewWriter(os.Stdout), nsName, cronJobName, workloadEvents, "File")
+			displayWorkloadEvents("Process Events", tablewriter.NewWriter(os.Stdout), nsName, cronJobName, workloadEvents, "Process")
+			displayWorkloadEvents("Ingress Events", tablewriter.NewWriter(os.Stdout), nsName, cronJobName, workloadEvents, "Ingress")
+			displayWorkloadEvents("Egress Events", tablewriter.NewWriter(os.Stdout), nsName, cronJobName, workloadEvents, "Egress")
+			displayWorkloadEvents("Bind Events", tablewriter.NewWriter(os.Stdout), nsName, cronJobName, workloadEvents, "Bind")
 		}
 	}
+}
+
+func displayWorkloadEvents(eventType string, writer *tablewriter.Table, nsName, workloadName string, workloadEvents *WorkloadEvents, eventTypeKey string) {
+	var events interface{}
+	switch eventTypeKey {
+	case "File":
+		events = workloadEvents.Events.File
+	case "Process":
+		events = workloadEvents.Events.Process
+	case "Ingress":
+		events = workloadEvents.Events.Ingress
+	case "Egress":
+		events = workloadEvents.Events.Egress
+	case "Bind":
+		events = workloadEvents.Events.Bind
+	}
+	displayEvents(eventType, writer, nsName, workloadName, events)
 }
 
 func displayEvents(title string, table *tablewriter.Table, nsName string, wtName string, events interface{}) {
@@ -74,7 +129,7 @@ func displayEvents(title string, table *tablewriter.Table, nsName string, wtName
 	fmt.Println()
 }
 
-func writeTableToFile(workload *Workload) error {
+/* func writeTableToFile(workload *Workload) error {
 	fmt.Println()
 
 	outDir := "knoxctl_out/summary/table"
@@ -166,7 +221,7 @@ func writeEventsToFile(title string, table *tablewriter.Table, file *os.File, ns
 	}
 	table.Render()
 	fmt.Fprintln(file)
-}
+} */
 
 func getEventCount(events interface{}) int {
 	switch e := events.(type) {
@@ -179,7 +234,7 @@ func getEventCount(events interface{}) int {
 	}
 }
 
-func calculateTotalProgressSteps(workload *Workload) int {
+/* func calculateTotalProgressSteps(workload *Workload) int {
 	total := 0
 	for _, cluster := range workload.Clusters {
 		for _, namespace := range cluster.Namespaces {
@@ -209,3 +264,4 @@ func getEventGroupCount(workloadType *WorkloadType) int {
 
 	return count
 }
+*/

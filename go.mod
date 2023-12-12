@@ -18,8 +18,8 @@ replace (
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/accuknox/dev2/api v0.0.0-20231026051927-56fe5412ae0d
-	github.com/accuknox/dev2/common v0.0.0-20240205101104-f36577e6a07f
+	github.com/accuknox/dev2/api v0.0.0-20231215052246-76a26e09a929
+	github.com/accuknox/dev2/common v0.0.0-20240207045330-8d679ba13dc1
 	github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d
 	github.com/accuknox/dev2/hardening v0.0.0-20231026051927-56fe5412ae0d
 	github.com/clarketm/json v1.17.1

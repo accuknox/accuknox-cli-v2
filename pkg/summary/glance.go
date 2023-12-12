@@ -67,19 +67,35 @@ func getSummaryStats(workload *Workload) (int, int, int, HighestEvents) {
 		namespaceCount += len(cluster.Namespaces)
 		for nsName, namespace := range cluster.Namespaces {
 			nsTotalEvents := 0
-			for wtName, workloadType := range namespace.WorkloadTypes {
+
+			for _, workloadEvents := range namespace.Deployments {
+				updateNamespaceStats(&highest, nsName, "Deployments", workloadEvents, &nsTotalEvents)
 				workloadTypeCount++
-				fileEvents := len(workloadType.Events.File)
-				processEvents := len(workloadType.Events.Process)
-				ingressEvents := len(workloadType.Events.Ingress)
-				egressEvents := len(workloadType.Events.Egress)
-				bindEvents := len(workloadType.Events.Bind)
-				wtTotalEvents := fileEvents + processEvents + ingressEvents + egressEvents + bindEvents
+			}
 
-				updateHighestEvents(&highest, nsName, wtName,
-					fileEvents, processEvents, ingressEvents, egressEvents, bindEvents, wtTotalEvents)
+			for _, workloadEvents := range namespace.ReplicaSets {
+				updateNamespaceStats(&highest, nsName, "ReplicaSets", workloadEvents, &nsTotalEvents)
+				workloadTypeCount++
+			}
 
-				nsTotalEvents += wtTotalEvents
+			for _, workloadEvents := range namespace.StatefulSets {
+				updateNamespaceStats(&highest, nsName, "StatefulSets", workloadEvents, &nsTotalEvents)
+				workloadTypeCount++
+			}
+
+			for _, workloadEvents := range namespace.DaemonSets {
+				updateNamespaceStats(&highest, nsName, "DaemonSets", workloadEvents, &nsTotalEvents)
+				workloadTypeCount++
+			}
+
+			for _, workloadEvents := range namespace.Jobs {
+				updateNamespaceStats(&highest, nsName, "Jobs", workloadEvents, &nsTotalEvents)
+				workloadTypeCount++
+			}
+
+			for _, workloadEvents := range namespace.CronJobs {
+				updateNamespaceStats(&highest, nsName, "CronJobs", workloadEvents, &nsTotalEvents)
+				workloadTypeCount++
 			}
 
 			if nsTotalEvents > highest.Namespace.Count {
@@ -91,27 +107,13 @@ func getSummaryStats(workload *Workload) (int, int, int, HighestEvents) {
 	return namespaceCount, workloadTypeCount, totalEvents, highest
 }
 
-func updateHighestEvents(highest *HighestEvents, nsName, wtName string,
-	fileEvents, processEvents, ingressEvents, egressEvents, bindEvents, wtTotalEvents int) {
+func updateNamespaceStats(highest *HighestEvents, nsName, wtName string, workloadEvents *WorkloadEvents, nsTotalEvents *int) {
+	fileEvents := len(workloadEvents.Events.File)
+	processEvents := len(workloadEvents.Events.Process)
+	ingressEvents := len(workloadEvents.Events.Ingress)
+	egressEvents := len(workloadEvents.Events.Egress)
+	bindEvents := len(workloadEvents.Events.Bind)
+	wtTotalEvents := fileEvents + processEvents + ingressEvents + egressEvents + bindEvents
 
-	if wtTotalEvents > highest.WorkloadType.Count {
-		highest.WorkloadType = Highest{
-			Name:  fmt.Sprintf("%s (%s)", wtName, nsName),
-			Count: wtTotalEvents,
-		}
-	}
-
-	updateHighestCountWithName(&highest.File, fileEvents, wtName, nsName)
-	updateHighestCountWithName(&highest.Process, processEvents, wtName, nsName)
-	updateHighestCountWithName(&highest.Ingress, ingressEvents, wtName, nsName)
-	updateHighestCountWithName(&highest.Egress, egressEvents, wtName, nsName)
-	updateHighestCountWithName(&highest.Bind, bindEvents, wtName, nsName)
-}
-
-func updateHighestCountWithName(h *HighestCountWithName, newCount int, wtName, nsName string) {
-	if newCount > h.Count {
-		h.Count = newCount
-		h.Name = wtName
-		h.NSName = nsName
-	}
+	*nsTotalEvents += wtTotalEvents
 }

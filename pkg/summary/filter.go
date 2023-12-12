@@ -1,6 +1,10 @@
 package summary
 
-import "github.com/accuknox/dev2/api/grpc/v2/summary"
+import (
+	"regexp"
+
+	"github.com/accuknox/dev2/api/grpc/v2/summary"
+)
 
 // Needs fixing
 func filterOpts(workload *Workload, opts Options) *Workload {
@@ -12,29 +16,18 @@ func filterOpts(workload *Workload, opts Options) *Workload {
 
 	for clusterName, cluster := range workload.Clusters {
 		newCluster := &Cluster{
-			Cluster:    cluster.Cluster,
 			Namespaces: make(map[string]*Namespace),
 		}
 
 		for nsName, namespace := range cluster.Namespaces {
 			if !namespaceFilterProvided || matchesNamespace(nsName, opts) {
 				newNamespace := &Namespace{
-					Namespace:     namespace.Namespace,
-					WorkloadTypes: make(map[string]*WorkloadType),
-				}
-
-				for wtName, workloadType := range namespace.WorkloadTypes {
-					if len(opts.LabelsRegex) > 0 || len(opts.DestinationRegex) > 0 || len(opts.SourceRegex) > 0 {
-						newWorkloadType := &WorkloadType{
-							Events: &Events{
-								File:    filterEvents(workloadType.Events.File, workloadType, opts),
-								Process: filterEvents(workloadType.Events.Process, workloadType, opts),
-							},
-						}
-						newNamespace.WorkloadTypes[wtName] = newWorkloadType
-					} else {
-						newNamespace.WorkloadTypes[wtName] = workloadType
-					}
+					Deployments:  filterWorkloadEvents(namespace.Deployments, opts),
+					ReplicaSets:  filterWorkloadEvents(namespace.ReplicaSets, opts),
+					StatefulSets: filterWorkloadEvents(namespace.StatefulSets, opts),
+					DaemonSets:   filterWorkloadEvents(namespace.DaemonSets, opts),
+					Jobs:         filterWorkloadEvents(namespace.Jobs, opts),
+					CronJobs:     filterWorkloadEvents(namespace.CronJobs, opts),
 				}
 
 				newCluster.Namespaces[nsName] = newNamespace
@@ -49,64 +42,31 @@ func filterOpts(workload *Workload, opts Options) *Workload {
 	return filteredWorkload
 }
 
-func matchesNamespaceRegex(name string, opts Options) bool {
-	for _, regex := range opts.NamespaceRegex {
-		if regex.MatchString(name) {
-			return true
-		}
-	}
-	return false
-}
+func filterWorkloadEvents(workloadEventsMap map[string]*WorkloadEvents, opts Options) map[string]*WorkloadEvents {
+	filteredEventsMap := make(map[string]*WorkloadEvents)
 
-func matchesRegex(event *summary.ProcessFileEvent, workloadEvent *summary.WorkloadEvents, opts Options) bool {
-	if len(opts.DestinationRegex) > 0 {
-		for _, regex := range opts.DestinationRegex {
-			if regex.MatchString(event.Destination) {
-				return true
+	for wtName, workloadEvents := range workloadEventsMap {
+		if len(opts.LabelsRegex) > 0 || len(opts.DestinationRegex) > 0 || len(opts.SourceRegex) > 0 {
+			filteredEvents := &WorkloadEvents{
+				Events: &Events{
+					File:    filterEvents(workloadEvents.Events.File, opts),
+					Process: filterEvents(workloadEvents.Events.Process, opts),
+				},
 			}
+			filteredEventsMap[wtName] = filteredEvents
+		} else {
+			filteredEventsMap[wtName] = workloadEvents
 		}
 	}
 
-	if len(opts.SourceRegex) > 0 {
-		for _, regex := range opts.SourceRegex {
-			if regex.MatchString(event.Source) {
-				return true
-			}
-		}
-	}
-
-	return false
+	return filteredEventsMap
 }
 
-func matchRegexLabels(workloadEvents *summary.WorkloadEvents, opts Options) bool {
-	if len(opts.LabelsRegex) > 0 && workloadEvents != nil {
-		for _, regex := range opts.LabelsRegex {
-			if regex.MatchString(workloadEvents.Labels) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func stringInSlice(str string, list []string) bool {
-	for _, v := range list {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
-func filterEvents(events []*summary.ProcessFileEvent, wlType *WorkloadType, opts Options) []*summary.ProcessFileEvent {
+func filterEvents(events []*summary.ProcessFileEvent, opts Options) []*summary.ProcessFileEvent {
 	filteredEvents := []*summary.ProcessFileEvent{}
 
-	if !labelsMatch(wlType.WorkloadEvents, opts) {
-		return filteredEvents
-	}
-
 	for _, event := range events {
-		if matches(event, wlType.WorkloadEvents, opts) {
+		if matches(event, opts) {
 			filteredEvents = append(filteredEvents, event)
 		}
 	}
@@ -114,36 +74,45 @@ func filterEvents(events []*summary.ProcessFileEvent, wlType *WorkloadType, opts
 	return filteredEvents
 }
 
-func matches(event *summary.ProcessFileEvent, workloadEvent *summary.WorkloadEvents, opts Options) bool {
-	if matchesRegex(event, workloadEvent, opts) {
-		return true
+// Update matchesRegex, matchRegexLabels, labelsMatch, and matchesNamespace functions accordingly.
+func matchesRegex(patterns []*regexp.Regexp, text string) bool {
+	for _, regex := range patterns {
+		if regex.MatchString(text) {
+			return true
+		}
 	}
+	return false
+}
 
-	if len(opts.Destination) > 0 && stringInSlice(event.Destination, opts.Destination) {
+func matches(event *summary.ProcessFileEvent, opts Options) bool {
+	if len(opts.DestinationRegex) > 0 && matchesRegex(opts.DestinationRegex, event.Destination) {
 		return true
 	}
-	if len(opts.Source) > 0 && stringInSlice(event.Source, opts.Source) {
+	if len(opts.SourceRegex) > 0 && matchesRegex(opts.SourceRegex, event.Source) {
 		return true
 	}
-
 	return false
 }
 
 func labelsMatch(workloadEvents *summary.WorkloadEvents, opts Options) bool {
-	if matchRegexLabels(workloadEvents, opts) {
+	if len(opts.LabelsRegex) > 0 && matchesRegex(opts.LabelsRegex, workloadEvents.Labels) {
 		return true
 	}
-
-	if len(opts.Labels) > 0 && stringInSlice(workloadEvents.Labels, opts.Labels) {
-		return true
-	}
-
 	return false
 }
 
 func matchesNamespace(name string, opts Options) bool {
-	if stringInSlice(name, opts.Namespace) || matchesNamespaceRegex(name, opts) {
+	if stringInSlice(name, opts.Namespace) || matchesRegex(opts.NamespaceRegex, name) {
 		return true
+	}
+	return false
+}
+
+func stringInSlice(str string, slice []string) bool {
+	for _, item := range slice {
+		if item == str {
+			return true
+		}
 	}
 	return false
 }

@@ -678,10 +678,10 @@ github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277/go.mod h1:Y06giCyLHz+sBHmytse7Rj1d4gSX2JnetkQ9tikmFwo=
 github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277 h1:s+u6ka+QjkxBfsbPlPQsy0+9b5ntl/JjLC5gNNrdksk=
 github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277/go.mod h1:FSQvW8Rqxd9Xic0fbd1R0w+dzS2hOj5+L9NOu4aa+jc=
-github.com/accuknox/dev2/api v0.0.0-20231026051927-56fe5412ae0d h1:d/abhv84kTQU4VW5K+7qUwOdVYQ3vUKKhIaVwQZ5MWQ=
-github.com/accuknox/dev2/api v0.0.0-20231026051927-56fe5412ae0d/go.mod h1:4F+gGKkjbWpplrorOKY7gznLCH96yh9QblZaiZkBqSc=
-github.com/accuknox/dev2/common v0.0.0-20240205101104-f36577e6a07f h1:dvtAlWzsiG6S7KYkkj0AcevwZeHdkFbvWjZqhUMctU4=
-github.com/accuknox/dev2/common v0.0.0-20240205101104-f36577e6a07f/go.mod h1:tQu9JAfiJ6PTSeBhviOT4wAriuiK1dKjl7isEDLnyRQ=
+github.com/accuknox/dev2/api v0.0.0-20231215052246-76a26e09a929 h1:0RgyVUlxSnTcRm0/j/Cb4AycO6dgGiR+loON/SnW6zw=
+github.com/accuknox/dev2/api v0.0.0-20231215052246-76a26e09a929/go.mod h1:4F+gGKkjbWpplrorOKY7gznLCH96yh9QblZaiZkBqSc=
+github.com/accuknox/dev2/common v0.0.0-20240207045330-8d679ba13dc1 h1:rZpQu5XGni3g30cUlQdIKJ6/ULhpbdYRp+Et0VQEJrE=
+github.com/accuknox/dev2/common v0.0.0-20240207045330-8d679ba13dc1/go.mod h1:tQu9JAfiJ6PTSeBhviOT4wAriuiK1dKjl7isEDLnyRQ=
 github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d h1:bnJ/LH5A5zRzc8kWV0HWJn+sMP5iGwVV+mZCnS6MHjc=
 github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d/go.mod h1:sl8g6QsS/coyuWOHQfLLkNnQZUFOCj5HRfF+qttsf70=
 github.com/accuknox/dev2/hardening v0.0.0-20231026051927-56fe5412ae0d h1:nL0W2zOmPgU0J4BHMO/Na9HtpUr6jfhbtoHTHWA11IM=

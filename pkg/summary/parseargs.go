@@ -8,24 +8,34 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 )
 
-// Options Structure
+// Options Structure: consider pod name
 type Options struct {
-	GRPC         string   `flag:"gRPC"`
-	Labels       []string `flag:"labels"`
-	Namespace    []string `flag:"namespace"`
-	Source       []string `flag:"source"`
-	Destination  []string `flag:"destination"`
-	Operation    string   `flag:"operation"`
-	View         string   `flag:"view"`
-	Outdir       string   `flag:"outdir"`
-	Dump         bool     `flag:"dump"`
-	Glance       bool     `flag:"glance"`
-	RevDNSLookup bool     // I dont really know how we integrate this
+	GRPC                string   `flag:"gRPC"`
+	Operation           string   `flag:"operation"`
+	BaselineSummaryPath string   `flag:"baseline"`
+	View                string   `flag:"view"`
+	OutputTo            string   `flag:"out"`
+	Workloads           []string `flag:"workloads"`
+	Namespace           []string `flag:"namespaces"`
+	IgnorePath          []string `flag:"ignore-paths"`
+	Source              []string `flag:"source"`
+	Destination         []string `flag:"destination"`
+	Command             []string `flag:"command"`
+	Labels              []string `flag:"labels"`
+	IgnoreCommand       []string `flag:"ignore-command"`
+	Dump                bool     `flag:"dump"`
+	Glance              bool     `flag:"glance"`
+	Debug               bool     `flag:"debug"`
 
-	LabelsRegex      []*regexp.Regexp
-	NamespaceRegex   []*regexp.Regexp
-	SourceRegex      []*regexp.Regexp
-	DestinationRegex []*regexp.Regexp
+	NamespaceRegex    []*regexp.Regexp
+	ResourceTypeRegex []*regexp.Regexp
+	ResourceNameRegex []*regexp.Regexp
+	IgnorePathsRegex  []*regexp.Regexp
+	SourceRegex       []*regexp.Regexp
+	DestinationRegex  []*regexp.Regexp
+	LabelsRegex       []*regexp.Regexp
+	CommandRegex      []*regexp.Regexp
+	WorkloadsRegex    []*regexp.Regexp
 }
 
 func (o *Options) noFilters() bool {
@@ -43,61 +53,68 @@ func (o *Options) noFilters() bool {
 }
 
 func ProcessArgs(rawArgs string) (*Options, error) {
-	parsed := &Options{}
+	parsedOption := &Options{}
 	parser := common.NewParser()
 
-	flags, err := parser.FlagsToMap(rawArgs, parsed)
+	flags, err := parser.FlagsToMap(rawArgs, parsedOption)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 
-	for flag, value := range flags {
-		if flag != "gRPC" && !isRegexAllowed(flag) && strings.ContainsAny(value, common.SpecialRegexChars) {
+	for flag, values := range flags {
+		if flag != "gRPC" && !isRegexAllowed(flag) && strings.ContainsAny(values, common.SpecialRegexChars) {
 			allowedFlags := getRegexAllowedFlags()
 			return nil, fmt.Errorf("found special regex characters: `%s`, regex is not allowed for the flag: %s, currently allowed flags are: %s", common.SpecialRegexChars, flag, strings.Join(allowedFlags, ", "))
 		}
 
 		var regexList []*regexp.Regexp
-		switch {
-		case flag == "gRPC" || flag == "g":
-			parsed.GRPC, err = parser.ParseString(rawArgs, flag)
 
-		case flag == "operation" || flag == "o":
-			parsed.Operation, err = parser.ParseString(rawArgs, flag)
+		switch {
+		case flag == "gRPC":
+			parsedOption.GRPC, err = parser.ParseString(rawArgs, flag)
+
+		case flag == "operation":
+			parsedOption.Operation, err = parser.ParseString(rawArgs, flag)
+
+		case flag == "baseline":
+			parsedOption.BaselineSummaryPath, err = parser.ParseString(rawArgs, flag)
 
 		case flag == "view" || flag == "v":
-			parsed.View, err = parser.ParseString(rawArgs, flag)
+			parsedOption.View, err = parser.ParseString(rawArgs, flag)
 
-		case flag == "labels" || flag == "l":
-			parsed.Labels, regexList, err = parser.ParseRegexSlice(value, value)
-			parsed.LabelsRegex = regexList
+		case flag == "namespaces":
+			parsedOption.Namespace, regexList, err = parser.ParseRegexSlice(values, flag)
+			parsedOption.NamespaceRegex = regexList
 
-		case flag == "namespace" || flag == "n":
-			parsed.Namespace, regexList, err = parser.ParseRegexSlice(value, flag)
-			parsed.NamespaceRegex = regexList
+		case flag == "ignore-path":
+			parsedOption.IgnorePath, regexList, err = parser.ParseRegexSlice(values, flag)
+			parsedOption.IgnorePathsRegex = regexList
 
-		case flag == "source" || flag == "s":
-			parsed.Source, regexList, err = parser.ParseRegexSlice(value, flag)
-			parsed.SourceRegex = regexList
+		case flag == "source":
+			parsedOption.Source, regexList, err = parser.ParseRegexSlice(values, flag)
+			parsedOption.SourceRegex = regexList
 
-		case flag == "destination" || flag == "d":
-			parsed.Destination, regexList, err = parser.ParseRegexSlice(value, flag)
-			parsed.DestinationRegex = regexList
+		case flag == "destination":
+			parsedOption.Destination, regexList, err = parser.ParseRegexSlice(values, flag)
+			parsedOption.DestinationRegex = regexList
 
-		case flag == "outdir" || flag == "o":
-			parsed.Outdir, err = parser.ParseString(rawArgs, flag)
+		case flag == "ignore-command":
+			parsedOption.IgnoreCommand, regexList, err = parser.ParseRegexSlice(values, flag)
+			parsedOption.CommandRegex = regexList
 
-		case flag == "revdnslookup":
-			parsed.RevDNSLookup = true
+		case flag == "labels":
+			parsedOption.Labels, regexList, err = parser.ParseRegexSlice(values, flag)
+			parsedOption.LabelsRegex = regexList
+
+		case flag == "workload":
+			parsedOption.Workloads, regexList, err = parser.ParseRegexSlice(values, flag)
+			parsedOption.WorkloadsRegex = regexList
 
 		case flag == "dump":
-			parsed.Dump = true
-
-		case flag == "glance":
-			parsed.Glance = true
+			parsedOption.Dump = true
 
 		default:
-			return nil, wrapErr(fmt.Errorf("unknown flag: %s", flag))
+			return nil, wrapErr(fmt.Errorf("unknown flag: %v", flag))
 		}
 
 		if err != nil {
@@ -105,7 +122,7 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 		}
 	}
 
-	return parsed, nil
+	return parsedOption, nil
 }
 
 func wrapErr(err error) error {
@@ -128,5 +145,5 @@ func isRegexAllowed(flag string) bool {
 
 // Add shorthand and longhand notation for flags supporting regex
 func getRegexAllowedFlags() []string {
-	return []string{"namespace", "labels", "source", "n", "l", "s"}
+	return []string{"workload", "ignore-command", "baseline", "ignore-path", "namespace", "labels", "source", "n", "l", "s"}
 }

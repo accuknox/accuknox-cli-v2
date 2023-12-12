@@ -1,56 +1,71 @@
 package summary
 
 import (
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/accuknox/dev2/api/grpc/v2/summary"
 )
 
+// Workload aligns with the top-level data structure
 type Workload struct {
-	mu       sync.RWMutex
-	Clusters map[string]*Cluster
+	mu       sync.RWMutex        `json:"-"`
+	Clusters map[string]*Cluster `json:"clusters"`
+	Hash     string              `json:"-"`
 }
 
+// Cluster mirrors the protobuf Cluster structure
 type Cluster struct {
-	mu sync.RWMutex
-	*summary.Cluster
-	Namespaces map[string]*Namespace
+	mu               sync.RWMutex `json:"-"`
+	ClusterName      string       `json:"-"`
+	*summary.Cluster `json:"-"`
+	Namespaces       map[string]*Namespace `json:"namespaces"`
+	Hash             string                `json:"-"`
 }
 
+// Namespace reflects the protobuf Namespace structure
 type Namespace struct {
-	mu sync.RWMutex
-	*summary.Namespace
-	WorkloadTypes map[string]*WorkloadType
+	mu            sync.RWMutex               `json:"-"`
+	NamespaceName string                     `json:"-"`
+	Deployments   map[string]*WorkloadEvents `json:"deployments"`
+	ReplicaSets   map[string]*WorkloadEvents `json:"replicaSets"`
+	StatefulSets  map[string]*WorkloadEvents `json:"statefulSets"`
+	DaemonSets    map[string]*WorkloadEvents `json:"daemonSets"`
+	Jobs          map[string]*WorkloadEvents `json:"jobs"`
+	CronJobs      map[string]*WorkloadEvents `json:"cronJobs"`
+	Hash          string                     `json:"-"`
 }
 
-type WorkloadType struct {
-	Events *Events
-	Labels *Labels
-	*summary.WorkloadEvents
+// WorkloadEvents aligns with the protobuf WorkloadEvents
+type WorkloadEvents struct {
+	mu           sync.RWMutex `json:"-"`
+	WorkloadName string       `json:"-"`
+	Labels       string       `json:"labels"`
+	Events       *Events      `json:"events"`
+	Hash         string       `json:"-"`
 }
 
-type Labels struct {
-	mu     sync.RWMutex
-	Labels string
-}
-
+// Events reflects the event structure in the protobuf
 type Events struct {
-	mu      sync.RWMutex
-	File    []*summary.ProcessFileEvent
-	Process []*summary.ProcessFileEvent
-	Ingress []*summary.NetworkEvent
-	Egress  []*summary.NetworkEvent
-	Bind    []*summary.NetworkEvent
+	mu      sync.RWMutex                `json:"-"`
+	File    []*summary.ProcessFileEvent `json:"file"`
+	Process []*summary.ProcessFileEvent `json:"process"`
+	Ingress []*summary.NetworkEvent     `json:"ingress"`
+	Egress  []*summary.NetworkEvent     `json:"egress"`
+	Bind    []*summary.NetworkEvent     `json:"bind"`
+	Hash    string                      `json:"-"`
 }
 
+// All this code needs to get refactored, its very hacky.
 // Workload methods
 func (w *Workload) AddCluster(clusterName string, cluster *Cluster) *Cluster {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	if existingCluster, ok := w.Clusters[clusterName]; ok {
-		// Return existing cluster if it already exists
 		return existingCluster
 	}
 
@@ -69,6 +84,36 @@ func (w *Workload) GetCluster(clusterName string) *Cluster {
 		return cluster
 	}
 	return nil
+}
+
+func (w *Workload) GetAllClusters() []*Cluster {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
+	clusters := make([]*Cluster, 0, len(w.Clusters))
+	for _, cluster := range w.Clusters {
+		clusters = append(clusters, cluster)
+	}
+	return clusters
+}
+
+func (w *Workload) SetHash() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	hash, err := ComputeHash(w)
+	if err != nil {
+		return err
+	}
+	w.Hash = hash
+	return nil
+}
+
+func (w *Workload) GetHash() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	return w.Hash
 }
 
 // Cluster methods
@@ -97,50 +142,221 @@ func (c *Cluster) GetNamespace(namespaceName string) *Namespace {
 	return nil
 }
 
-// Namespace
-func (ns *Namespace) AddWorkloadType(workloadTypeName string, workloadType *WorkloadType) {
-	ns.mu.Lock()
-	defer ns.mu.Unlock()
+func (c *Cluster) GetAllNamespaces() []*Namespace {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	if ns.WorkloadTypes == nil {
-		ns.WorkloadTypes = make(map[string]*WorkloadType)
+	namespaces := make([]*Namespace, 0, len(c.Namespaces))
+	for _, ns := range c.Namespaces {
+		namespaces = append(namespaces, ns)
 	}
-	ns.WorkloadTypes[workloadTypeName] = workloadType
+	return namespaces
 }
 
-func (ns *Namespace) GetWorkloadType(workloadTypeName string) *WorkloadType {
-	ns.mu.RLock()
-	defer ns.mu.RUnlock()
+func (c *Cluster) SetHash() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	if wt, ok := ns.WorkloadTypes[workloadTypeName]; ok {
-		return wt
+	hash, err := ComputeHash(c)
+	if err != nil {
+		return err
 	}
+	c.Hash = hash
 	return nil
 }
 
-func (ns *Namespace) TotalEvents() int {
-	total := 0
-	for _, wt := range ns.WorkloadTypes {
-		total += len(wt.Events.File)
-		total += len(wt.Events.Process)
-		total += len(wt.Events.Ingress)
-		total += len(wt.Events.Egress)
-		total += len(wt.Events.Bind)
-	}
+func (c *Cluster) GetHash() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
+	return c.Hash
+}
+
+// Namespace methods adds
+func (ns *Namespace) AddDeploymentEvents(deploymentName string, deploymentEvents *WorkloadEvents) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	if ns.Deployments == nil {
+		ns.Deployments = make(map[string]*WorkloadEvents)
+	}
+	ns.Deployments[deploymentName] = deploymentEvents
+}
+
+func (ns *Namespace) AddReplicaSetEvents(replicaSetName string, replicaSetEvents *WorkloadEvents) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	if ns.ReplicaSets == nil {
+		ns.ReplicaSets = make(map[string]*WorkloadEvents)
+	}
+	ns.ReplicaSets[replicaSetName] = replicaSetEvents
+}
+
+func (ns *Namespace) AddStatefulSetEvents(statefulSetName string, statefulSetEvents *WorkloadEvents) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	if ns.StatefulSets == nil {
+		ns.StatefulSets = make(map[string]*WorkloadEvents)
+	}
+	ns.StatefulSets[statefulSetName] = statefulSetEvents
+}
+
+func (ns *Namespace) AddDaemonSetEvents(daemonSetName string, daemonSetEvents *WorkloadEvents) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	if ns.DaemonSets == nil {
+		ns.DaemonSets = make(map[string]*WorkloadEvents)
+	}
+	ns.DaemonSets[daemonSetName] = daemonSetEvents
+}
+
+func (ns *Namespace) AddJobEvents(jobName string, jobEvents *WorkloadEvents) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	if ns.Jobs == nil {
+		ns.Jobs = make(map[string]*WorkloadEvents)
+	}
+	ns.Jobs[jobName] = jobEvents
+}
+
+func (ns *Namespace) AddCronJobEvents(cronJobName string, cronJobEvents *WorkloadEvents) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	if ns.CronJobs == nil {
+		ns.CronJobs = make(map[string]*WorkloadEvents)
+	}
+	ns.CronJobs[cronJobName] = cronJobEvents
+}
+
+func (ns *Namespace) SetHash() error {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	hash, err := ComputeHash(ns)
+	if err != nil {
+		return err
+	}
+	ns.Hash = hash
+	return nil
+}
+
+// Gets
+func (ns *Namespace) GetDeploymentEvents(deploymentName string) *WorkloadEvents {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	return ns.Deployments[deploymentName]
+}
+
+func (ns *Namespace) GetReplicaSetEvents(replicaSetName string) *WorkloadEvents {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	return ns.ReplicaSets[replicaSetName]
+}
+
+func (ns *Namespace) GetStatefulSetEvents(statefulSetName string) *WorkloadEvents {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	return ns.StatefulSets[statefulSetName]
+}
+
+func (ns *Namespace) GetDaemonSetEvents(daemonSetName string) *WorkloadEvents {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	return ns.DaemonSets[daemonSetName]
+}
+
+func (ns *Namespace) GetJobEvents(jobName string) *WorkloadEvents {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	return ns.Jobs[jobName]
+}
+
+func (ns *Namespace) GetCronJobEvents(cronJobName string) *WorkloadEvents {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	return ns.CronJobs[cronJobName]
+}
+
+func (ns *Namespace) GetHash() string {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	return ns.Hash
+}
+
+// WorkloadEvents methods
+func (we *WorkloadEvents) SetHash() error {
+	we.mu.Lock()
+	defer we.mu.Unlock()
+
+	hash, err := ComputeHash(we)
+	if err != nil {
+		return err
+	}
+	we.Hash = hash
+	return nil
+}
+
+func (we *WorkloadEvents) GetHash() string {
+	we.mu.Lock()
+	defer we.mu.Unlock()
+
+	return we.Hash
+}
+
+func (ns *Namespace) TotalEvents() int {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	total := 0
+	for _, we := range ns.Deployments {
+		total += we.Events.TotalEvents()
+	}
+	for _, we := range ns.ReplicaSets {
+		total += we.Events.TotalEvents()
+	}
+	for _, we := range ns.StatefulSets {
+		total += we.Events.TotalEvents()
+	}
+	for _, we := range ns.DaemonSets {
+		total += we.Events.TotalEvents()
+	}
+	for _, we := range ns.Jobs {
+		total += we.Events.TotalEvents()
+	}
+	for _, we := range ns.CronJobs {
+		total += we.Events.TotalEvents()
+	}
 	return total
 }
 
-// WorkloadType
-func (wt *WorkloadType) SetEvents(events *Events) {
-	wt.Events = events
+// WorkloadEvents methods
+func (we *WorkloadEvents) SetEvents(events *Events) {
+	we.mu.Lock()
+	defer we.mu.Unlock()
+
+	we.Events = events
 }
 
-func (wt *WorkloadType) GetEvents() *Events {
-	return wt.Events
+func (we *WorkloadEvents) GetEvents() *Events {
+	we.mu.RLock()
+	defer we.mu.RUnlock()
+
+	return we.Events
 }
 
-// Events
+// Events methods
 func (e *Events) AddFileEvent(fe *summary.ProcessFileEvent) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -176,6 +392,25 @@ func (e *Events) AddBindEvent(be *summary.NetworkEvent) {
 	e.Bind = append(e.Bind, be)
 }
 
+func (e *Events) SetHash() error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	hash, err := ComputeHash(e)
+	if err != nil {
+		return err
+	}
+	e.Hash = hash
+	return nil
+}
+
+func (e *Events) GetHash() string {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	return e.Hash
+}
+
 func (e *Events) TotalEvents() int {
 	total := 0
 	total += len(e.File)
@@ -201,4 +436,14 @@ func sortNamespacesByEvents(cluster *Cluster) []string {
 	})
 
 	return namespaceNames
+}
+
+func ComputeHash(v interface{}) (string, error) {
+	jsonBytes, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+
+	hash := sha256.Sum256(jsonBytes)
+	return fmt.Sprintf("%x", hash), nil
 }

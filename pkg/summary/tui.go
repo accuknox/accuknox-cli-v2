@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/accuknox/dev2/api/grpc/v2/summary"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -75,9 +76,9 @@ func StartTUI(workload *Workload) {
 	selectedFunc := func(node *tview.TreeNode) {
 		reference := node.GetReference()
 		if reference != nil {
-			if wt, ok := reference.(*WorkloadType); ok {
+			if events, ok := reference.(*WorkloadEvents); ok {
 				workloadTypeName := node.GetText()
-				populateDetailsList(workloadTypeName, wt, detailsList, eventDetailsView)
+				populateDetailsList(workloadTypeName, events, detailsList, eventDetailsView)
 			}
 		}
 		children := node.GetChildren()
@@ -136,8 +137,8 @@ func StartTUI(workload *Workload) {
 	})
 
 	namespaceTree.SetChangedFunc(func(node *tview.TreeNode) {
-		if wt, ok := node.GetReference().(*WorkloadType); ok {
-			populateDetailsList(node.GetText(), wt, detailsList, eventDetailsView)
+		if events, ok := node.GetReference().(*WorkloadEvents); ok {
+			populateDetailsList(node.GetText(), events, detailsList, eventDetailsView)
 		}
 	})
 
@@ -146,60 +147,113 @@ func StartTUI(workload *Workload) {
 	}
 }
 
+// var DebugLog []string = []string{}
+//
+// func AddDebugLog(message string) {
+// 	DebugLog = append(DebugLog, message)
+// }
+//
+// func PrintDebugLog() {
+// 	fmt.Println("called")
+// 	fmt.Println(len(DebugLog))
+// 	for _, content := range DebugLog {
+// 		fmt.Printf("TUI LOG: %s\n", content)
+// 	}
+// }
+
 func populateNamespaceTree(treeView *tview.TreeView, cluster *Cluster, clusterName string, detailsView, eventDetailsView *tview.TextView) {
 	sortedNamespaceNames := sortNamespacesByEvents(cluster)
+
+	// namespaceNames := make([]string, 0, len(cluster.Namespaces))
+	// for nsName := range cluster.Namespaces {
+	// 	namespaceNames = append(namespaceNames, nsName)
+	// }
 
 	root := tview.NewTreeNode(clusterName).SetSelectable(false).SetColor(tcell.ColorGreen)
 	treeView.SetRoot(root)
 
 	for _, nsName := range sortedNamespaceNames {
 		ns := cluster.Namespaces[nsName]
-		nsNode := tview.NewTreeNode(nsName).SetSelectable(false).SetColor(tcell.ColorYellow)
+		nsNode := tview.NewTreeNode(nsName).SetSelectable(true).SetColor(tcell.ColorYellow)
 		root.AddChild(nsNode)
 
-		for wtName, wt := range ns.WorkloadTypes {
-			if wt.GetEvents().TotalEvents() > 0 { // only add a child if there are events
-				wtNode := tview.NewTreeNode(wtName).SetSelectable(true).SetReference(wt)
-				nsNode.AddChild(wtNode)
-			}
+		for depName, depEvents := range ns.Deployments {
+			eventNode := tview.NewTreeNode(fmt.Sprintf("Deployment: %s", depName)).SetSelectable(true).SetReference(depEvents)
+			nsNode.AddChild(eventNode)
+		}
+
+		for rsName, rsEvents := range ns.ReplicaSets {
+			eventNode := tview.NewTreeNode(fmt.Sprintf("ReplicaSet: %s", rsName)).SetSelectable(true).SetReference(rsEvents)
+			nsNode.AddChild(eventNode)
+		}
+
+		for ssName, ssEvents := range ns.StatefulSets {
+			eventNode := tview.NewTreeNode(fmt.Sprintf("StatefulSet: %s", ssName)).SetSelectable(true).SetReference(ssEvents)
+			nsNode.AddChild(eventNode)
+		}
+
+		for dsName, dsEvents := range ns.DaemonSets {
+			eventNode := tview.NewTreeNode(fmt.Sprintf("DaemonSet: %s", dsName)).SetSelectable(true).SetReference(dsEvents)
+			nsNode.AddChild(eventNode)
+		}
+
+		for jobName, jobEvents := range ns.Jobs {
+			eventNode := tview.NewTreeNode(fmt.Sprintf("Job: %s", jobName)).SetSelectable(true).SetReference(jobEvents)
+			nsNode.AddChild(eventNode)
+		}
+
+		for cjName, cjEvents := range ns.CronJobs {
+			eventNode := tview.NewTreeNode(fmt.Sprintf("CronJob: %s", cjName)).SetSelectable(true).SetReference(cjEvents)
+			nsNode.AddChild(eventNode)
 		}
 	}
 
 	treeView.SetSelectedFunc(func(node *tview.TreeNode) {
-		if wt, ok := node.GetReference().(*WorkloadType); ok {
+		if events, ok := node.GetReference().(*WorkloadEvents); ok {
 			workloadTypeName := node.GetText()
-			displayWorkloadTypeDetails(workloadTypeName, wt, detailsView, eventDetailsView)
+			displayWorkloadTypeDetails(workloadTypeName, events, detailsView, eventDetailsView)
 		}
 	})
 }
 
-func displayWorkloadTypeDetails(workloadTypeName string, wt *WorkloadType, detailsView, eventDetailsView *tview.TextView) {
-	summary := createEventSummary(wt.Events)
+func displayWorkloadTypeDetails(workloadTypeName string, events *WorkloadEvents, detailsView, eventDetailsView *tview.TextView) {
+	summary := createSummary(events)
 	detailsView.SetText(fmt.Sprintf("Details for %s:\n%s", workloadTypeName, summary))
 	detailsView.ScrollToBeginning()
 
 	detailsView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyUp, tcell.KeyDown:
-			summary := createEventSummary(wt.Events)
+			summary := createSummary(events)
 			detailsView.SetText(fmt.Sprintf("Event summary for %s:\n%s", workloadTypeName, summary))
 			detailsView.ScrollToBeginning()
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'i':
-				displayEventDetails("Ingress", wt.Events.Ingress, eventDetailsView)
+				displayEventDetails("Ingress", events.Events.Ingress, eventDetailsView)
 			case 'p':
-				displayEventDetails("Process", wt.Events.Process, eventDetailsView)
+				displayEventDetails("Process", events.Events.Process, eventDetailsView)
 			case 'e':
-				displayEventDetails("Egress", wt.Events.Egress, eventDetailsView)
+				displayEventDetails("Egress", events.Events.Egress, eventDetailsView)
 			case 'b':
-				displayEventDetails("Bind", wt.Events.Bind, eventDetailsView)
+				displayEventDetails("Bind", events.Events.Bind, eventDetailsView)
 			case 'f':
-				displayEventDetails("File", wt.Events.File, eventDetailsView)
+				displayEventDetails("File", events.Events.File, eventDetailsView)
 			}
 		}
 		return event
 	})
+}
+
+func createSummary(events *WorkloadEvents) string {
+	var summary strings.Builder
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "File Events", len(events.Events.File)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Process Events", len(events.Events.Process)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Ingress Events", len(events.Events.Ingress)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Egress Events", len(events.Events.Egress)))
+	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Bind Events", len(events.Events.Bind)))
+
+	return summary.String()
 }
 
 func displayEventDetails(eventType string, events interface{}, eventDetailsView *tview.TextView) {
@@ -207,17 +261,6 @@ func displayEventDetails(eventType string, events interface{}, eventDetailsView 
 	eventDetailsView.Clear()
 	eventDetailsView.SetText(fmt.Sprintf("%s Events:\n%s", eventType, eventDetails))
 	eventDetailsView.ScrollToBeginning()
-}
-
-func createEventSummary(events *Events) string {
-	var summary strings.Builder
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "File Events", len(events.File)))
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Process Events", len(events.Process)))
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Ingress Events", len(events.Ingress)))
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Egress Events", len(events.Egress)))
-	summary.WriteString(fmt.Sprintf("%-20s: %d\n", "Bind Events", len(events.Bind)))
-
-	return summary.String()
 }
 
 func formatEventDetails(eventData interface{}) string {
@@ -228,40 +271,48 @@ func formatEventDetails(eventData interface{}) string {
 	return string(eventJSON)
 }
 
-func populateDetailsList(workloadTypeName string, wt *WorkloadType, detailsList *tview.List, eventDetailsView *tview.TextView) {
+func populateDetailsList(workloadTypeName string, events *WorkloadEvents, detailsList *tview.List, eventDetailsView *tview.TextView) {
 	detailsList.Clear()
 
-	detailsList.AddItem(fmt.Sprintf("File Events (f) - %d", len(wt.Events.File)), "", 0, func() {
-		displayEventDetails("File", wt.Events.File, eventDetailsView)
-	})
-	detailsList.AddItem(fmt.Sprintf("Process Events (p) - %d", len(wt.Events.Process)), "", 0, func() {
-		displayEventDetails("Process", wt.Events.Process, eventDetailsView)
-	})
-	detailsList.AddItem(fmt.Sprintf("Ingress Events (i) - %d", len(wt.Events.Ingress)), "", 0, func() {
-		displayEventDetails("Ingress", wt.Events.Ingress, eventDetailsView)
-	})
-	detailsList.AddItem(fmt.Sprintf("Egress Events (e) - %d", len(wt.Events.Egress)), "", 0, func() {
-		displayEventDetails("Egress", wt.Events.Egress, eventDetailsView)
-	})
-	detailsList.AddItem(fmt.Sprintf("Bind Events (b) - %d", len(wt.Events.Bind)), "", 0, func() {
-		displayEventDetails("Bind", wt.Events.Bind, eventDetailsView)
-	})
+	addEventDetailsItem(detailsList, "File", events.Events.File, eventDetailsView)
+	addEventDetailsItem(detailsList, "Process", events.Events.Process, eventDetailsView)
+	addEventDetailsItem(detailsList, "Ingress", events.Events.Ingress, eventDetailsView)
+	addEventDetailsItem(detailsList, "Egress", events.Events.Egress, eventDetailsView)
+	addEventDetailsItem(detailsList, "Bind", events.Events.Bind, eventDetailsView)
 
 	detailsList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
-		displayEventDetailsFromList(mainText, wt, eventDetailsView)
+		displayEventDetailsFromList(mainText, events, eventDetailsView)
 	})
 }
 
-func displayEventDetailsFromList(itemLabel string, wt *WorkloadType, eventDetailsView *tview.TextView) {
+func addEventDetailsItem(list *tview.List, eventType string, eventList interface{}, eventDetailsView *tview.TextView) {
+	count := getEventCountTUI(eventList)
+	list.AddItem(fmt.Sprintf("%s Events (%c) - %d", eventType, eventType[0], count), "", 0, func() {
+		displayEventDetails(eventType, eventList, eventDetailsView)
+	})
+}
+
+func getEventCountTUI(eventList interface{}) int {
+	switch v := eventList.(type) {
+	case []*summary.ProcessFileEvent:
+		return len(v)
+	case []*summary.NetworkEvent:
+		return len(v)
+	default:
+		return 0
+	}
+}
+
+func displayEventDetailsFromList(itemLabel string, events *WorkloadEvents, eventDetailsView *tview.TextView) {
 	if strings.Contains(itemLabel, "File Events") {
-		displayEventDetails("File", wt.Events.File, eventDetailsView)
+		displayEventDetails("File", events.Events.File, eventDetailsView)
 	} else if strings.Contains(itemLabel, "Process Events") {
-		displayEventDetails("Process", wt.Events.Process, eventDetailsView)
+		displayEventDetails("Process", events.Events.Process, eventDetailsView)
 	} else if strings.Contains(itemLabel, "Ingress Events") {
-		displayEventDetails("Ingress", wt.Events.Ingress, eventDetailsView)
+		displayEventDetails("Ingress", events.Events.Ingress, eventDetailsView)
 	} else if strings.Contains(itemLabel, "Egress Events") {
-		displayEventDetails("Egress", wt.Events.Egress, eventDetailsView)
+		displayEventDetails("Egress", events.Events.Egress, eventDetailsView)
 	} else if strings.Contains(itemLabel, "Bind Events") {
-		displayEventDetails("Bind", wt.Events.Bind, eventDetailsView)
+		displayEventDetails("Bind", events.Events.Bind, eventDetailsView)
 	}
 }

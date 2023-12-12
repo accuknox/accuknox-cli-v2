@@ -94,6 +94,7 @@ func Summary(c *k8s.Client, o Options) error {
 	}
 
 	if workload != nil {
+		// PrintDebugLog()
 		switch {
 		case o.View == "table":
 			displayWorkloadInTable(workload)
@@ -106,11 +107,11 @@ func Summary(c *k8s.Client, o Options) error {
 			fmt.Println(string(jsonData))
 
 		case o.Dump:
-			err := writeTableToFile(workload)
-			if err != nil {
-				fmt.Println("Failed to write table to file: ", err)
-				return err
-			}
+			// err := writeTableToFile(workload)
+			// if err != nil {
+			// 	fmt.Println("Failed to write table to file: ", err)
+			// 	return err
+			// }
 
 			jsonData, err := json.MarshalIndent(workload, "", "    ")
 			if err != nil {
@@ -139,6 +140,7 @@ func Summary(c *k8s.Client, o Options) error {
 		fmt.Println("No workloads found.")
 	}
 
+	// PrintDebugLog()
 	return nil
 }
 
@@ -155,34 +157,47 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 	}
 
 	errChan := make(chan error)
+	workloadChan := make(chan *summary.Workload)
 	sumRespChan := make(chan *summary.SummaryResponse)
 	done := make(chan struct{})
 	var wg sync.WaitGroup
 
 	bar := initializeProgressBar("Processing Workloads...", len(workloads.Workloads))
 
-	for _, w := range workloads.Workloads {
+	const numWorkers = 30
+	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
-		go func(w *summary.Workload) {
+		go func() {
 			defer wg.Done()
+			for w := range workloadChan {
+				reqCopy := &summary.SummaryRequest{
+					Clusters:   []string{w.Cluster},
+					Namespaces: []string{w.Namespace},
+				}
 
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30) // 30-second timeout
-			defer cancel()
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+				defer cancel()
 
-			sumReq.Namespaces = []string{w.Namespace}
-			sumReq.Clusters = []string{w.Cluster}
-			sumResp, err := client.GetSummaryEvent(ctx, sumReq)
-			if err != nil {
-				errChan <- err
-				return
+				sumResp, err := client.GetSummaryEvent(ctx, reqCopy)
+				if err != nil {
+					errChan <- err
+					continue
+				}
+
+				sumRespChan <- sumResp
 			}
-
-			sumRespChan <- sumResp
-
-			_ = bar.Add(1)
-		}(w)
+		}()
 	}
 
+	// Send workloads to the channel
+	go func() {
+		for _, w := range workloads.Workloads {
+			workloadChan <- w
+		}
+		close(workloadChan)
+	}()
+
+	// Wait for all workers to finish
 	go func() {
 		wg.Wait()
 		close(sumRespChan)
@@ -190,6 +205,7 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 		_ = bar.Finish()
 	}()
 
+	// Process the results
 	go func() {
 		for {
 			select {
@@ -197,14 +213,13 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 				if !ok {
 					sumRespChan = nil
 				} else {
-					processSummaryResponse(rootWorkload, sumResp, workloads.Workloads)
+					processSummaryResponse(rootWorkload, sumResp, bar)
 				}
 
 			case _, ok := <-errChan:
 				if !ok {
 					errChan = nil
 				}
-				_ = bar.Finish()
 			}
 
 			if sumRespChan == nil && errChan == nil {
@@ -220,75 +235,91 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 }
 
 // processSummaryResponse populates the Workload structure with the summary response data.
-func processSummaryResponse(rootWorkload *Workload, sumResp *summary.SummaryResponse, workloads []*summary.Workload) {
+func processSummaryResponse(rootWorkload *Workload, sumResp *summary.SummaryResponse, bar *progressbar.ProgressBar) {
+	_ = bar.Add(1)
 	for clusterName, cluster := range sumResp.GetClusters() {
 		rootCluster := rootWorkload.AddCluster(clusterName, &Cluster{
-			Cluster:    cluster,
-			Namespaces: make(map[string]*Namespace),
+			Namespaces:  make(map[string]*Namespace),
+			ClusterName: clusterName,
 		})
+		_ = rootCluster.SetHash()
 
 		for nsName, ns := range cluster.GetNamespaces() {
 			rootNamespace := rootCluster.AddNamespace(nsName, &Namespace{
-				Namespace:     ns,
-				WorkloadTypes: make(map[string]*WorkloadType),
+				NamespaceName: nsName,
+				Deployments:   make(map[string]*WorkloadEvents),
+				ReplicaSets:   make(map[string]*WorkloadEvents),
+				StatefulSets:  make(map[string]*WorkloadEvents),
+				DaemonSets:    make(map[string]*WorkloadEvents),
+				Jobs:          make(map[string]*WorkloadEvents),
+				CronJobs:      make(map[string]*WorkloadEvents),
 			})
 
 			populateNamespace(rootNamespace, ns)
+			_ = rootNamespace.SetHash()
 		}
 	}
+
+	_ = rootWorkload.SetHash()
 }
 
 // populateNamespace takes a namespace from the gRPC response and populates the namespace structure.
 func populateNamespace(existingNamespace *Namespace, namespace *summary.Namespace) {
-	for workloadType, eventsMap := range map[string]map[string]*summary.WorkloadEvents{
-		"Deployments":  namespace.Deployments,
-		"StatefulSets": namespace.StatefulSets,
-		"DaemonSets":   namespace.DaemonSets,
-		"ReplicaSets":  namespace.ReplicaSets,
-		"Jobs":         namespace.Jobs,
-		"CronJobs":     namespace.CronJobs,
-	} {
-		workloadTypeStruct := existingNamespace.GetWorkloadType(workloadType)
-		if workloadTypeStruct == nil {
-			workloadTypeStruct = &WorkloadType{Events: &Events{}, Labels: &Labels{}}
-			existingNamespace.AddWorkloadType(workloadType, workloadTypeStruct)
+	for depName, depEvents := range namespace.Deployments {
+		if depEvents != nil {
+			we := createWorkloadEventsFromSummary(depName, depEvents)
+			_ = we.SetHash()
+			existingNamespace.AddDeploymentEvents(depName, we)
 		}
+	}
 
-		convertWorkloadEvents(workloadTypeStruct, eventsMap)
+	for rsName, rsEvents := range namespace.ReplicaSets {
+		if rsEvents != nil {
+			we := createWorkloadEventsFromSummary(rsName, rsEvents)
+			_ = we.SetHash()
+			existingNamespace.AddReplicaSetEvents(rsName, we)
+		}
+	}
+
+	for ssName, ssEvents := range namespace.StatefulSets {
+		if ssEvents != nil {
+			we := createWorkloadEventsFromSummary(ssName, ssEvents)
+			_ = we.SetHash()
+			existingNamespace.AddStatefulSetEvents(ssName, we)
+		}
+	}
+
+	for dsName, dsEvents := range namespace.DaemonSets {
+		if dsEvents != nil {
+			we := createWorkloadEventsFromSummary(dsName, dsEvents)
+			_ = we.SetHash()
+			existingNamespace.AddDaemonSetEvents(dsName, we)
+		}
+	}
+
+	for jobName, jobEvents := range namespace.Jobs {
+		if jobEvents != nil {
+			we := createWorkloadEventsFromSummary(jobName, jobEvents)
+			_ = we.SetHash()
+			existingNamespace.AddJobEvents(jobName, we)
+		}
 	}
 }
 
-// convertWorkloadEvents converts summary WorkloadEvents into the application's Events structure.
-func convertWorkloadEvents(wt *WorkloadType, eventsMap map[string]*summary.WorkloadEvents) {
-	for _, workloadEvents := range eventsMap {
-		if workloadEvents == nil {
-			continue
-		}
-
-		wt.Labels.mu.Lock()
-		wt.Labels.Labels = workloadEvents.Labels
-		wt.Labels.mu.Unlock()
-
-		for _, pfe := range workloadEvents.Events.Process {
-			wt.Events.AddProcessEvent(pfe)
-		}
-
-		for _, pe := range workloadEvents.Events.File {
-			wt.Events.AddFileEvent(pe)
-		}
-
-		for _, ing := range workloadEvents.Events.Ingress {
-			wt.Events.AddIngressEvent(ing)
-		}
-
-		for _, eg := range workloadEvents.Events.Egress {
-			wt.Events.AddEgressEvent(eg)
-		}
-
-		for _, bi := range workloadEvents.Events.Bind {
-			wt.Events.AddBindEvent(bi)
-		}
+func createWorkloadEventsFromSummary(weName string, summaryEvents *summary.WorkloadEvents) *WorkloadEvents {
+	we := &WorkloadEvents{
+		WorkloadName: weName,
+		Events: &Events{
+			File:    summaryEvents.Events.File,
+			Process: summaryEvents.Events.Process,
+			Ingress: summaryEvents.Events.Ingress,
+			Egress:  summaryEvents.Events.Egress,
+			Bind:    summaryEvents.Events.Bind,
+		},
 	}
+
+	_ = we.SetHash()
+	return we
 }
 
 func initializeProgressBar(description string, max int) *progressbar.ProgressBar {
@@ -301,7 +332,7 @@ func initializeProgressBar(description string, max int) *progressbar.ProgressBar
 		progressbar.OptionClearOnFinish(),
 		progressbar.OptionSetElapsedTime(true),
 		progressbar.OptionShowCount(),
-		progressbar.OptionShowBytes(true),
+		progressbar.OptionShowBytes(false),
 		progressbar.OptionShowIts(),
 	)
 }
