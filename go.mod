@@ -20,6 +20,9 @@ require (
 	github.com/accuknox/dev2/api v0.0.0-20231026051927-56fe5412ae0d
 	github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d
 	github.com/accuknox/dev2/hardening v0.0.0-20231026051927-56fe5412ae0d
+	github.com/charmbracelet/bubbles v0.15.0
+	github.com/charmbracelet/bubbletea v0.23.2
+	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/clarketm/json v1.17.1
 	github.com/fatih/color v1.15.0
 	github.com/gdamore/tcell/v2 v2.6.0
@@ -42,6 +45,7 @@ require (
 	k8s.io/apimachinery v0.28.3
 	k8s.io/cli-runtime v0.28.3
 	k8s.io/client-go v0.28.3
+	k8s.io/metrics v0.27.7
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -102,9 +106,6 @@ require (
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/charmbracelet/bubbles v0.15.0 // indirect
-	github.com/charmbracelet/bubbletea v0.23.2 // indirect
-	github.com/charmbracelet/lipgloss v0.7.1 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/cilium/cilium v1.13.2 // indirect
 	github.com/clbanning/mxj/v2 v2.5.7 // indirect
