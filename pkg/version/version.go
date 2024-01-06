@@ -3,12 +3,11 @@ package version
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
+	"io"
+	"net/http"
 	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
-	"github.com/fatih/color"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -18,38 +17,22 @@ var (
 	BuildDate  = ""
 )
 
+const (
+	releaseVersionPage = "https://knoxctl.accuknox.com/version/latest_version.txt"
+)
+
 type Option struct {
 	GitPATPath string
 }
 
 // PrintVersion displays the current version and checks for updates
-func PrintVersion(c *k8s.Client, pat string) error {
-	if pat == "" {
-		fmt.Println("please provide an absolute path to your GitHub Personal Access Token (PAT)")
-		return nil
-	}
-
-	gitKey, err := readGitKey(pat)
+func PrintVersion(c *k8s.Client) error {
+	releaseVer, err := fetchReleaseVersion()
 	if err != nil {
-		return fmt.Errorf("error reading git PAT: %v", err)
+		return fmt.Errorf("error fetching latest version: %v", err)
 	}
 
-	ctx := context.Background()
-	client, err := common.SetupGitHubClient(gitKey, ctx)
-	if err != nil {
-		return fmt.Errorf("error setting up GitHub client: %v", err)
-	}
-
-	latestVer, err := common.GetLatestVersion(client, ctx)
-	if err != nil {
-		return fmt.Errorf("error checking latest version: %v", err)
-	}
-
-	if latestVer != GitSummary {
-		color.HiMagenta("Update available: version " + latestVer)
-	} else {
-		fmt.Println("You are using the latest version of accuknoxcli.")
-	}
+	fmt.Printf("knoxctl release version: [%v]\n", releaseVer)
 
 	kubearmorVersion, err := getKubeArmorVersion(c)
 	if err != nil {
@@ -59,7 +42,8 @@ func PrintVersion(c *k8s.Client, pat string) error {
 		fmt.Printf("kubearmor not running\n")
 		return nil
 	}
-	fmt.Printf("kubearmor image (running) version %s\n", kubearmorVersion)
+
+	fmt.Printf("kubearmor image (running) version: [%s]\n", kubearmorVersion)
 	return nil
 }
 
@@ -75,17 +59,6 @@ func getKubeArmorVersion(c *k8s.Client) (string, error) {
 	}
 
 	return "", nil
-}
-
-func readGitKey(path string) (string, error) {
-	cleanedPath := filepath.Clean(path)
-
-	keyBytes, err := os.ReadFile(cleanedPath)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(string(keyBytes)), nil
 }
 
 func ShouldUpdate(currentVersion, pat string) (bool, error) {
@@ -104,4 +77,19 @@ func ShouldUpdate(currentVersion, pat string) (bool, error) {
 	}
 
 	return latestVersion != currentVersion, nil
+}
+
+func fetchReleaseVersion() (string, error) {
+	resp, err := http.Get(releaseVersionPage)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(body)), nil
 }
