@@ -4,13 +4,12 @@
 package cmd
 
 import (
-	"github.com/accuknox/accuknox-cli-v2/pkg/discoveryengine"
+	dev2install "github.com/accuknox/accuknox-cli-v2/pkg/install"
 	"github.com/kubearmor/kubearmor-client/install"
 	"github.com/spf13/cobra"
 )
 
 var uninstallOptions install.Options
-var dev2UninstallOptions discoveryengine.Options
 var uninstallKubearmor bool
 var uninstallDev2 bool
 
@@ -27,10 +26,11 @@ var uninstallCmd = &cobra.Command{
 		}
 
 		if uninstallDev2 {
-			if err := discoveryengine.K8sUninstaller(client, dev2UninstallOptions); err != nil {
+			if err := dev2install.Remove(client); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	},
 }
@@ -39,9 +39,6 @@ func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	uninstallCmd.Flags().StringVarP(&uninstallOptions.Namespace, "namespace", "n", "kube-system", "Namespace for kubearmor resources")
 	uninstallCmd.Flags().BoolVar(&uninstallOptions.Force, "force", false, "Force remove KubeArmor annotations from deployments. (Deployments might be restarted)")
-
-	uninstallCmd.Flags().StringVarP(&dev2UninstallOptions.Namespace, "dev2-namespace", "p", "accuknox-agents", "Namespace for Discovery Engine resources")
-
 	uninstallCmd.Flags().BoolVar(&uninstallKubearmor, "kubearmor", true, "uninstall KubeArmor")
-	uninstallCmd.Flags().BoolVar(&uninstallDev2, "dev2", true, "uninstall Discovery Engine")
+	uninstallCmd.Flags().BoolVar(&uninstallDev2, "discovery-engine", true, "uninstall Discovery Engine")
 }

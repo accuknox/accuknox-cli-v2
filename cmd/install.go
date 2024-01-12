@@ -3,22 +3,22 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/accuknox/accuknox-cli-v2/pkg/discoveryengine"
+	dev2install "github.com/accuknox/accuknox-cli-v2/pkg/install"
 	"github.com/kubearmor/kubearmor-client/install"
 	"github.com/spf13/cobra"
 )
 
 var (
-	installOptions     install.Options
-	dev2InstallOptions discoveryengine.Options
-	key                string
-	user               string
+	installOptions         install.Options
+	key                    string
+	user                   string
+	discoveryEngineOptions dev2install.Options
 )
 
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Kubearmor, Discovery Engine and License",
-	Long:  `Discover applicable policies`,
+	Long:  `The install command will download and install KubeArmor and AccuKnox's Discovery Engine.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Installing Kubearmor
 		if err := installOptions.Env.CheckAndSetValidEnvironmentOption(cmd.Flag("env").Value.String()); err != nil {
@@ -27,19 +27,11 @@ var installCmd = &cobra.Command{
 		if err := install.K8sInstaller(client, installOptions); err != nil {
 			return err
 		}
-		//installing Dev2
-		if err := discoveryengine.K8sInstaller(client, dev2InstallOptions); err != nil {
+
+		if err := dev2install.DiscoveryEngine(client, discoveryEngineOptions); err != nil {
 			return err
 		}
-		discoveryengine.CheckPods(client)
-
-		//installing license
-		if user == "" || key == "" {
-			return nil
-		}
-
-		err := discoveryengine.InstallLicense(client, key, user)
-		return err
+		return nil
 	},
 }
 
@@ -61,6 +53,7 @@ func init() {
 	installCmd.Flags().BoolVar(&installOptions.Local, "local", false, "Use Local KubeArmor Images (sets ImagePullPolicy to 'IfNotPresent') ")
 	installCmd.Flags().StringVarP(&installOptions.Env.Environment, "env", "e", "", "Supported KubeArmor Environment [k0s,k3s,microK8s,minikube,gke,bottlerocket,eks,docker,oke,generic]")
 	//dev2
-	installCmd.Flags().StringVarP(&dev2InstallOptions.Namespace, "dev2-namespace", "p", "accuknox-agents", "Namespace for resources")
-
+	installCmd.Flags().StringVarP(&discoveryEngineOptions.Tag, "release-tag", "", "", "Release tag for Discovery Engine that is to be installed")
+	installCmd.Flags().BoolVar(&discoveryEngineOptions.ListTags, "list-tags", false, "List the latest 3 rolling release tags of Discovery Engine")
+	installCmd.Flags().BoolVar(&discoveryEngineOptions.Debug, "debug", false, "Debug will not clean up Discovery Engine's resources in case deployment fails and will print extra info about the resources installed.")
 }
