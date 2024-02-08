@@ -18,6 +18,7 @@ replace (
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/accuknox/dev2/api v0.0.0-20231215052246-76a26e09a929
 	github.com/accuknox/dev2/common v0.0.0-20240207045330-8d679ba13dc1
 	github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d
@@ -34,6 +35,7 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/schollz/progressbar/v3 v3.14.1
 	github.com/spf13/cobra v1.7.0
+	golang.org/x/mod v0.13.0
 	golang.org/x/oauth2 v0.15.0
 	golang.org/x/sync v0.5.0
 	golang.org/x/term v0.15.0
@@ -63,6 +65,8 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/IGLOU-EU/go-wildcard v1.0.3 // indirect
+	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230426101702-58e86b294756 // indirect
@@ -180,6 +184,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/in-toto/in-toto-golang v0.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -213,9 +218,11 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
+	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -307,7 +314,6 @@ require (
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

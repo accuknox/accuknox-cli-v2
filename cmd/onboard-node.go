@@ -1,0 +1,52 @@
+/*
+Copyright © 2024 NAME HERE <EMAIL ADDRESS>
+*/
+package cmd
+
+import (
+	"log"
+
+	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
+	"github.com/spf13/cobra"
+)
+
+var (
+	kubeArmorAddr   string
+	relayServerAddr string
+	SIAAddr         string
+	PEAAddr         string
+)
+
+// joinNodeCmd represents the join command
+var joinNodeCmd = &cobra.Command{
+	Use:   "node",
+	Short: "Join this worker node with the control plane node for onboarding onto SaaS",
+	Long:  "Join this worker node with the control plane node for onboarding onto SaaS",
+	Run: func(cmd *cobra.Command, args []string) {
+		clusterTypeValue := onboard.ClusterTypeValues[clusterType]
+
+		clusterConfig, err := onboard.CreateClusterConfig(clusterTypeValue, kubearmorVersion, agentVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, true)
+		joinConfig := onboard.JoinClusterConfig(*clusterConfig, kubeArmorAddr, relayServerAddr, SIAAddr, PEAAddr)
+
+		err = joinConfig.JoinWorkerNode()
+		if err != nil {
+			log.Fatalln("Failed to join worker node:", err.Error())
+		}
+
+		log.Println("VM successfully joined with control-plane!")
+	},
+}
+
+func init() {
+	// configuration for connecting with KubeArmor and control plane
+	joinNodeCmd.PersistentFlags().StringVar(&kubeArmorAddr, "kubearmor-addr", "", "address of kubearmor on this node")
+	joinNodeCmd.PersistentFlags().StringVar(&relayServerAddr, "relay-server-addr", "", "address of relay-server on control plane to connect with for pushing telemetry events")
+	joinNodeCmd.PersistentFlags().StringVar(&SIAAddr, "sia-addr", "", "address of shared-informer-agent on control plane to push state events")
+	joinNodeCmd.PersistentFlags().StringVar(&PEAAddr, "pea-addr", "", "address of policy-enforcement-agent on control plane for receiving policy events")
+
+	joinNodeCmd.MarkPersistentFlagRequired("relay-server-addr")
+	joinNodeCmd.MarkPersistentFlagRequired("sia-addr")
+	joinNodeCmd.MarkPersistentFlagRequired("pea-addr")
+
+	onboardCmd.AddCommand(joinNodeCmd)
+}

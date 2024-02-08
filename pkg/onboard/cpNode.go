@@ -1,0 +1,151 @@
+package onboard
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/Masterminds/sprig"
+)
+
+func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGateway string) *InitConfig {
+	return &InitConfig{
+		ClusterConfig: cc,
+		JoinToken:     joinToken,
+		SpireHost:     spireHost,
+		PPSHost:       ppsHost,
+		KnoxGateway:   knoxGateway,
+	}
+}
+
+func (ic *InitConfig) InitializeControlPlane() error {
+	// validate this environment
+	err := ic.validateEnv()
+	if err != nil {
+		return err
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+
+	configPath, err := createConfigPath()
+	if err != nil {
+		return err
+	}
+
+	spireHost, spirePort, err := parseURL(ic.SpireHost)
+	if spirePort == "80" {
+		// default spire port
+		spirePort = "8081"
+	}
+
+	var spireTrustBundleURL string
+	if ic.SpireTrustBundleURL == "" {
+		if strings.Contains(ic.SpireHost, "spire.dev.accuknox.com") {
+			//spireTrustBundleURL = "https://accuknox-dev-cert-spire.s3.us-east-2.amazonaws.com/ca.crt"
+			spireTrustBundleURL = "https://accuknox-spire.s3.amazonaws.com/certs/dev/certificate.crt"
+		} else if strings.Contains(ic.SpireHost, "spire.stage.accuknox.com") {
+			spireTrustBundleURL = "https://accuknox-stage-cert-spire.s3.us-east-2.amazonaws.com/ca.crt"
+		} else {
+			return errors.New("No SPIRE trust bundle found for this environment")
+		}
+	}
+
+	ic.TCArgs = TemplateConfigArgs{
+		KubeArmorImage:            ic.KubeArmorImage,
+		KubeArmorInitImage:        ic.KubeArmorInitImage,
+		KubeArmorRelayServerImage: ic.KubeArmorRelayServerImage,
+		KubeArmorVMAdapterImage:   ic.KubeArmorVMAdapterImage,
+		SIAImage:                  ic.SIAImage,
+		PEAImage:                  ic.PEAImage,
+		FeederImage:               ic.FeederImage,
+
+		Hostname: hostname,
+		// TODO: make configurable
+		KubeArmorURL:  "kubearmor:32767",
+		KubeArmorPort: "32767",
+
+		RelayServerURL:  "kubearmor-relay-server:32768",
+		RelayServerAddr: "kubearmor-relay-server",
+		RelayServerPort: "32768",
+
+		WorkerNode: ic.WorkerNode,
+
+		SIAAddr: "shared-informer-agent:32769",
+		PEAAddr: "policy-enforcement-agent:32770",
+
+		PPSHost: ic.PPSHost,
+
+		JoinToken:     ic.JoinToken,
+		SpireHostAddr: spireHost,
+		SpireHostPort: spirePort,
+
+		SpireTrustBundleURL: spireTrustBundleURL,
+
+		ConfigPath: configPath,
+	}
+
+	// initialize sprig for templating
+	sprigFuncs := sprig.GenericFuncMap()
+
+	// write compose file
+	composeFilePath, err := writeFile(configPath, "docker-compose.yaml", sprigFuncs, cpComposeFileTemplate, ic.TCArgs)
+	if err != nil {
+		return err
+	}
+
+	_, err = writeFile(configPath, "pea/application.yaml", sprigFuncs, peaConfig, ic.TCArgs)
+	if err != nil {
+		return err
+	}
+
+	_, err = writeFile(configPath, "sia/app.yaml", sprigFuncs, siaConfig, ic.TCArgs)
+	if err != nil {
+		return err
+	}
+
+	_, err = writeFile(configPath, "spire/conf/agent.conf", sprigFuncs, spireAgentConfig, ic.TCArgs)
+	if err != nil {
+		return err
+	}
+
+	kmuxConfigArgs := KmuxConfigTemplateArgs{
+		StreamName: "knox-gateway",
+		ServerURL:  ic.KnoxGateway,
+	}
+
+	_, err = writeFile(configPath, "sia/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
+	if err != nil {
+		return err
+	}
+
+	_, err = writeFile(configPath, "feeder-service/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
+	if err != nil {
+		return err
+	}
+
+	// pull latest images
+	_, err = ExecComposeCommand(
+		true,
+		ic.composeCmd, "-f", composeFilePath,
+		"--profile", "spire-agent", "--profile", "kubearmor",
+		"--profile", "accuknox-agents", "pull")
+	if err != nil {
+		return fmt.Errorf("Error: %s", err.Error())
+	}
+
+	// run compose command
+	_, err = ExecComposeCommand(
+		true,
+		ic.composeCmd, "-f", composeFilePath,
+		"--profile", "spire-agent", "--profile", "kubearmor",
+		"--profile", "accuknox-agents", "up", "-d")
+	if err != nil {
+		return fmt.Errorf("Error: %s", err.Error())
+	}
+
+	return nil
+}
