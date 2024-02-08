@@ -43,5 +43,7 @@ func init() {
 	summaryCmd.Flags().StringVarP(&summaryOptions.View, "view", "v", "json", "Print data on console in table or json format")
 	summaryCmd.Flags().BoolVar(&summaryOptions.Dump, "dump", false, "Dump json data to knoxctl_out directory and skip TUI")
 	summaryCmd.Flags().BoolVar(&summaryOptions.Glance, "glance", false, "Glance at the summary data")
+	summaryCmd.Flags().BoolVar(&summaryOptions.NoTUI, "no-tui", false, "Disable TUI and progress bar")
+	summaryCmd.Flags().StringVar(&summaryOptions.OutputTo, "out", "", "write out files to a specified directory")
 	//summaryCmd.Flags().BoolVar(&summaryOptions.Aggregation, "agg", false, "Aggregate destination files/folder path")
 }

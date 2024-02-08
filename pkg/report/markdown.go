@@ -16,6 +16,7 @@ func (g Graph) markdownPR(filename, rootHash string) error {
 	var isSomethingThere bool
 
 	file, err := common.CleanAndCreate(filename)
+	fmt.Printf("Writing report markdown file to: %s\n", filename)
 	if err != nil {
 		return err
 	}

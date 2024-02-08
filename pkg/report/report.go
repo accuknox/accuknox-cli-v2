@@ -37,15 +37,15 @@ func Report(client *k8s.Client, o *summary.Options) error {
 	// Determine output paths
 	predefinedPath := "knoxctl_out/reports/"
 	level4NodesOutput := predefinedPath + "level_4_nodes.json"
-	testPrMdOutput := predefinedPath + "test_pr_md.md"
+	prMDOutput := predefinedPath + "pr_report.md"
 	diffOutput := predefinedPath + "diff.json"
 	if o.OutputTo != "" {
-		level4NodesOutput = o.OutputTo
-		testPrMdOutput = o.OutputTo
-		diffOutput = o.OutputTo
+		level4NodesOutput = o.OutputTo + "level_4_nodes.json"
+		prMDOutput = o.OutputTo + "pr_report.md"
+		diffOutput = o.OutputTo + "diff.json"
 	}
 
-	err = tracker.markdownPR(testPrMdOutput, latestSummary.GetHash())
+	err = tracker.markdownPR(prMDOutput, latestSummary.GetHash())
 	if err != nil {
 		return err
 	}

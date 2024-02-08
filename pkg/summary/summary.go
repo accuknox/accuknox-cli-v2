@@ -131,6 +131,9 @@ func Summary(c *k8s.Client, o Options) error {
 
 		default:
 			if len(workload.Clusters) != 0 {
+				if o.NoTUI {
+					return nil
+				}
 				StartTUI(workload)
 			} else {
 				fmt.Println("Summary data not found.")
@@ -162,7 +165,13 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 	done := make(chan struct{})
 	var wg sync.WaitGroup
 
-	bar := initializeProgressBar("Processing Workloads...", len(workloads.Workloads))
+	var bar *progressbar.ProgressBar
+	if !o.NoTUI {
+		bar = initializeProgressBar("Processing Workloads...", len(workloads.Workloads))
+	} else {
+		fmt.Println("TUI is disabled")
+		fmt.Println("Getting summary, this may take a few minutes...")
+	}
 
 	const numWorkers = 30
 	for i := 0; i < numWorkers; i++ {
@@ -202,7 +211,9 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 		wg.Wait()
 		close(sumRespChan)
 		close(errChan)
-		_ = bar.Finish()
+		if !o.NoTUI {
+			_ = bar.Finish()
+		}
 	}()
 
 	// Process the results
@@ -213,7 +224,7 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 				if !ok {
 					sumRespChan = nil
 				} else {
-					processSummaryResponse(rootWorkload, sumResp, bar)
+					processSummaryResponse(rootWorkload, sumResp, bar, o.NoTUI)
 				}
 
 			case _, ok := <-errChan:
@@ -235,8 +246,11 @@ func (o *Options) getSummaryPerWorkload(client summary.SummaryClient, sumReq *su
 }
 
 // processSummaryResponse populates the Workload structure with the summary response data.
-func processSummaryResponse(rootWorkload *Workload, sumResp *summary.SummaryResponse, bar *progressbar.ProgressBar) {
-	_ = bar.Add(1)
+func processSummaryResponse(rootWorkload *Workload, sumResp *summary.SummaryResponse, bar *progressbar.ProgressBar, noTUI bool) {
+	if !noTUI && bar != nil {
+		_ = bar.Add(1)
+	}
+
 	for clusterName, cluster := range sumResp.GetClusters() {
 		rootCluster := rootWorkload.AddCluster(clusterName, &Cluster{
 			Namespaces:  make(map[string]*Namespace),

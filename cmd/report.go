@@ -38,7 +38,7 @@ func init() {
 	reportCmd.Flags().StringSliceVarP(&reportOptions.Workloads, "workload", "", []string{}, "Workloads")
 	reportCmd.Flags().StringSliceVar(&reportOptions.Labels, "labels", []string{}, "Labels")
 	reportCmd.Flags().StringSliceVarP(&reportOptions.Source, "source", "s", []string{}, "Source path")
-	reportCmd.Flags().StringSliceVarP(&reportOptions.Destination, "destination", "d", []string{}, "Destination path")
+	reportCmd.Flags().StringSliceVarP(&reportOptions.Destination, "destination", "", []string{}, "Destination path")
 	reportCmd.Flags().StringVarP(&reportOptions.Operation, "operation", "", "", "Operation type")
 	reportCmd.Flags().StringSliceVarP(&reportOptions.IgnorePath, "ignore-path", "", []string{}, "Destination path")
 	reportCmd.Flags().StringVarP(&reportOptions.BaselineSummaryPath, "baseline", "", "baseline/report.json", "Baseline summary path")
@@ -46,4 +46,6 @@ func init() {
 	reportCmd.Flags().BoolVarP(&reportOptions.Dump, "dump", "", false, "Dump")
 	reportCmd.Flags().StringSliceVarP(&reportOptions.IgnoreCommand, "ignore-command", "", []string{}, "Ignore command")
 	reportCmd.Flags().BoolVarP(&reportOptions.Debug, "debug", "", false, "Debug by printing the nodes")
+	reportCmd.Flags().BoolVarP(&reportOptions.NoTUI, "no-tui", "", false, "Disable TUI and progress bars")
+	reportCmd.Flags().StringVar(&reportOptions.OutputTo, "out", "", "Write output file to a specified directory")
 }

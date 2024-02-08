@@ -26,6 +26,7 @@ type Options struct {
 	Dump                bool     `flag:"dump"`
 	Glance              bool     `flag:"glance"`
 	Debug               bool     `flag:"debug"`
+	NoTUI               bool     `flag:"no-tui"`
 
 	NamespaceRegex    []*regexp.Regexp
 	ResourceTypeRegex []*regexp.Regexp
@@ -110,8 +111,14 @@ func ProcessArgs(rawArgs string) (*Options, error) {
 			parsedOption.Workloads, regexList, err = parser.ParseRegexSlice(values, flag)
 			parsedOption.WorkloadsRegex = regexList
 
+		case flag == "out":
+			parsedOption.OutputTo, err = parser.ParseString(rawArgs, flag)
+
 		case flag == "dump":
 			parsedOption.Dump = true
+
+		case flag == "no-tui":
+			parsedOption.NoTUI = true
 
 		default:
 			return nil, wrapErr(fmt.Errorf("unknown flag: %v", flag))

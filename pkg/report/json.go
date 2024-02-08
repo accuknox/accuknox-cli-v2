@@ -145,6 +145,6 @@ func (g Graph) writeDiffJSON(fileName, rootHash string) error {
 		return err
 	}
 
-	fmt.Printf("Diff json file written to: %s", fileName)
+	fmt.Printf("Diff json file written to: %s\n", fileName)
 	return nil
 }
