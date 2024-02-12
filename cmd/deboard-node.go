@@ -20,7 +20,7 @@ var deboardNodeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		configPath, err := deboard.Deboard(onboard.NodeType_WorkerNode, dryRun)
 		if err != nil && os.IsPermission(err) {
-			log.Println("Please remove any remaining resources at %s.", configPath)
+			log.Println("Please remove any remaining resources at", configPath)
 		} else {
 			log.Fatalln("Failed to deboard worker node:", err.Error())
 		}

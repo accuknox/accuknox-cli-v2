@@ -81,7 +81,9 @@ func writeFile(dirPath, filePath string, tempFuncs template.FuncMap, templateStr
 		return "", err
 	}
 
-	resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	//resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	// fullFilePath contains the path to configDir - hard coding paths won't be efficient
+	resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600) // #nosec G304
 	if err != nil {
 		return "", err
 	}
@@ -142,12 +144,16 @@ func GetComposeCommand() string {
 }
 
 func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (string, error) {
+	if !strings.Contains(tryCmd, "docker") {
+		return "", fmt.Errorf("Command %s not supported", tryCmd)
+	}
+
 	composeCmd := new(exec.Cmd)
 
 	cmd := strings.Split(tryCmd, " ")
 	if len(cmd) == 1 {
 
-		composeCmd = exec.Command(cmd[0])
+		composeCmd = exec.Command(cmd[0]) // #nosec G204
 		if dryRun {
 			composeCmd.Args = append(composeCmd.Args, "--dry-run")
 		}
@@ -155,7 +161,8 @@ func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (
 
 	} else if len(cmd) > 1 {
 
-		composeCmd = exec.Command(cmd[0], cmd[1])
+		// need this to handle docker compose command
+		composeCmd = exec.Command(cmd[0], cmd[1]) // #nosec G204
 		if dryRun {
 			composeCmd.Args = append(composeCmd.Args, "--dry-run")
 		}

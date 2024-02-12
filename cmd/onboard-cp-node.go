@@ -55,11 +55,26 @@ func init() {
 
 	cpNodeCmd.PersistentFlags().StringVar(&nodeAddr, "cp-node-addr", "", "address of control plane node for generating join command")
 
-	cpNodeCmd.MarkPersistentFlagRequired("join-token")
-	cpNodeCmd.MarkPersistentFlagRequired("spire-host")
-	cpNodeCmd.MarkPersistentFlagRequired("pps-host")
-	cpNodeCmd.MarkPersistentFlagRequired("knox-gateway")
-	cpNodeCmd.MarkPersistentFlagRequired("version")
+	err := cpNodeCmd.MarkPersistentFlagRequired("join-token")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cpNodeCmd.MarkPersistentFlagRequired("spire-host")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cpNodeCmd.MarkPersistentFlagRequired("pps-host")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cpNodeCmd.MarkPersistentFlagRequired("knox-gateway")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cpNodeCmd.MarkPersistentFlagRequired("version")
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	onboardCmd.AddCommand(cpNodeCmd)
 }

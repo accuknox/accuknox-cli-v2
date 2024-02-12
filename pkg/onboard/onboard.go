@@ -60,6 +60,9 @@ func CreateClusterConfig(clusterType ClusterType, kubearmorVersion, releaseVersi
 	}
 
 	cc.WorkerNode = workerNode
+	cc.DryRun = dryRun
+	cc.CPNodeAddr = nodeAddress
+
 	if workerNode {
 		return cc, nil
 	}
@@ -87,9 +90,6 @@ func CreateClusterConfig(clusterType ClusterType, kubearmorVersion, releaseVersi
 	} else {
 		return nil, fmt.Errorf("No tag found for feeder-service")
 	}
-
-	cc.DryRun = dryRun
-	cc.CPNodeAddr = nodeAddress
 
 	return cc, nil
 }

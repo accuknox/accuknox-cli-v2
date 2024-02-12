@@ -4,6 +4,8 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"log"
+
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +22,10 @@ func init() {
 	deboardCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "only generate manifests and don't onboard anything")
 	deboardCmd.PersistentFlags().Lookup("dry-run").NoOptDefVal = "true"
 
-	deboardCmd.MarkPersistentFlagRequired("type")
+	err := deboardCmd.MarkPersistentFlagRequired("type")
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	rootCmd.AddCommand(deboardCmd)
 }

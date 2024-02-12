@@ -14,7 +14,7 @@ var (
 	}
 
 	ClusterTypeKeys = map[ClusterType]string{
-		ClusterType_VM: "vm",
+		ClusterType_VM:  "vm",
 		ClusterType_ECS: "ecs",
 	}
 )

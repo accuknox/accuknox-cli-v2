@@ -20,7 +20,7 @@ var (
 	peaImage                  string
 	feederImage               string
 
-	dryRun bool
+	dryRun   bool
 	nodeAddr string
 )
 
@@ -53,8 +53,6 @@ func init() {
 
 	onboardCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "only generate manifests and don't onboard anything")
 	onboardCmd.PersistentFlags().Lookup("dry-run").NoOptDefVal = "true"
-
-	onboardCmd.MarkPersistentFlagRequired("type")
 
 	rootCmd.AddCommand(onboardCmd)
 }

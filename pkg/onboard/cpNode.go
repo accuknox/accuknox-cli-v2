@@ -19,7 +19,6 @@ func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGatew
 	}
 }
 
-
 func (ic *InitConfig) InitializeControlPlane() error {
 	// validate this environment
 	err := ic.validateEnv()

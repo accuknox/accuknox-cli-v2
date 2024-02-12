@@ -20,7 +20,7 @@ var deboardCpNodeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		configPath, err := deboard.Deboard(onboard.NodeType_ControlPlane, dryRun)
 		if err != nil && os.IsPermission(err) {
-			log.Println("Please remove any remaining resources at %s.", configPath)
+			log.Println("Please remove any remaining resources at", configPath)
 		} else {
 			log.Fatalln("Failed to deboard control plane node:", err.Error())
 		}

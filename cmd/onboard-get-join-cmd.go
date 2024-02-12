@@ -14,7 +14,7 @@ import (
 var getJoinCmd = &cobra.Command{
 	Use:   "get-join-cmd",
 	Short: "Get join command for joining a worker node with the control plane node at the given adddress",
-	Long: "Get join command for joining a worker node with the control plane node at the given adddress",
+	Long:  "Get join command for joining a worker node with the control plane node at the given adddress",
 	Run: func(cmd *cobra.Command, args []string) {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
