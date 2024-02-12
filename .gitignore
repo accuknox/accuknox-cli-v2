@@ -26,6 +26,7 @@ accuknoxD
 accuknoxR
 accuknoxS
 accuknox-cli-v2
+knoxctl
 
 *.pprof
 *.prof 

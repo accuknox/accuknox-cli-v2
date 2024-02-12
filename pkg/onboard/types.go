@@ -12,6 +12,11 @@ var (
 		"vm":  ClusterType_VM,
 		"ecs": ClusterType_ECS,
 	}
+
+	ClusterTypeKeys = map[ClusterType]string{
+		ClusterType_VM: "vm",
+		ClusterType_ECS: "ecs",
+	}
 )
 
 type NodeType string
@@ -41,7 +46,10 @@ type ClusterConfig struct {
 	PEAImage                  string
 	FeederImage               string
 
+	CPNodeAddr string
+
 	WorkerNode bool
+	DryRun     bool
 
 	// internal
 	composeCmd string

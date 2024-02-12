@@ -17,7 +17,7 @@ var deboardNodeCmd = &cobra.Command{
 	Short: "Deboard a worker node",
 	Long:  "Deboard a worker node",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := deboard.Deboard(onboard.NodeType_WorkerNode)
+		err := deboard.Deboard(onboard.NodeType_WorkerNode, dryRun)
 		if err != nil {
 			log.Fatalln("Failed to deboard worker node:", err.Error())
 		}

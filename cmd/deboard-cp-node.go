@@ -17,7 +17,7 @@ var deboardCpNodeCmd = &cobra.Command{
 	Short: "Deboard control plane node",
 	Long:  "Deboard control plane node",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := deboard.Deboard(onboard.NodeType_ControlPlane)
+		err := deboard.Deboard(onboard.NodeType_ControlPlane, dryRun)
 		if err != nil {
 			log.Fatalln("Failed to deboard control plane node:", err.Error())
 		}

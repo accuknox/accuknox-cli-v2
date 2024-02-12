@@ -25,7 +25,11 @@ var joinNodeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		clusterTypeValue := onboard.ClusterTypeValues[clusterType]
 
-		clusterConfig, err := onboard.CreateClusterConfig(clusterTypeValue, kubearmorVersion, agentVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, true)
+		clusterConfig, err := onboard.CreateClusterConfig(clusterTypeValue, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, true)
+		if err != nil {
+			log.Fatalln("Failed to create cluster config:", err.Error())
+		}
+
 		joinConfig := onboard.JoinClusterConfig(*clusterConfig, kubeArmorAddr, relayServerAddr, SIAAddr, PEAAddr)
 
 		err = joinConfig.JoinWorkerNode()
@@ -39,14 +43,13 @@ var joinNodeCmd = &cobra.Command{
 
 func init() {
 	// configuration for connecting with KubeArmor and control plane
+	joinNodeCmd.PersistentFlags().StringVarP(&clusterType, "type", "t", "", "type of cluster to onboard. possible values VM")
 	joinNodeCmd.PersistentFlags().StringVar(&kubeArmorAddr, "kubearmor-addr", "", "address of kubearmor on this node")
 	joinNodeCmd.PersistentFlags().StringVar(&relayServerAddr, "relay-server-addr", "", "address of relay-server on control plane to connect with for pushing telemetry events")
 	joinNodeCmd.PersistentFlags().StringVar(&SIAAddr, "sia-addr", "", "address of shared-informer-agent on control plane to push state events")
 	joinNodeCmd.PersistentFlags().StringVar(&PEAAddr, "pea-addr", "", "address of policy-enforcement-agent on control plane for receiving policy events")
 
-	joinNodeCmd.MarkPersistentFlagRequired("relay-server-addr")
-	joinNodeCmd.MarkPersistentFlagRequired("sia-addr")
-	joinNodeCmd.MarkPersistentFlagRequired("pea-addr")
+	joinNodeCmd.PersistentFlags().StringVar(&nodeAddr, "cp-node-addr", "", "address of control plane")
 
 	onboardCmd.AddCommand(joinNodeCmd)
 }

@@ -4,8 +4,6 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -14,13 +12,13 @@ var deboardCmd = &cobra.Command{
 	Use:   "deboard",
 	Short: "Deboard your cluster from SaaS",
 	Long:  "Deboard your cluster from SaaS",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("deboard called")
-	},
 }
 
 func init() {
 	deboardCmd.PersistentFlags().StringVarP(&clusterType, "type", "t", "", "type of cluster to onboard. possible values VM")
+
+	deboardCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "only generate manifests and don't onboard anything")
+	deboardCmd.PersistentFlags().Lookup("dry-run").NoOptDefVal = "true"
 
 	deboardCmd.MarkPersistentFlagRequired("type")
 

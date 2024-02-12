@@ -10,7 +10,7 @@ import (
 var (
 	clusterType      string
 	kubearmorVersion string
-	agentVersion     string
+	releaseVersion   string
 
 	kubeArmorImage            string
 	kubeArmorInitImage        string
@@ -19,6 +19,9 @@ var (
 	siaImage                  string
 	peaImage                  string
 	feederImage               string
+
+	dryRun bool
+	nodeAddr string
 )
 
 // onboardCmd represents the cluster command
@@ -38,9 +41,7 @@ var onboardCmd = &cobra.Command{
 
 func init() {
 	// local configuration
-	onboardCmd.PersistentFlags().StringVarP(&clusterType, "type", "t", "", "type of cluster to onboard. possible values VM")
 	onboardCmd.PersistentFlags().StringVarP(&kubearmorVersion, "kubearmor-version", "", "stable", "version of KubeArmor to use")
-	onboardCmd.PersistentFlags().StringVarP(&agentVersion, "version", "v", "", "version of agents to be used")
 
 	onboardCmd.PersistentFlags().StringVar(&kubeArmorImage, "kubearmor-image", "", "KubeArmor image to use")
 	onboardCmd.PersistentFlags().StringVar(&kubeArmorInitImage, "kubearmor-init-image", "", "KubeArmor init image to use")
@@ -50,8 +51,10 @@ func init() {
 	onboardCmd.PersistentFlags().StringVar(&peaImage, "pea-image", "", "pea image to use")
 	onboardCmd.PersistentFlags().StringVar(&feederImage, "feeder-image", "", "feeder-service image to use")
 
+	onboardCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "only generate manifests and don't onboard anything")
+	onboardCmd.PersistentFlags().Lookup("dry-run").NoOptDefVal = "true"
+
 	onboardCmd.MarkPersistentFlagRequired("type")
-	onboardCmd.MarkPersistentFlagRequired("version")
 
 	rootCmd.AddCommand(onboardCmd)
 }
