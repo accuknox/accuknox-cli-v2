@@ -1,10 +1,7 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/deboard"
@@ -17,15 +14,16 @@ var deboardNodeCmd = &cobra.Command{
 	Use:   "node",
 	Short: "Deboard a worker node",
 	Long:  "Deboard a worker node",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		configPath, err := deboard.Deboard(onboard.NodeType_WorkerNode, dryRun)
 		if err != nil && os.IsPermission(err) {
-			log.Println("Please remove any remaining resources at", configPath)
-		} else {
-			log.Fatalln("Failed to deboard worker node:", err.Error())
+			fmt.Println("Please remove any remaining resources at", configPath)
+		} else if err != nil {
+			return fmt.Errorf("Failed to deboard worker node: %s", err.Error())
 		}
 
-		log.Println("Worker node deboarded successfully.")
+		fmt.Println("Worker node deboarded successfully.")
+		return nil
 	},
 }
 

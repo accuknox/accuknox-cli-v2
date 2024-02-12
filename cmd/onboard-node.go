@@ -1,9 +1,7 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
@@ -22,22 +20,24 @@ var joinNodeCmd = &cobra.Command{
 	Use:   "node",
 	Short: "Join this worker node with the control plane node for onboarding onto SaaS",
 	Long:  "Join this worker node with the control plane node for onboarding onto SaaS",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		clusterTypeValue := onboard.ClusterTypeValues[clusterType]
 
 		clusterConfig, err := onboard.CreateClusterConfig(clusterTypeValue, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, true)
 		if err != nil {
-			log.Fatalln("Failed to create cluster config:", err.Error())
+			return fmt.Errorf("Failed to create cluster config: %s", err.Error())
 		}
 
 		joinConfig := onboard.JoinClusterConfig(*clusterConfig, kubeArmorAddr, relayServerAddr, SIAAddr, PEAAddr)
 
 		err = joinConfig.JoinWorkerNode()
 		if err != nil {
-			log.Fatalln("Failed to join worker node:", err.Error())
+			return fmt.Errorf("Failed to join worker node: %s", err.Error())
 		}
 
 		log.Println("VM successfully joined with control-plane!")
+
+		return nil
 	},
 }
 

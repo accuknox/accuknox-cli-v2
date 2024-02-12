@@ -1,10 +1,8 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -24,7 +22,8 @@ func init() {
 
 	err := deboardCmd.MarkPersistentFlagRequired("type")
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	rootCmd.AddCommand(deboardCmd)

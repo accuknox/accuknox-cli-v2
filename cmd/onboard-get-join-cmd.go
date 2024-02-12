@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -15,10 +14,10 @@ var getJoinCmd = &cobra.Command{
 	Use:   "get-join-cmd",
 	Short: "Get join command for joining a worker node with the control plane node at the given adddress",
 	Long:  "Get join command for joining a worker node with the control plane node at the given adddress",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			log.Fatalln("Failed to generate join command:", err)
+			return fmt.Errorf("Failed to generate join command: %s", err)
 		}
 
 		// TODO: update as more platforms added
@@ -28,13 +27,15 @@ var getJoinCmd = &cobra.Command{
 		var clusterType string
 		_, err = os.Stat(dockerComposeFilePath)
 		if err != nil {
-			log.Fatalln("Failed to generate join command:", err)
+			return fmt.Errorf("Failed to generate join command: %s", err)
 		} else {
 			clusterType = string(onboard.ClusterType_VM)
 		}
 
 		command := fmt.Sprintf("knoxctl onboard node --type=%s --cp-addr=%s", clusterType, nodeAddr)
 		fmt.Println(command)
+
+		return nil
 	},
 }
 

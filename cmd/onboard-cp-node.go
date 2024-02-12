@@ -1,10 +1,8 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 	"github.com/spf13/cobra"
@@ -22,24 +20,26 @@ var cpNodeCmd = &cobra.Command{
 	Use:   "cp-node",
 	Short: "Initialize a control plane node for onboarding onto SaaS",
 	Long:  "Initialize a control plane node for onboarding onto SaaS",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		clusterTypeValue := onboard.ClusterTypeValues[clusterType]
 
 		clusterConfig, err := onboard.CreateClusterConfig(clusterTypeValue, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, false)
 		if err != nil {
-			log.Fatalln("Failed to create cluster config:", err.Error())
+			return fmt.Errorf("Failed to create cluster config: %s", err.Error())
 		}
 
 		onboardConfig := onboard.InitCPNodeConfig(*clusterConfig, joinToken, spireHost, ppsHost, knoxGateway)
 
 		err = onboardConfig.InitializeControlPlane()
 		if err != nil {
-			log.Fatalln("Failed to onboard control plane node:", err.Error())
+			return fmt.Errorf("Failed to onboard control plane node: %s", err.Error())
 		}
 
-		log.Println("VM successfully onboarded!")
-		log.Println("Now onboard any worker nodes with:")
+		fmt.Println("VM successfully onboarded!")
+		fmt.Println("Now onboard any worker nodes with:")
 		onboardConfig.PrintJoinCommand()
+
+		return nil
 	},
 }
 
@@ -57,23 +57,28 @@ func init() {
 
 	err := cpNodeCmd.MarkPersistentFlagRequired("join-token")
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	err = cpNodeCmd.MarkPersistentFlagRequired("spire-host")
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	err = cpNodeCmd.MarkPersistentFlagRequired("pps-host")
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	err = cpNodeCmd.MarkPersistentFlagRequired("knox-gateway")
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	err = cpNodeCmd.MarkPersistentFlagRequired("version")
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	onboardCmd.AddCommand(cpNodeCmd)

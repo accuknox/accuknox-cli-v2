@@ -3,6 +3,8 @@ package common
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
+	"os"
 
 	"golang.org/x/mod/semver"
 )
@@ -26,7 +28,8 @@ var (
 func init() {
 	err := json.Unmarshal(releaseInfoFile, &ReleaseInfo)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
 
