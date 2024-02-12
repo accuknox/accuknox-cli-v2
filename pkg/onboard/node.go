@@ -44,9 +44,34 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		}
 	}
 
-	relayHost, relayPort, err := parseURL(jc.RelayServerAddr)
-	if err != nil {
-		return err
+	// parse URL and assign default values as needed
+	var relayHost, relayPort, relayAddr string
+	if jc.RelayServerAddr != "" {
+		relayAddr = jc.RelayServerAddr
+		relayHost, relayPort, err = parseURL(jc.RelayServerAddr)
+		if err != nil {
+			return err
+		}
+	} else if jc.CPNodeAddr != "" {
+		relayHost = jc.CPNodeAddr
+		relayPort = "32768"
+		relayAddr = jc.CPNodeAddr + ":" + relayPort
+	} else {
+		return fmt.Errorf("Relay server address cannot be empty")
+	}
+
+	siaAddr := jc.SIAAddr
+	if siaAddr == "" && jc.CPNodeAddr != "" {
+		siaAddr = jc.CPNodeAddr + ":" + "32769"
+	} else {
+		return fmt.Errorf("SIA address cannot be empty")
+	}
+
+	peaAddr := jc.PEAAddr
+	if peaAddr == "" && jc.CPNodeAddr != "" {
+		peaAddr = jc.CPNodeAddr + ":" + "32770"
+	} else {
+		return fmt.Errorf("PEA address cannot be empty")
 	}
 
 	jc.TCArgs = TemplateConfigArgs{
@@ -61,12 +86,12 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		KubeArmorURL:  kubeArmorURL,
 		KubeArmorPort: kubeArmorPort,
 
-		RelayServerURL:  jc.RelayServerAddr,
+		RelayServerURL:  relayAddr,
 		RelayServerAddr: relayHost,
 		RelayServerPort: relayPort,
 
-		SIAAddr: jc.SIAAddr,
-		PEAAddr: jc.PEAAddr,
+		SIAAddr: siaAddr,
+		PEAAddr: peaAddr,
 
 		WorkerNode: jc.WorkerNode,
 

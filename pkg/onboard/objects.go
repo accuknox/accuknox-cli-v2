@@ -113,8 +113,9 @@ services:
     image: "{{.KubeArmorRelayServerImage}}"
     command:
       - "-enableReverseLogClient"
-      - "-enablePolicyServer"
       - "-gRPCPort=32768"
+    volumes:
+      - "{{.ConfigPath}}:/opt"
     restart: on-failure:4
     labels:
       app: kubearmor-relay-server
@@ -141,6 +142,8 @@ services:
     labels:
       app: kubearmor-vm-adapter
     restart: on-failure:4
+    volumes:
+      - "{{.ConfigPath}}:/opt"
     networks:
       accuknox-net:
         aliases:
@@ -217,13 +220,15 @@ services:
         condition: service_completed_successfully
       kubearmor-relay-server:
         condition: service_started
+      kubearmor-vm-adapter:
+        condition: service_started
     container_name: policy-enforcement-agent
     image: "{{.PEAImage}}"
     command: ["-config-path", "/opt/pea/"]
     labels:
       app: policy-enforcement-agent
     volumes:
-      - "{{.ConfigPath}}/pea:/opt/pea"
+      - "{{.ConfigPath}}:/opt"
       - "/var/run:/var/run:ro"
     restart: on-failure:4
     ports:
@@ -312,6 +317,8 @@ services:
       - "--relay-server-addr={{.RelayServerURL}}"
       - "--sia-addr={{.SIAAddr}}"
       - "--pea-addr={{.PEAAddr}}"
+    volumes:
+      - "{{.ConfigPath}}:/opt"
     labels:
       app: kubearmor-vm-adapter
     restart: on-failure:4
