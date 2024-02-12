@@ -107,7 +107,7 @@ func GetComposeCommand() string {
 	}
 
 	// docker-compose exists, compare versions
-	composeCLIVersion, err := ExecComposeCommand(false, "docker-compose", "version", "--short")
+	composeCLIVersion, err := ExecComposeCommand(false, false, "docker-compose", "version", "--short")
 	if err != nil {
 		return ""
 	}
@@ -123,7 +123,7 @@ func GetComposeCommand() string {
 	}
 
 	// check if "docker compose" meets version requirements
-	composeDockerCLIVersion, err := ExecComposeCommand(false, "docker compose", "version", "--short")
+	composeDockerCLIVersion, err := ExecComposeCommand(false, false, "docker compose", "version", "--short")
 	if err != nil {
 		return ""
 	}
@@ -141,15 +141,26 @@ func GetComposeCommand() string {
 	return ""
 }
 
-func ExecComposeCommand(setStdOut bool, tryCmd string, args ...string) (string, error) {
+func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (string, error) {
 	composeCmd := new(exec.Cmd)
 
 	cmd := strings.Split(tryCmd, " ")
 	if len(cmd) == 1 {
-		composeCmd = exec.Command(cmd[0], args...)
-	} else if len(cmd) > 1 {
-		composeCmd = exec.Command(cmd[0], cmd[1])
+
+		composeCmd = exec.Command(cmd[0])
+		if dryRun {
+			composeCmd.Args = append(composeCmd.Args, "--dry-run")
+		}
 		composeCmd.Args = append(composeCmd.Args, args...)
+
+	} else if len(cmd) > 1 {
+
+		composeCmd = exec.Command(cmd[0], cmd[1])
+		if dryRun {
+			composeCmd.Args = append(composeCmd.Args, "--dry-run")
+		}
+		composeCmd.Args = append(composeCmd.Args, args...)
+
 	} else {
 		return "", fmt.Errorf("unknown compose command")
 	}

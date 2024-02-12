@@ -8,7 +8,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 )
 
-func Deboard(nodeType onboard.NodeType) error {
+func Deboard(nodeType onboard.NodeType, dryRun bool) error {
 	userHomedir, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -24,11 +24,11 @@ func Deboard(nodeType onboard.NodeType) error {
 	composeCmd := onboard.GetComposeCommand()
 	switch nodeType {
 	case onboard.NodeType_ControlPlane:
-		_, err = onboard.ExecComposeCommand(true, composeCmd,
+		_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
 			"-f", composeFilePath, "--profile", "spire-agent",
 			"--profile", "kubearmor", "--profile", "accuknox-agents", "down")
 	case onboard.NodeType_WorkerNode:
-		_, err = onboard.ExecComposeCommand(true, composeCmd,
+		_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
 			"-f", composeFilePath, "--profile", "kubearmor", "down")
 	}
 	if err != nil {

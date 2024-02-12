@@ -1,6 +1,7 @@
 package onboard
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/Masterminds/sprig"
@@ -82,13 +83,13 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	// pull latest images
-	_, err = ExecComposeCommand(true, jc.composeCmd, "-f", composeFilePath, "--profile", "kubearmor-only", "pull")
+	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, "-f", composeFilePath, "--profile", "kubearmor-only", "pull")
 	if err != nil {
 		return err
 	}
 
 	// run compose command
-	_, err = ExecComposeCommand(true, jc.composeCmd, "-f", composeFilePath, "--profile", "kubearmor-only", "up", "-d")
+	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, "-f", composeFilePath, "--profile", "kubearmor-only", "up", "-d")
 	if err != nil {
 		return err
 	}

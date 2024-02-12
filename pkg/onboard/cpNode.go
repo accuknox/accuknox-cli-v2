@@ -19,6 +19,7 @@ func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGatew
 	}
 }
 
+
 func (ic *InitConfig) InitializeControlPlane() error {
 	// validate this environment
 	err := ic.validateEnv()
@@ -129,7 +130,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	// pull latest images
 	_, err = ExecComposeCommand(
-		true,
+		true, ic.DryRun,
 		ic.composeCmd, "-f", composeFilePath,
 		"--profile", "spire-agent", "--profile", "kubearmor",
 		"--profile", "accuknox-agents", "pull")
@@ -139,7 +140,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	// run compose command
 	_, err = ExecComposeCommand(
-		true,
+		true, ic.DryRun,
 		ic.composeCmd, "-f", composeFilePath,
 		"--profile", "spire-agent", "--profile", "kubearmor",
 		"--profile", "accuknox-agents", "up", "-d")
