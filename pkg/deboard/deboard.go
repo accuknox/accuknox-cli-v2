@@ -8,17 +8,17 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 )
 
-func Deboard(nodeType onboard.NodeType, dryRun bool) error {
+func Deboard(nodeType onboard.NodeType, dryRun bool) (string, error) {
 	userHomedir, err := os.UserHomeDir()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	configPath := filepath.Join(userHomedir, ".accuknox")
 	composeFilePath := filepath.Join(configPath, "docker-compose.yaml")
 	_, err = os.Stat(composeFilePath)
 	if err != nil {
-		return err
+		return configPath, err
 	}
 
 	composeCmd := onboard.GetComposeCommand()
@@ -32,13 +32,13 @@ func Deboard(nodeType onboard.NodeType, dryRun bool) error {
 			"-f", composeFilePath, "--profile", "kubearmor", "down")
 	}
 	if err != nil {
-		return fmt.Errorf("Error: %s", err.Error())
+		return configPath, fmt.Errorf("Error: %s", err.Error())
 	}
 
 	err = os.RemoveAll(configPath)
 	if err != nil {
-		return err
+		return configPath, err
 	}
 
-	return nil
+	return configPath, nil
 }

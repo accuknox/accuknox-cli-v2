@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"log"
+	"os"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/deboard"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
@@ -17,8 +18,10 @@ var deboardCpNodeCmd = &cobra.Command{
 	Short: "Deboard control plane node",
 	Long:  "Deboard control plane node",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := deboard.Deboard(onboard.NodeType_ControlPlane, dryRun)
-		if err != nil {
+		configPath, err := deboard.Deboard(onboard.NodeType_ControlPlane, dryRun)
+		if err != nil && os.IsPermission(err) {
+			log.Println("Please remove any remaining resources at %s.", configPath)
+		} else {
 			log.Fatalln("Failed to deboard control plane node:", err.Error())
 		}
 
