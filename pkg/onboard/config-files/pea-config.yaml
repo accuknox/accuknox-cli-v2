@@ -1,0 +1,29 @@
+server:
+  port: :6060
+  basepath: /pea
+
+application:
+  name: policy-enf-agent
+
+spire:
+  enable: true
+  agent: "unix:///var/run/spire/agent.sock"
+
+endpoint:
+  urlendpoint: /pps/api/v1/policy-provider/fetch-policy
+  baseurlendpoint: https://{{.PPSHost}}
+
+statusendpoint:
+  endpoint: https://{{.PPSHost}}/pps/api/v1/policy-provider/change-status-policy
+
+syncuptime:
+  t: 5
+
+annotation:
+  statusendpoint: /pps/api/v1/policy-provider/update-annotation-status
+  annotationendpoint: /pps/api/v1/policy-provider/fetch-annotations
+  basepath: https://{{.PPSHost}}
+
+non-k8s:
+  enable: true
+  policy-server-port: 32770

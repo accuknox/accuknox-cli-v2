@@ -31,7 +31,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		return err
 	}
 
-	configPath, err := createConfigPath()
+	configPath, err := createDefaultConfigPath()
 	if err != nil {
 		return err
 	}
@@ -92,22 +92,22 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	sprigFuncs := sprig.GenericFuncMap()
 
 	// write compose file
-	composeFilePath, err := writeFile(configPath, "docker-compose.yaml", sprigFuncs, cpComposeFileTemplate, ic.TCArgs)
+	composeFilePath, err := copyOrGenerateFile(ic.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, cpComposeFileTemplate, ic.TCArgs)
 	if err != nil {
 		return err
 	}
 
-	_, err = writeFile(configPath, "pea/application.yaml", sprigFuncs, peaConfig, ic.TCArgs)
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "pea/application.yaml", sprigFuncs, peaConfig, ic.TCArgs)
 	if err != nil {
 		return err
 	}
 
-	_, err = writeFile(configPath, "sia/app.yaml", sprigFuncs, siaConfig, ic.TCArgs)
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sia/app.yaml", sprigFuncs, siaConfig, ic.TCArgs)
 	if err != nil {
 		return err
 	}
 
-	_, err = writeFile(configPath, "spire/conf/agent.conf", sprigFuncs, spireAgentConfig, ic.TCArgs)
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "spire/conf/agent.conf", sprigFuncs, spireAgentConfig, ic.TCArgs)
 	if err != nil {
 		return err
 	}
@@ -117,12 +117,12 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		ServerURL:  ic.KnoxGateway,
 	}
 
-	_, err = writeFile(configPath, "sia/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sia/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
 	if err != nil {
 		return err
 	}
 
-	_, err = writeFile(configPath, "feeder-service/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "feeder-service/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
 	if err != nil {
 		return err
 	}

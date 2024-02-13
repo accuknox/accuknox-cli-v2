@@ -29,7 +29,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		return err
 	}
 
-	configPath, err := createConfigPath()
+	configPath, err := createDefaultConfigPath()
 	if err != nil {
 		return err
 	}
@@ -60,15 +60,19 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		return fmt.Errorf("Relay server address cannot be empty")
 	}
 
-	siaAddr := jc.SIAAddr
-	if siaAddr == "" && jc.CPNodeAddr != "" {
+	var siaAddr string
+	if jc.SIAAddr != "" {
+		siaAddr = jc.SIAAddr
+	} else if siaAddr == "" && jc.CPNodeAddr != "" {
 		siaAddr = jc.CPNodeAddr + ":" + "32769"
 	} else {
 		return fmt.Errorf("SIA address cannot be empty")
 	}
 
-	peaAddr := jc.PEAAddr
-	if peaAddr == "" && jc.CPNodeAddr != "" {
+	var peaAddr string
+	if jc.PEAAddr != "" {
+		peaAddr = jc.PEAAddr
+	} else if peaAddr == "" && jc.CPNodeAddr != "" {
 		peaAddr = jc.CPNodeAddr + ":" + "32770"
 	} else {
 		return fmt.Errorf("PEA address cannot be empty")
@@ -102,7 +106,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	sprigFuncs := sprig.GenericFuncMap()
 
 	// write compose file
-	composeFilePath, err := writeFile(configPath, "docker-compose.yaml", sprigFuncs, workerNodeComposeFileTemplate, jc.TCArgs)
+	composeFilePath, err := copyOrGenerateFile(jc.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, workerNodeComposeFileTemplate, jc.TCArgs)
 	if err != nil {
 		return err
 	}

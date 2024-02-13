@@ -34,6 +34,9 @@ var (
 )
 
 type ClusterConfig struct {
+	DefaultConfigPath string
+	UserConfigPath    string
+
 	ClusterType      ClusterType
 	KubeArmorVersion string
 	AgentsVersion    string

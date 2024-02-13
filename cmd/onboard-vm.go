@@ -10,16 +10,16 @@ var (
 	kubearmorVersion string
 	releaseVersion   string
 
-	kubeArmorImage            string
-	kubeArmorInitImage        string
-	kubeArmorVMAdapterImage   string
+	kubeArmorImage          string
+	kubeArmorInitImage      string
+	kubeArmorVMAdapterImage string
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
 var onboardVMCmd = &cobra.Command{
 	Use:   "vm",
 	Short: "sub-command for onboarding VM clusters",
-	Long: "sub-command for onboarding VM clusters",
+	Long:  "sub-command for onboarding VM clusters",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := cmd.Help()
 		if err != nil {

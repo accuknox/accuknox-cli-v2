@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 
@@ -143,4 +144,20 @@ func writeWorkloadInfoToTable(cluster, namespace, workloadType, workloadName str
 		table.Append(v)
 	}
 	table.Render()
+}
+
+// GetDefaultConfigPath returns home dir along with an error
+func GetDefaultConfigPath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	if homeDir == "" {
+		return "", fmt.Errorf("Home directory not found")
+	}
+
+	configPath := filepath.Join(homeDir, DefaultConfigPathDirName)
+
+	return configPath, nil
 }

@@ -1,0 +1,6 @@
+kmux:
+  sink:
+    stream: {{.StreamName}}
+
+knox-gateway:
+  server: {{.ServerURL}}

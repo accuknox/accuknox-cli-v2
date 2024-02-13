@@ -1,0 +1,17 @@
+spire:
+  enable: true
+  agent: "unix:///var/run/spire/agent.sock"
+
+kmux-topic: shared-event
+kmux-topic-prefix: persistent://accuknox/cluster-entity/
+
+heartbeat:
+  interval: 5m
+
+kmux-config-file: "/opt/sia/kmux-config.yaml"
+
+state-agent:
+  port: 32769
+
+k8s:
+  enable:false

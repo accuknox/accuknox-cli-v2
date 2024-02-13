@@ -10,18 +10,19 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"golang.org/x/mod/semver"
 )
 
 // path for writing configuration files
-func createConfigPath() (string, error) {
-	userHomedir, err := os.UserHomeDir()
+func createDefaultConfigPath() (string, error) {
+	configPath, err := common.GetDefaultConfigPath()
 	if err != nil {
 		return "", err
 	}
 
-	configPath := filepath.Join(userHomedir, ".accuknox")
 	_, err = os.Stat(configPath)
+	// return all errors expect if given path does not exist
 	if err != nil && !os.IsNotExist(err) {
 		return "", err
 	}
@@ -58,31 +59,55 @@ func parseURL(address string) (string, string, error) {
 	return host, port, nil
 }
 
-// writeFile writes to file with the given template at the given path
-func writeFile(dirPath, filePath string, tempFuncs template.FuncMap, templateString string, templateArgs interface{}) (string, error) {
-	// generate the file with the template
-	templateFile, err := template.New(filePath).Funcs(tempFuncs).Parse(templateString)
-	if err != nil {
-		return "", err
+// copyOrGenerateFile copies a a config file from userConfigDir to the given path or writes file with the given template at the given path
+func copyOrGenerateFile(userConfigDir, dirPath, filePath string, tempFuncs template.FuncMap, templateString string, templateArgs interface{}) (string, error) {
+	dataFile := &bytes.Buffer{}
+
+	// if user specified a config path - read if the given file
+	// exists in it and skip template generation
+	if userConfigDir != "" {
+		userConfigFilePath := filepath.Join(userConfigDir, filePath)
+		if _, err := os.Stat(userConfigFilePath); err != nil {
+			return "", fmt.Errorf("error while opening user specified file: %s", err.Error())
+		}
+
+		userFileBytes, err := os.ReadFile(userConfigFilePath) // #nosec G304
+		if err != nil {
+			return "", err
+		} else if len(userFileBytes) == 0 {
+			return "", fmt.Errorf("empty config file given at %s", userConfigFilePath)
+		}
+
+		dataFile = bytes.NewBuffer(userFileBytes)
+
+	} else {
+		// generate the file with the template
+		templateFile, err := template.New(filePath).Funcs(tempFuncs).Parse(templateString)
+		if err != nil {
+			return "", err
+		}
+
+		err = templateFile.Execute(dataFile, templateArgs)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	var dataFile bytes.Buffer
-	err = templateFile.Execute(&dataFile, templateArgs)
-	if err != nil {
-		return "", err
+	if dataFile == nil {
+		return "", fmt.Errorf("Failed to read config file for %s: Empty file", filePath)
 	}
 
 	fullFilePath := filepath.Join(dirPath, filePath)
 	fullFileDir := filepath.Dir(fullFilePath)
 
-	// create needed directories
-	err = os.MkdirAll(fullFileDir, os.ModeDir|os.ModePerm)
+	// create needed directories at the path to write
+	err := os.MkdirAll(fullFileDir, os.ModeDir|os.ModePerm)
 	if err != nil && !os.IsExist(err) {
 		return "", err
 	}
 
-	//resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
 	// fullFilePath contains the path to configDir - hard coding paths won't be efficient
+	// overwrite files if need
 	resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600) // #nosec G304
 	if err != nil {
 		return "", err
@@ -97,7 +122,23 @@ func writeFile(dirPath, filePath string, tempFuncs template.FuncMap, templateStr
 	return fullFilePath, nil
 }
 
-// check compose command
+func compareVersionsAndGetComposeCommand(composeCLIVersion, returnCmd string) string {
+	composeCLIVersionStr := strings.TrimSpace(string(composeCLIVersion))
+	if composeCLIVersion != "" {
+		if composeCLIVersionStr[0] != 'v' {
+			composeCLIVersionStr = "v" + composeCLIVersionStr
+		}
+
+		if semver.Compare(composeCLIVersionStr, common.MinDockerComposeVersion) >= 0 {
+			return returnCmd
+		}
+	}
+
+	return ""
+}
+
+// GetComposeCommand gets the compose command with perfect version
+// caller must check for empty
 func GetComposeCommand() string {
 	var err error
 
@@ -113,31 +154,20 @@ func GetComposeCommand() string {
 	if err != nil {
 		return ""
 	}
-	composeCLIVersionStr := strings.TrimSpace(string(composeCLIVersion))
-	if composeCLIVersion != "" {
-		if composeCLIVersionStr[0] != 'v' {
-			composeCLIVersionStr = "v" + composeCLIVersionStr
-		}
-
-		if semver.Compare(composeCLIVersionStr, "v1.27.0") >= 0 {
-			return "docker-compose"
-		}
+	composeCmd := compareVersionsAndGetComposeCommand(composeCLIVersion, "docker-compose")
+	if composeCmd != "" {
+		return composeCmd
 	}
 
+	// docker-compose didn't match requirements so
 	// check if "docker compose" meets version requirements
 	composeDockerCLIVersion, err := ExecComposeCommand(false, false, "docker compose", "version", "--short")
 	if err != nil {
 		return ""
 	}
-	composeDockerCLIVersionStr := strings.TrimSpace(string(composeCLIVersion))
-	if composeDockerCLIVersion != "" {
-		if composeDockerCLIVersionStr[0] != 'v' {
-			composeDockerCLIVersionStr = "v" + composeCLIVersionStr
-		}
-
-		if semver.Compare(composeDockerCLIVersionStr, "v1.27.0") >= 0 {
-			return "docker compose"
-		}
+	composeCmd = compareVersionsAndGetComposeCommand(composeDockerCLIVersion, "docker compose")
+	if composeCmd != "" {
+		return composeCmd
 	}
 
 	return ""
@@ -197,7 +227,7 @@ func (cc *ClusterConfig) validateEnv() error {
 	// check if docker exists
 	_, err := exec.LookPath("docker")
 	if err != nil {
-		return fmt.Errorf("Error while looking for docker. Err: %s. Please install docker v19.0.3+.", err.Error())
+		return fmt.Errorf("Error while looking for docker. Err: %s. Please install docker %s+.", err.Error(), common.MinDockerVersion)
 	}
 
 	serverVersionCmd := exec.Command("docker", "version", "-f", "{{.Server.Version}}")
@@ -212,14 +242,14 @@ func (cc *ClusterConfig) validateEnv() error {
 			serverVersionStr = "v" + serverVersionStr
 		}
 
-		if semver.Compare(serverVersionStr, "v19.0.3") < 0 {
+		if semver.Compare(serverVersionStr, common.MinDockerVersion) < 0 {
 			return fmt.Errorf("docker version %s not supported", serverVersionStr)
 		}
 	}
 
 	composeCmd := GetComposeCommand()
 	if composeCmd == "" {
-		return fmt.Errorf("Please install docker-compose v1.27.0+")
+		return fmt.Errorf("Please install docker-compose %s+", common.MinDockerComposeVersion)
 	}
 
 	cc.composeCmd = composeCmd

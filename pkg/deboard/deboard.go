@@ -5,16 +5,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 )
 
 func Deboard(nodeType onboard.NodeType, dryRun bool) (string, error) {
-	userHomedir, err := os.UserHomeDir()
+	configPath, err := common.GetDefaultConfigPath()
 	if err != nil {
 		return "", err
 	}
 
-	configPath := filepath.Join(userHomedir, ".accuknox")
 	composeFilePath := filepath.Join(configPath, "docker-compose.yaml")
 	_, err = os.Stat(composeFilePath)
 	if err != nil {
