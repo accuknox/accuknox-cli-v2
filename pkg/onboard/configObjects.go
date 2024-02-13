@@ -5,15 +5,15 @@ import (
 )
 
 var (
-	//go:embed config-files/kmux-config.yaml
+	//go:embed templates/kmux-config.yaml
 	kmuxConfig string
 
-	//go:embed config-files/pea-config.yaml
+	//go:embed templates/pea-config.yaml
 	peaConfig string
 
-	//go:embed config-files/sia-config.yaml
+	//go:embed templates/sia-config.yaml
 	siaConfig string
 
-	//go:embed config-files/spire-agent.conf
+	//go:embed templates/spire-agent.conf
 	spireAgentConfig string
 )

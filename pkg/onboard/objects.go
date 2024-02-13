@@ -5,9 +5,9 @@ import (
 )
 
 var (
-	//go:embed config-files/docker-compose_cp-node.yaml
+	//go:embed templates/docker-compose_cp-node.yaml
 	cpComposeFileTemplate string
 
-	//go:embed config-files/docker-compose_node.yaml
+	//go:embed templates/docker-compose_node.yaml
 	workerNodeComposeFileTemplate string
 )
