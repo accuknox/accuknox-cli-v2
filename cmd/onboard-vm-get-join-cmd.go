@@ -40,6 +40,6 @@ var getJoinCmd = &cobra.Command{
 }
 
 func init() {
-	onboardCmd.DisableFlagParsing = true
-	onboardCmd.AddCommand(getJoinCmd)
+	onboardVMCmd.DisableFlagParsing = true
+	onboardVMCmd.AddCommand(getJoinCmd)
 }

@@ -9,10 +9,17 @@ import (
 )
 
 var (
+	// essential flags
 	joinToken   string
 	spireHost   string
 	ppsHost     string
 	knoxGateway string
+
+	// cp-node only images
+	kubeArmorRelayServerImage string
+	siaImage                  string
+	peaImage                  string
+	feederImage               string
 )
 
 // cpNodeCmd represents the init command
@@ -21,9 +28,7 @@ var cpNodeCmd = &cobra.Command{
 	Short: "Initialize a control plane node for onboarding onto SaaS",
 	Long:  "Initialize a control plane node for onboarding onto SaaS",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		clusterTypeValue := onboard.ClusterTypeValues[clusterType]
-
-		clusterConfig, err := onboard.CreateClusterConfig(clusterTypeValue, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, false)
+		clusterConfig, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, false)
 		if err != nil {
 			return fmt.Errorf("Failed to create cluster config: %s", err.Error())
 		}
@@ -45,7 +50,6 @@ var cpNodeCmd = &cobra.Command{
 
 func init() {
 	// configuration for connecting with accuKnox SaaS
-	cpNodeCmd.PersistentFlags().StringVarP(&clusterType, "type", "t", "", "type of cluster to onboard. possible values VM")
 	cpNodeCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "agents release version to use")
 
 	cpNodeCmd.PersistentFlags().StringVar(&joinToken, "join-token", "", "join-token to use")
@@ -54,6 +58,11 @@ func init() {
 	cpNodeCmd.PersistentFlags().StringVar(&knoxGateway, "knox-gateway", "", "address of knox-gateway to connect with for pushing telemetry data")
 
 	cpNodeCmd.PersistentFlags().StringVar(&nodeAddr, "cp-node-addr", "", "address of control plane node for generating join command")
+
+	cpNodeCmd.PersistentFlags().StringVar(&kubeArmorRelayServerImage, "kubearmor-relay-server", "", "KubeArmor relay-server image to use")
+	cpNodeCmd.PersistentFlags().StringVar(&siaImage, "sia-image", "", "sia image to use")
+	cpNodeCmd.PersistentFlags().StringVar(&peaImage, "pea-image", "", "pea image to use")
+	cpNodeCmd.PersistentFlags().StringVar(&feederImage, "feeder-image", "", "feeder-service image to use")
 
 	err := cpNodeCmd.MarkPersistentFlagRequired("join-token")
 	if err != nil {
@@ -81,5 +90,5 @@ func init() {
 		os.Exit(1)
 	}
 
-	onboardCmd.AddCommand(cpNodeCmd)
+	onboardVMCmd.AddCommand(cpNodeCmd)
 }

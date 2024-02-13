@@ -28,5 +28,5 @@ var deboardNodeCmd = &cobra.Command{
 }
 
 func init() {
-	deboardCmd.AddCommand(deboardNodeCmd)
+	deboardVMCmd.AddCommand(deboardNodeCmd)
 }
