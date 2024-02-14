@@ -37,6 +37,9 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	spireHost, spirePort, err := parseURL(ic.SpireHost)
+	if err != nil {
+		return err
+	}
 	if spirePort == "80" {
 		// default spire port
 		spirePort = "8081"

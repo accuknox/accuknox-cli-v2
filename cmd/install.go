@@ -56,4 +56,5 @@ func init() {
 	installCmd.Flags().StringVarP(&discoveryEngineOptions.Tag, "release-tag", "", "", "Release tag for Discovery Engine that is to be installed")
 	installCmd.Flags().BoolVar(&discoveryEngineOptions.ListTags, "list-tags", false, "List the latest 3 rolling release tags of Discovery Engine")
 	installCmd.Flags().BoolVar(&discoveryEngineOptions.Debug, "debug", false, "Debug will not clean up Discovery Engine's resources in case deployment fails and will print extra info about the resources installed.")
+	installCmd.Flags().BoolVar(&discoveryEngineOptions.Helm, "helm", false, "Install using helm. Please make sure helm is installed on your system")
 }
