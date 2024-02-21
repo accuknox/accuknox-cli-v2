@@ -1,6 +1,6 @@
 module github.com/accuknox/accuknox-cli-v2
 
-go 1.20
+go 1.21
 
 replace (
 	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.6
