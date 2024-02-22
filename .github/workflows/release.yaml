@@ -61,20 +61,22 @@ jobs:
           path: knoxctl-website
           ref: main
 
-      - name: Update latest version file 
+      - name: Update latest version file and upload binaries
         run: |
           echo "${{ steps.get_tag.outputs.TAG_NAME }}" > knoxctl-website/static/version/latest_version.txt
+          cp -r dist/* knoxctl-website/static/binaries/
           cd knoxctl-website
           git config user.name "accuknox-user"
           git config user.email "devops.alerts@accuknox.com"
-          git add static/version/latest_version.txt
-          git commit -m "[knoxctl-ci-bot] Update latest version to ${{ steps.get_tag.outputs.TAG_NAME }}"
-          git push origin main
+          git add .
+          git commit -m "[knoxctl-ci-bot] Update latest version and add binaries for version ${{ steps.get_tag.outputs.TAG_NAME }}"
 
-      - name: Upload binaries to knoxctl-website
-        run: |
-          cp -r dist/* knoxctl-website/static/binaries/
-          cd knoxctl-website
-          git add static/binaries/
-          git commit -m "[knoxctl-ci-bot] Add binaries for version ${{ steps.get_tag.outputs.TAG_NAME }}"
-          git push origin main 
+
+      - name: Push Update to Protected Branch
+        uses: CasperWA/push-protected@v2
+        with:
+          token: ${{ secrets.AK_PAT_REPO_SCOPE }}
+          branch: main
+        env:
+          GIT_COMMITTER_NAME: accuknox-user
+          GIT_COMMITTER_EMAIL: devops.alerts@accuknox.com
