@@ -80,8 +80,19 @@ jobs:
       - name: Update version in index.md
         run: |
           LATEST_TAG=${{ steps.get_tag.outputs.TAG_NAME }}
+          # Debug: Print the original LATEST_TAG
+          echo "Original LATEST_TAG: $LATEST_TAG"
+          
+          LATEST_TAG=${LATEST_TAG#v}
+          echo "Modified LATEST_TAG: $LATEST_TAG"
+
           FILE_PATH=knoxctl-website/content/docs/install/index.md
+          echo "sed command: sed -i \"s/accuknoxcli_[0-9]*\.[0-9]*\.[0-9]*_/accuknoxcli_${LATEST_TAG}_/g\" $FILE_PATH"
+          
           sed -i "s/accuknoxcli_[0-9]*\.[0-9]*\.[0-9]*_/accuknoxcli_${LATEST_TAG}_/g" $FILE_PATH
+
+          git status
+          git diff
 
           cd knoxctl-website
           git config user.name "accuknox-user"
@@ -89,3 +100,4 @@ jobs:
           git add content/docs/install/index.md
           git commit -m "[knoxctl-ci-bot] Update installation guide to version $LATEST_TAG"
           git push origin main
+
