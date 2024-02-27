@@ -77,16 +77,16 @@ jobs:
           git commit -m "[knoxctl-ci-bot] Add binaries for version ${{ steps.get_tag.outputs.TAG_NAME }}"
           git push origin main
 
-      - name: Update version in index.md
-        run: |
-          LATEST_TAG=${{ steps.get_tag.outputs.TAG_NAME }}
-          LATEST_TAG=${LATEST_TAG#v}
-          FILE_PATH=knoxctl-website/content/docs/install/index.md
-          sed -i "s/accuknoxcli_[0-9]*\.[0-9]*\.[0-9]*_/accuknoxcli_${LATEST_TAG}_/g" $FILE_PATH
-
-          cd knoxctl-website
-          git config user.name "accuknox-user"
-          git config user.email "devops.alerts@accuknox.com"
-          git add content/docs/install/index.md
-          git commit -m "[knoxctl-ci-bot] Update installation guide to version $LATEST_TAG"
-          git push origin main
+      # - name: Update version in index.md
+      #   run: |
+      #     LATEST_TAG=${{ steps.get_tag.outputs.TAG_NAME }}
+      #     LATEST_TAG=${LATEST_TAG#v}
+      #     FILE_PATH=knoxctl-website/content/docs/install/index.md
+      #     sed -i "s/accuknoxcli_[0-9]*\.[0-9]*\.[0-9]*_/accuknoxcli_${LATEST_TAG}_/g" $FILE_PATH
+      #
+      #     cd knoxctl-website
+      #     git config user.name "accuknox-user"
+      #     git config user.email "devops.alerts@accuknox.com"
+      #     git add content/docs/install/index.md
+      #     git commit -m "[knoxctl-ci-bot] Update installation guide to version $LATEST_TAG"
+      #     git push origin main
