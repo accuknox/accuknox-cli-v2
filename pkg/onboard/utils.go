@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -208,6 +209,10 @@ func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (
 
 		err := composeCmd.Run()
 		if err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				return "", errors.New(string(exitErr.Stderr))
+			}
+
 			return "", err
 		}
 
@@ -233,6 +238,9 @@ func (cc *ClusterConfig) validateEnv() error {
 	serverVersionCmd := exec.Command("docker", "version", "-f", "{{.Server.Version}}")
 	serverVersion, err := serverVersionCmd.Output()
 	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return errors.New(string(exitErr.Stderr))
+		}
 		return err
 	}
 

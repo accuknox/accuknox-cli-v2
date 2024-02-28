@@ -10,8 +10,11 @@ services:
       - "/etc/spire/conf/agent.conf"
       - "-expandEnv"
     volumes:
+      # for SPIRE config
       - "{{.ConfigPath}}:/etc"
+      # for SPIRE socket
       - "/var/run/:/var/run/"
+      # for spire SVID persistence
       - "/var/lib/spire/agent:/var/lib/spire/agent"
     labels:
       app: spire-agent
@@ -226,6 +229,7 @@ services:
       app: policy-enforcement-agent
     volumes:
       - "{{.ConfigPath}}:/opt"
+      # for spire socket
       - "/var/run:/var/run:ro"
     restart: on-failure:4
     ports:

@@ -15,6 +15,9 @@ var (
 	ppsHost     string
 	knoxGateway string
 
+	// non-essential
+	spireTrustBundle string
+
 	// cp-node only images
 	kubeArmorRelayServerImage string
 	siaImage                  string
@@ -33,7 +36,7 @@ var cpNodeCmd = &cobra.Command{
 			return fmt.Errorf("Failed to create cluster config: %s", err.Error())
 		}
 
-		onboardConfig := onboard.InitCPNodeConfig(*clusterConfig, joinToken, spireHost, ppsHost, knoxGateway)
+		onboardConfig := onboard.InitCPNodeConfig(*clusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle)
 
 		err = onboardConfig.InitializeControlPlane()
 		if err != nil {
@@ -56,6 +59,8 @@ func init() {
 	cpNodeCmd.PersistentFlags().StringVar(&spireHost, "spire-host", "", "address of spire-host to connect for authenticating with accuknox SaaS")
 	cpNodeCmd.PersistentFlags().StringVar(&ppsHost, "pps-host", "", "address of policy-provider-service to connect with for receiving policies")
 	cpNodeCmd.PersistentFlags().StringVar(&knoxGateway, "knox-gateway", "", "address of knox-gateway to connect with for pushing telemetry data")
+
+	cpNodeCmd.PersistentFlags().StringVar(&spireTrustBundle, "spire-trust-bundle-addr", "", "address of spire trust bundle (CA cert for accuknox spire-server)")
 
 	cpNodeCmd.PersistentFlags().StringVar(&nodeAddr, "cp-node-addr", "", "address of control plane node for generating join command")
 

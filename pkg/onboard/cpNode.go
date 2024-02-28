@@ -1,7 +1,6 @@
 package onboard
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -9,13 +8,15 @@ import (
 	"github.com/Masterminds/sprig"
 )
 
-func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGateway string) *InitConfig {
+func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle string) *InitConfig {
 	return &InitConfig{
 		ClusterConfig: cc,
 		JoinToken:     joinToken,
 		SpireHost:     spireHost,
 		PPSHost:       ppsHost,
 		KnoxGateway:   knoxGateway,
+
+		SpireTrustBundleURL: spireTrustBundle,
 	}
 }
 
@@ -42,15 +43,19 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		spirePort = "8081"
 	}
 
-	var spireTrustBundleURL string
-	if ic.SpireTrustBundleURL == "" {
+	// currently unused as we use insecure bootstrap
+	var spireTrustBundleURL = ic.SpireTrustBundleURL
+	if spireTrustBundleURL == "" {
 		if strings.Contains(ic.SpireHost, "spire.dev.accuknox.com") {
-			//spireTrustBundleURL = "https://accuknox-dev-cert-spire.s3.us-east-2.amazonaws.com/ca.crt"
-			spireTrustBundleURL = "https://accuknox-spire.s3.amazonaws.com/certs/dev/certificate.crt"
+			spireTrustBundleURL = spireTrustBundleURLMap["dev"]
 		} else if strings.Contains(ic.SpireHost, "spire.stage.accuknox.com") {
-			spireTrustBundleURL = "https://accuknox-stage-cert-spire.s3.us-east-2.amazonaws.com/ca.crt"
-		} else {
-			return errors.New("No SPIRE trust bundle found for this environment")
+			spireTrustBundleURL = spireTrustBundleURLMap["stage"]
+		} else if strings.Contains(ic.SpireHost, "spire.demo.accuknox.com") {
+			spireTrustBundleURL = spireTrustBundleURLMap["demo"]
+		} else if strings.Contains(ic.SpireHost, "spire.prod.accuknox.com") {
+			spireTrustBundleURL = spireTrustBundleURLMap["prod"]
+		} else if strings.Contains(ic.SpireHost, "spire.xcitium.accuknox.com") {
+			spireTrustBundleURL = spireTrustBundleURLMap["xcitium"]
 		}
 	}
 
