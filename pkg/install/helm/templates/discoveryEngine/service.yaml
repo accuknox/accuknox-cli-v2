@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: discovery-engine
+  name: discovery-engine
+  namespace: {{ .Values.namespace | default "accuknox-agents" }}
+spec:
+  ports:
+    - name: grpc
+      port: 8090
+      protocol: TCP
+      targetPort: 8090
+    - name: amqp  
+      port: 5672
+      protocol: TCP
+      targetPort: 5672  
+  selector:
+    app: discovery-engine

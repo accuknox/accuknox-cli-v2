@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: discovery-engine
+  name: discovery-engine
+  namespace: {{ .Values.namespace | default "accuknox-agents" }}
+spec:
+  replicas: {{ .Values.discoveryEngine.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: discovery-engine
+  template:
+    metadata:
+      labels:
+        app: discovery-engine
+    spec:
+      serviceAccountName: discovery-engine
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: summary-engine
+          image: "{{ .Values.discoveryEngine.imagebase }}-sumengine:{{ .Values.discoveryEngine.tag }}"
+          imagePullPolicy: Always
+          args: ["--config", "/var/lib/sumengine/app.yaml", "--kmux-config", "/var/lib/sumengine/kmux.yaml"]
+          resources:
+            {{- toYaml .Values.discoveryEngine.summaryEngine.resources | nindent 12 }}
+          volumeMounts:
+          - mountPath: /var/lib/sumengine/
+            name: config-sumengine
+            readOnly: true
+        - name: offloader
+          image: "{{ .Values.discoveryEngine.imagebase }}-offloader:{{ .Values.discoveryEngine.tag }}"
+          imagePullPolicy: Always
+          args: ["--config", "/var/lib/offloader/app.yaml", "--kmux-config", "/var/lib/offloader/kmux.yaml"]
+          ports:
+          - containerPort: 8090
+            name: grpc
+          resources:
+            {{- toYaml .Values.discoveryEngine.offloader.resources | nindent 12 }}
+          volumeMounts:
+          - mountPath: /var/lib/offloader/
+            name: config-offloader
+            readOnly: true
+        - name: rabbitmq
+          image: rabbitmq:3.12.2-management # TODO: use .Values
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5672
+              name: amqp
+            - containerPort: 15672
+              name: management
+          resources:
+            {{- toYaml .Values.discoveryEngine.rabbitmq.resources | nindent 12 }}
+        - name: discover
+          image: "{{ .Values.discoveryEngine.imagebase }}-discover:{{ .Values.discoveryEngine.tag }}"
+          imagePullPolicy: Always
+          args: ["--config", "/var/lib/discover/app.yaml", "--kmux-config", "/var/lib/discover/kmux.yaml"]
+          ports:
+          - containerPort: 8090
+            name: grpc
+          resources:
+            {{- toYaml .Values.discoveryEngine.discover.resources | nindent 12 }}
+          volumeMounts:
+          - mountPath: /var/lib/discover/
+            name: config-discover
+            readOnly: true
+        - name: hardening
+          image: "{{ .Values.discoveryEngine.imagebase }}-hardening:{{ .Values.discoveryEngine.tag }}"
+          imagePullPolicy: Always
+          args: ["start", "--config", "/var/lib/hardening/config/app.yaml", "--kmux-config", "/var/lib/hardening/config/kmux.yaml", "--templates", "/var/lib/hardening/resources/policy_templates.zip"]
+          resources:
+            {{- toYaml .Values.discoveryEngine.hardening.resources | nindent 12 }}
+          volumeMounts:
+          - mountPath: /var/lib/hardening/config/
+            name: config-hardening
+            readOnly: true
+      volumes:
+      - configMap:
+          name: discovery-engine-sumengine
+        name: config-sumengine
+      - configMap:
+          name: discovery-engine-offloader
+        name: config-offloader
+      - configMap:
+          name: discovery-engine-hardening
+        name: config-hardening
+      - configMap:
+          name: discovery-engine-discover
+        name: config-discover
+

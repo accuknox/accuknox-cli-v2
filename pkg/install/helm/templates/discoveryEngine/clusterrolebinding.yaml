@@ -1,0 +1,29 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: view-cluster-resources
+  labels:
+    app: discovery-engine
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view-cluster-resources
+subjects:
+  - kind: ServiceAccount
+    name: discovery-engine
+    namespace: {{ .Values.namespace | default "accuknox-agents" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manage-policies
+  labels:
+    app: discovery-engine
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: manage-policies
+subjects:
+  - kind: ServiceAccount
+    name: discovery-engine
+    namespace: {{ .Values.namespace | default "accuknox-agents" }}

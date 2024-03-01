@@ -21,11 +21,24 @@ type Options struct {
 	Tag      string
 	ListTags bool
 	Debug    bool
+	Helm     bool
 }
 
 // DiscoveryEngine installs all the necessary k8s objects and resources
 // that will get Discovery Engine deployed, up and running.
 func DiscoveryEngine(client *k8s.Client, o Options) error {
+	if o.Helm {
+		fmt.Println("Installing Discovery Engine using Helm...")
+		err := installViaHelm(o)
+		if err != nil {
+			fmt.Printf("Failed to install via Helm: %v\n", err)
+			fmt.Println("Using release manifests to install Discovery Engine")
+		} else {
+			fmt.Println("Used Helm to install Discovery Engine!")
+			return checkDeploymentHealth(client, o)
+		}
+	}
+
 	if o.ListTags {
 		tags, err := deploy.GetReleaseTags()
 		if err != nil {
@@ -54,16 +67,20 @@ func DiscoveryEngine(client *k8s.Client, o Options) error {
 		return err
 	}
 
+	return checkDeploymentHealth(client, o)
+}
+
+// checkDeploymentHealth will do a health check on discovery engine containers
+func checkDeploymentHealth(client *k8s.Client, o Options) error {
 	countdownDuration := 7 * time.Minute
+	fmt.Println("Checking health of the deployment...")
 
 	doneChan := make(chan error)
-	allGoodChan := make(chan bool)
 	go startCountdown(countdownDuration)
 
 	go func() {
-		good, err := allGood(client, "accuknox-agents", 7*time.Minute, 5, 10*time.Second)
+		err := allGood(client, "accuknox-agents", 7*time.Minute, 5, 10*time.Second)
 		doneChan <- err
-		allGoodChan <- good // is this channel needed?
 	}()
 
 	select {
@@ -76,21 +93,11 @@ func DiscoveryEngine(client *k8s.Client, o Options) error {
 			}
 			return err
 		}
-		fmt.Println("\nDeployment succuessful! Discovery Engine is up and running.")
-		return nil
-	case good := <-allGoodChan:
-		if good {
-			fmt.Println("\nDeployment successful! Discovery Engine is up and running.")
-		}
+		fmt.Println("\nDeployment successful! Discovery Engine is up and running.")
 		return nil
 	case <-time.After(countdownDuration):
-		fmt.Printf("Deployment timeout reached\n")
-		if !o.Debug {
-			fmt.Println("Health check timeout reached.")
-		} else {
-			fmt.Println("Health check timeout reached.")
-		}
-		return nil
+		fmt.Println("Deployment timeout reached. Health check timeout reached.")
+		return fmt.Errorf("deployment timeout reached")
 	}
 }
 
@@ -351,7 +358,7 @@ func setupService(client *k8s.Client, tag string, Namespace string) (string, err
 	return service.Name, nil
 }
 
-func allGood(client *k8s.Client, Namespace string, timeout time.Duration, restartThreshold int32, checkInterval time.Duration) (bool, error) {
+func allGood(client *k8s.Client, Namespace string, timeout time.Duration, restartThreshold int32, checkInterval time.Duration) error {
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
 
@@ -362,7 +369,7 @@ func allGood(client *k8s.Client, Namespace string, timeout time.Duration, restar
 		case <-ticker.C:
 			pods, err := client.K8sClientset.CoreV1().Pods(Namespace).List(context.Background(), metav1.ListOptions{})
 			if err != nil {
-				return false, err
+				return err
 			}
 
 			allRunning := true
@@ -385,10 +392,10 @@ func allGood(client *k8s.Client, Namespace string, timeout time.Duration, restar
 			}
 
 			if allRunning {
-				return true, nil
+				return nil
 			}
 		case <-timeoutChan:
-			return false, fmt.Errorf("timeout reached while waiting for pods to be in a running state")
+			return fmt.Errorf("timeout reached while waiting for pods to be in a running state")
 		}
 	}
 }

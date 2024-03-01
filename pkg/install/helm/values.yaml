@@ -1,0 +1,216 @@
+# Need to automate in such a way that any changes in agents-charts gets
+# picked up here automatically. Or get this file from agents-charts? 
+# That would require some kind of authentication (think of PAT, yet again!)
+# If we write Go based APIs to get these files from agents chart, knoxctl binary
+# will not be able to pick up the changes. In that case we need to have a mechanism 
+# where every time agents-chart is updated we create a new release of knoxctl as well. 
+# Coupling the release of knoxctl and agents-chart would solve a bunch of issues.
+#
+# We can also get the complete chart using this: https://pkg.go.dev/github.com/mittwald/go-helm-client#example-HelmClient.AddOrUpdateChartRepo-Private
+discoveryEngine:
+
+  tag: "v0.1.16"
+  imagebase: "public.ecr.aws/k9v9d5v2/discovery-engine"
+
+  rabbitmq:
+    resources:
+      limits:
+        cpu: 1
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
+  summaryEngine:
+
+    resources: 
+      limits:
+        cpu: 500m
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
+    appConfig:
+      watcher:
+        enabled: true
+        kubearmor-event-type:
+          logs: true
+          alerts: true
+        kubearmor-relay:
+          name: relay-1
+          enabled: false
+          url: ""
+          port: ""
+      summary-engine:
+        enabled: true
+        cron-interval: "0h01m0s"
+        threshold: 10000
+        file-aggregation: true
+        topic:
+          summary-event: "summary-v2" 
+        exclude-namespaces:
+          kubearmor: true   
+        exclude-events:
+          operation:
+            process: false
+            file: false
+            network: false
+            
+    kmuxConfig:
+      kmux:
+        sink:
+          stream: rabbitmq 
+      rabbitmq:
+        server: "localhost:5672"
+        exchange:
+          name: "dev2"
+          type: "direct"
+          durable: true
+          auto-delete: true
+
+  offloader:
+
+    resources: 
+      limits:
+        cpu: 1
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 100Mi 
+
+    appConfig:
+      offloader:
+        summary:
+          enabled: true
+          topic: "summary-v2"
+          retention:
+            enabled: true
+            interval: 1 # Interval in days
+        policy:
+          enabled: true
+          topic: "policy-v1"
+          merge_policy: false
+          retention:
+            enabled: true
+            interval: 7 # Interval in days
+        server:
+          enabled: true
+          host: 0.0.0.0
+          port: 8090
+      database:
+        driver: sqlite
+        name:
+          policy-db: /Offloader/accuknox-policy.db
+          summary-db: /Offloader/accuknox-summary.db
+        credentials: local
+
+    kmuxConfig:
+      kmux:
+        source:
+          stream: rabbitmq
+      rabbitmq:
+        server: "localhost:5672"
+        exchange:
+          name: "dev2"
+          type: "direct"
+          durable: true
+          auto-delete: true
+        queue:
+          name: ""
+          durable: true
+          auto-delete: true
+
+  hardening: 
+
+    resources: 
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+    
+    appConfig:  
+      hardening:
+        enabled: true
+        cron-job-time-interval: "1h00m00s"
+        recommend-host-policy: true
+        template-version: "0.2.4"
+        topic: "policy-v1"
+        download-templates: false
+        delay-cron-job: "0h05m00s"
+        filter-enabled: false
+        exclude-namespaces:
+          kubearmor: true
+          kube-system: true 
+
+    kmuxConfig:
+      kmux: 
+        sink:
+          stream: rabbitmq
+      rabbitmq:
+        server: "localhost:5672"
+        exchange:
+          name: "dev2"
+          type: "direct"
+          durable: true
+          auto-delete: true
+        queue:
+          name: ""
+          durable: true
+          auto-delete: true
+
+  discover: 
+
+    resources: 
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 200Mi
+    
+    appConfig:  
+      discover:
+        consumer:
+          buffer-limit:
+            system: 1000
+            network: 100
+          time-limit: 1
+          topic: "summary-v2"
+        processor:
+          spu: 1
+          npu: 1
+          cores: 50
+        sink:
+          channel-size: 100
+          topic: "policy-v1"
+        policy-client:
+          server: 127.0.0.1:8090
+        ruleConfig:
+          rules: "process,network"
+      logging:
+        level: info
+
+    kmuxConfig:
+      kmux:
+        source:
+          stream: rabbitmq
+        sink:
+          stream: rabbitmq
+      rabbitmq:
+        server: "127.0.0.1:5672"
+        exchange:
+          name: "dev2"
+          type: "direct"
+          durable: true
+          auto-delete: true
+        queue:
+          name: ""
+          durable: true
+          auto-delete: true
+  
+  rabbitmqMgmt:
+    tag: 3.12.2-management
+    image: rabbitmq
