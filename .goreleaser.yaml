@@ -1,4 +1,4 @@
-project_name: accuknoxcli
+project_name: knoxctl
 
 builds:
   - binary: knoxctl
@@ -10,6 +10,10 @@ builds:
       - arm64
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/accuknox/accuknox-cli-v2/pkg/version.GitSummary={{.Version}} -X github.com/accuknox/accuknox-cli-v2/pkg/version.BuildDate={{.Date}}
+    flags:
+      - -trimpath
 
 signs:
   - cmd: cosign

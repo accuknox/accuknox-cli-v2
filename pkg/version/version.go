@@ -22,18 +22,21 @@ const (
 )
 
 type Option struct {
-	GitPATPath string
+	GitPATPath    string
+	LatestRelease bool
 }
 
 // PrintVersion displays the current version and checks for updates
-func PrintVersion(c *k8s.Client) error {
+func PrintVersion(c *k8s.Client, o Option) error {
+	fmt.Printf("knoxctl's version: %s (Built on %s)\n", GitSummary, BuildDate)
 	releaseVer, err := fetchReleaseVersion()
 	if err != nil {
 		return fmt.Errorf("error fetching latest version: %v", err)
 	}
 
-	fmt.Printf("knoxctl release version: [%v]\n", releaseVer)
-
+	if o.LatestRelease {
+		fmt.Printf("knoxctl release version: [%v]\n", releaseVer)
+	}
 	kubearmorVersion, err := getKubeArmorVersion(c)
 	if err != nil {
 		return nil

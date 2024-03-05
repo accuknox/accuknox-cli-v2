@@ -48,6 +48,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Fetch Tag Name
         id: get_tag
         run: echo "::set-output name=TAG_NAME::$(git describe --tags --abbrev=0)"
