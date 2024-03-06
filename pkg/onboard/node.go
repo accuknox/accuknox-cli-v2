@@ -100,6 +100,18 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		WorkerNode:      jc.WorkerNode,
 		ImagePullPolicy: string(jc.ImagePullPolicy),
 
+		// kubearmor config
+		KubeArmorVisibility:     jc.Visibility,
+		KubeArmorHostVisibility: jc.HostVisibility,
+
+		KubeArmorFilePosture:    jc.DefaultFilePosture,
+		KubeArmorNetworkPosture: jc.DefaultNetworkPosture,
+		KubeArmorCapPosture:     jc.DefaultCapPosture,
+
+		KubeArmorHostFilePosture:    jc.DefaultHostFilePosture,
+		KubeArmorHostNetworkPosture: jc.DefaultHostNetworkPosture,
+		KubeArmorHostCapPosture:     jc.DefaultHostCapPosture,
+
 		ConfigPath: configPath,
 	}
 

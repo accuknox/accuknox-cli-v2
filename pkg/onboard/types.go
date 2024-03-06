@@ -64,6 +64,16 @@ type ClusterConfig struct {
 
 	ImagePullPolicy ImagePullPolicy
 
+	// KubeArmor config
+	Visibility                string
+	HostVisibility            string
+	DefaultFilePosture        string
+	DefaultNetworkPosture     string
+	DefaultCapPosture         string
+	DefaultHostFilePosture    string
+	DefaultHostNetworkPosture string
+	DefaultHostCapPosture     string
+
 	// internal
 	composeCmd string
 }
@@ -100,9 +110,21 @@ type TemplateConfigArgs struct {
 	KubeArmorInitImage        string
 	KubeArmorVMAdapterImage   string
 	KubeArmorRelayServerImage string
-	SIAImage                  string
-	PEAImage                  string
-	FeederImage               string
+
+	KubeArmorVisibility     string
+	KubeArmorHostVisibility string
+
+	KubeArmorFilePosture    string
+	KubeArmorNetworkPosture string
+	KubeArmorCapPosture     string
+
+	KubeArmorHostFilePosture    string
+	KubeArmorHostNetworkPosture string
+	KubeArmorHostCapPosture     string
+
+	SIAImage    string
+	PEAImage    string
+	FeederImage string
 
 	ImagePullPolicy string
 

@@ -38,9 +38,16 @@ services:
       - "-k8s=false"
       - "-enableKubeArmorPolicy"
       - "-enableKubeArmorHostPolicy"
-      - "-hostVisibility=\"process,network\""
+      - "-visibility={{.KubeArmorVisibility}}"
+      - "-hostVisibility={{.KubeArmorHostVisibility}}"
       - "-criSocket=unix:///var/run/docker.sock"
       - "-enableKubeArmorStateAgent"
+      - "-defaultFilePosture={{.KubeArmorFilePosture}}"
+      - "-defaultNetworkPosture={{.KubeArmorNetworkPosture}}"
+      - "-defaultCapabilitiesPosture={{.KubeArmorCapPosture}}"
+      - "-hostDefaultFilePosture={{.KubeArmorHostFilePosture}}"
+      - "-hostDefaultNetworkPosture={{.KubeArmorHostNetworkPosture}}"
+      - "-hostDefaultCapabilitiesPosture={{.KubeArmorHostCapPosture}}"
     labels:
       app: kubearmor
     volumes:

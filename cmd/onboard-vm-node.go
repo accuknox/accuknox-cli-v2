@@ -26,7 +26,7 @@ var joinNodeCmd = &cobra.Command{
 			return fmt.Errorf("cp-node-addr (control-plane address) or address of each agent must be specified")
 		}
 
-		clusterConfig, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, true, imagePullPolicy)
+		clusterConfig, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, true, imagePullPolicy, visibility, hostVisibility, audit, block)
 		if err != nil {
 			return fmt.Errorf("Failed to create cluster config: %s", err.Error())
 		}

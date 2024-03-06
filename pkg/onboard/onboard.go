@@ -9,7 +9,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 )
 
-func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage, vmAdapterImage, relayServerImage, siaImage, peaImage, feederImage, nodeAddress string, dryRun, workerNode bool, imagePullPolicy string) (*ClusterConfig, error) {
+func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage, vmAdapterImage, relayServerImage, siaImage, peaImage, feederImage, nodeAddress string, dryRun, workerNode bool, imagePullPolicy, visibility, hostVisibility, audit, block string) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -35,6 +35,25 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	}
 
 	cc.ClusterType = clusterType
+
+	cc.Visibility = visibility
+	if cc.Visibility == "" {
+		cc.Visibility = "process,network"
+	}
+
+	cc.HostVisibility = hostVisibility
+	if cc.HostVisibility == "" {
+		cc.HostVisibility = "process,network"
+	}
+
+	// if audit or no default posture specified
+	cc.DefaultFilePosture = getDefaultPosture(audit, block, "file")
+	cc.DefaultNetworkPosture = getDefaultPosture(audit, block, "network")
+	cc.DefaultCapPosture = getDefaultPosture(audit, block, "capabilities")
+
+	cc.DefaultHostFilePosture = getDefaultPosture(audit, block, "file")
+	cc.DefaultHostNetworkPosture = getDefaultPosture(audit, block, "network")
+	cc.DefaultHostCapPosture = getDefaultPosture(audit, block, "capabilities")
 
 	var imageTags common.ImageTags
 	if releaseVersion == "" {
@@ -129,4 +148,21 @@ func (cc *ClusterConfig) PrintJoinCommand() {
 	command := fmt.Sprintf("knoxctl onboard vm node --cp-node-addr=%s", cc.CPNodeAddr)
 
 	fmt.Println(command)
+}
+
+func getDefaultPosture(auditPostureVal, blockPostureVal, ruleType string) string {
+	if auditPostureVal == "all" || (auditPostureVal == "" && blockPostureVal == "") {
+		return "audit"
+	} else if blockPostureVal == "all" {
+		return "block"
+	}
+
+	if strings.Contains(auditPostureVal, ruleType) {
+		return "audit"
+	} else if strings.Contains(blockPostureVal, ruleType) {
+		return "block"
+	}
+
+	// unrecognized or default
+	return "audit"
 }

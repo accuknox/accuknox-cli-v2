@@ -91,6 +91,18 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		SpireTrustBundleURL: spireTrustBundleURL,
 		ImagePullPolicy:     string(ic.ImagePullPolicy),
 
+		// kubearmor config
+		KubeArmorVisibility:     ic.Visibility,
+		KubeArmorHostVisibility: ic.HostVisibility,
+
+		KubeArmorFilePosture:    ic.DefaultFilePosture,
+		KubeArmorNetworkPosture: ic.DefaultNetworkPosture,
+		KubeArmorCapPosture:     ic.DefaultCapPosture,
+
+		KubeArmorHostFilePosture:    ic.DefaultHostFilePosture,
+		KubeArmorHostNetworkPosture: ic.DefaultHostNetworkPosture,
+		KubeArmorHostCapPosture:     ic.DefaultHostCapPosture,
+
 		ConfigPath: configPath,
 	}
 
