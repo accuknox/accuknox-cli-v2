@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"github.com/docker/docker/client"
 	"golang.org/x/mod/semver"
 )
 
@@ -266,4 +267,13 @@ func (cc *ClusterConfig) validateEnv() error {
 	cc.composeCmd = composeCmd
 
 	return nil
+}
+
+func CreateDockerClient() (*client.Client, error) {
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, err
+	}
+
+	return dockerClient, nil
 }

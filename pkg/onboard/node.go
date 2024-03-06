@@ -118,9 +118,15 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	// run compose command
-	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, "-f", composeFilePath, "--profile", "kubearmor-only", "up", "-d")
+	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, "-f", composeFilePath,
+		"--profile", "kubearmor-only", "up", "-d",
+		"--wait", "--wait-timeout", "60")
 	if err != nil {
-		return err
+		diagnosis, diagErr := diaganose(NodeType_ControlPlane)
+		if diagErr != nil {
+			diagnosis = diagErr.Error()
+		}
+		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
 	}
 
 	return nil

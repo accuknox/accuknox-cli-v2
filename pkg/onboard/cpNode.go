@@ -147,9 +147,13 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		true, ic.DryRun,
 		ic.composeCmd, "-f", composeFilePath,
 		"--profile", "spire-agent", "--profile", "kubearmor",
-		"--profile", "accuknox-agents", "up", "-d")
+		"--profile", "accuknox-agents", "up", "-d", "--wait", "--wait-timeout", "60")
 	if err != nil {
-		return fmt.Errorf("Error: %s", err.Error())
+		diagnosis, diagErr := diaganose(NodeType_ControlPlane)
+		if diagErr != nil {
+			diagnosis = diagErr.Error()
+		}
+		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
 	}
 
 	return nil
