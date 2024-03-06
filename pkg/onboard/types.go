@@ -33,6 +33,14 @@ var (
 	}
 )
 
+type ImagePullPolicy string
+
+const (
+	ImagePullPolicy_Always ImagePullPolicy = "always"
+	ImagePullPolicy_Never ImagePullPolicy = "never"
+	ImagePullPolicy_IfNotPresent ImagePullPolicy = "missing"
+)
+
 type ClusterConfig struct {
 	DefaultConfigPath string
 	UserConfigPath    string
@@ -53,6 +61,8 @@ type ClusterConfig struct {
 
 	WorkerNode bool
 	DryRun     bool
+
+	ImagePullPolicy ImagePullPolicy
 
 	// internal
 	composeCmd string
@@ -93,6 +103,8 @@ type TemplateConfigArgs struct {
 	SIAImage                  string
 	PEAImage                  string
 	FeederImage               string
+
+	ImagePullPolicy string
 
 	KubeArmorPort string
 	Hostname      string

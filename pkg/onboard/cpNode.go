@@ -89,6 +89,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		SpireHostPort: spirePort,
 
 		SpireTrustBundleURL: spireTrustBundleURL,
+		ImagePullPolicy: string(ic.ImagePullPolicy),
 
 		ConfigPath: configPath,
 	}
@@ -130,16 +131,6 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "feeder-service/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
 	if err != nil {
 		return err
-	}
-
-	// pull latest images
-	_, err = ExecComposeCommand(
-		true, ic.DryRun,
-		ic.composeCmd, "-f", composeFilePath,
-		"--profile", "spire-agent", "--profile", "kubearmor",
-		"--profile", "accuknox-agents", "pull")
-	if err != nil {
-		return fmt.Errorf("Error: %s", err.Error())
 	}
 
 	// run compose command

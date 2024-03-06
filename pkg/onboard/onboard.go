@@ -9,7 +9,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 )
 
-func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage, vmAdapterImage, relayServerImage, siaImage, peaImage, feederImage, nodeAddress string, dryRun, workerNode bool) (*ClusterConfig, error) {
+func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage, vmAdapterImage, relayServerImage, siaImage, peaImage, feederImage, nodeAddress string, dryRun, workerNode bool, imagePullPolicy string) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -43,6 +43,17 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 		imageTags = imageTagsValue
 	} else {
 		return nil, fmt.Errorf("Unknown image tag %s", releaseVersion)
+	}
+
+	switch strings.ToLower(imagePullPolicy) {
+	case string(ImagePullPolicy_Always):
+		cc.ImagePullPolicy = ImagePullPolicy_Always
+	case string(ImagePullPolicy_IfNotPresent):
+		cc.ImagePullPolicy = ImagePullPolicy_IfNotPresent
+	case string(ImagePullPolicy_Never):
+		cc.ImagePullPolicy = ImagePullPolicy_Never
+	default:
+		return nil, fmt.Errorf("Image pull policy %s unrecognized", imagePullPolicy)
 	}
 
 	if kubearmorImage != "" {

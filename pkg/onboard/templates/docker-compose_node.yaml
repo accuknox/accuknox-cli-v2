@@ -6,6 +6,7 @@ services:
       - "kubearmor"
     container_name: kubearmor-init
     image: {{.KubeArmorInitImage}}
+    pull_policy: "{{.ImagePullPolicy}}"
     labels:
       app: kubearmor-init
     volumes:
@@ -32,6 +33,7 @@ services:
     hostname: {{.Hostname}}
     container_name: kubearmor
     image: "{{.KubeArmorImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "-k8s=false"
       - "-enableKubeArmorPolicy"
@@ -69,6 +71,7 @@ services:
         condition: service_started
     container_name: kubearmor-vm-adapter
     image: "{{.KubeArmorVMAdapterImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       - "--relay-server-addr={{.RelayServerURL}}"

@@ -13,6 +13,7 @@ var (
 	kubeArmorImage          string
 	kubeArmorInitImage      string
 	kubeArmorVMAdapterImage string
+	imagePullPolicy string
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -35,6 +36,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&kubeArmorImage, "kubearmor-image", "", "KubeArmor image to use")
 	onboardVMCmd.PersistentFlags().StringVar(&kubeArmorInitImage, "kubearmor-init-image", "", "KubeArmor init image to use")
 	onboardVMCmd.PersistentFlags().StringVar(&kubeArmorVMAdapterImage, "kubearmor-vm-adapter-image", "", "KubeArmor vm-adapter image to use")
+
+	onboardVMCmd.PersistentFlags().StringVar(&imagePullPolicy, "image-pull-policy", "always", "image pull policy to use. Either of: missing | never | always")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

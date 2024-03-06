@@ -5,6 +5,7 @@ services:
       - "spire-agent"
     container_name: spire-agent
     image: "public.ecr.aws/k9v9d5v2/spire-agent:latest"
+    pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "-config"
       - "/etc/spire/conf/agent.conf"
@@ -36,6 +37,7 @@ services:
       spire-agent:
         condition: service_started
     image: "public.ecr.aws/k9v9d5v2/wait-for-it:latest"
+    pull_policy: "{{.ImagePullPolicy}}"
     command: ["-t", "60", "spire-agent:9090"]
     labels:
       app: wait-for-it
@@ -50,6 +52,7 @@ services:
       - "kubearmor"
     container_name: kubearmor-init
     image: {{.KubeArmorInitImage}}
+    pull_policy: "{{.ImagePullPolicy}}"
     labels:
       app: kubearmor-init
     volumes:
@@ -76,6 +79,7 @@ services:
     hostname: {{.Hostname}}
     container_name: kubearmor
     image: "{{.KubeArmorImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "-k8s=false"
       - "-enableKubeArmorPolicy"
@@ -111,6 +115,7 @@ services:
       - kubearmor
     container_name: kubearmor-relay-server
     image: "{{.KubeArmorRelayServerImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "-enableReverseLogClient"
       - "-gRPCPort=32768"
@@ -135,6 +140,7 @@ services:
         condition: service_started
     container_name: kubearmor-vm-adapter
     image: "{{.KubeArmorVMAdapterImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       - "--relay-server-addr={{.RelayServerURL}}"
@@ -162,6 +168,7 @@ services:
         condition: service_started
     container_name: shared-informer-agent
     image: "{{.SIAImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
     command: ["-config-path", "/opt/sia/"]
     labels:
       app: shared-informer-agent
@@ -187,6 +194,7 @@ services:
         condition: service_started
     container_name: feeder-service
     image: "{{.FeederImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
     labels:
       app: feeder-service
     volumes:
@@ -227,6 +235,7 @@ services:
         condition: service_started
     container_name: policy-enforcement-agent
     image: "{{.PEAImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
     command: ["-config-path", "/opt/pea/"]
     labels:
       app: policy-enforcement-agent

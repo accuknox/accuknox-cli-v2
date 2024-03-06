@@ -98,6 +98,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		PEAAddr: peaAddr,
 
 		WorkerNode: jc.WorkerNode,
+		ImagePullPolicy: string(jc.ImagePullPolicy),
 
 		ConfigPath: configPath,
 	}
@@ -107,12 +108,6 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 
 	// write compose file
 	composeFilePath, err := copyOrGenerateFile(jc.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, workerNodeComposeFileTemplate, jc.TCArgs)
-	if err != nil {
-		return err
-	}
-
-	// pull latest images
-	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, "-f", composeFilePath, "--profile", "kubearmor-only", "pull")
 	if err != nil {
 		return err
 	}
