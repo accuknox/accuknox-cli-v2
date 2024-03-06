@@ -13,7 +13,7 @@ var (
 	kubeArmorImage          string
 	kubeArmorInitImage      string
 	kubeArmorVMAdapterImage string
-	imagePullPolicy string
+	imagePullPolicy         string
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters

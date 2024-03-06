@@ -97,7 +97,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		SIAAddr: siaAddr,
 		PEAAddr: peaAddr,
 
-		WorkerNode: jc.WorkerNode,
+		WorkerNode:      jc.WorkerNode,
 		ImagePullPolicy: string(jc.ImagePullPolicy),
 
 		ConfigPath: configPath,

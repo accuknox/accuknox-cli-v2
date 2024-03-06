@@ -89,7 +89,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		SpireHostPort: spirePort,
 
 		SpireTrustBundleURL: spireTrustBundleURL,
-		ImagePullPolicy: string(ic.ImagePullPolicy),
+		ImagePullPolicy:     string(ic.ImagePullPolicy),
 
 		ConfigPath: configPath,
 	}

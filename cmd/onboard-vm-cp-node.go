@@ -44,7 +44,7 @@ var cpNodeCmd = &cobra.Command{
 		}
 
 		fmt.Println(
-		`VM successfully onboarded!
+			`VM successfully onboarded!
 
 Now run the below command to onboard any worker nodes.
 Please assign appropriate IP address to --cp-node-addr to make sure

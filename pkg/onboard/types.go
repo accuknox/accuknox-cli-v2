@@ -36,8 +36,8 @@ var (
 type ImagePullPolicy string
 
 const (
-	ImagePullPolicy_Always ImagePullPolicy = "always"
-	ImagePullPolicy_Never ImagePullPolicy = "never"
+	ImagePullPolicy_Always       ImagePullPolicy = "always"
+	ImagePullPolicy_Never        ImagePullPolicy = "never"
 	ImagePullPolicy_IfNotPresent ImagePullPolicy = "missing"
 )
 
