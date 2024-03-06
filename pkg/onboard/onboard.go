@@ -86,7 +86,11 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 
 	cc.WorkerNode = workerNode
 	cc.DryRun = dryRun
+
 	cc.CPNodeAddr = nodeAddress
+	if cc.CPNodeAddr == "" {
+		cc.CPNodeAddr = "<address-of-this-node>"
+	}
 
 	if workerNode {
 		return cc, nil

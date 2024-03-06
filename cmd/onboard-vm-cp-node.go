@@ -43,8 +43,12 @@ var cpNodeCmd = &cobra.Command{
 			return fmt.Errorf("Failed to onboard control plane node: %s", err.Error())
 		}
 
-		fmt.Println("VM successfully onboarded!")
-		fmt.Println("Now onboard any worker nodes with:")
+		fmt.Println(
+		`VM successfully onboarded!
+
+Now run the below command to onboard any worker nodes.
+Please assign appropriate IP address to --cp-node-addr to make sure
+that worker nodes can connect to this node`)
 		onboardConfig.PrintJoinCommand()
 
 		return nil
