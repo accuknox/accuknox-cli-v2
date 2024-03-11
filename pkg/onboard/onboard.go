@@ -111,7 +111,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 // prints join command - currently only with the default ports
 // TODO: handle complex configuration
 func (cc *ClusterConfig) PrintJoinCommand() {
-	command := fmt.Sprintf("knoxctl onboard vm node --cp-addr=%s", cc.CPNodeAddr)
+	command := fmt.Sprintf("knoxctl onboard vm node --cp-node-addr=%s", cc.CPNodeAddr)
 
 	fmt.Println(command)
 }
