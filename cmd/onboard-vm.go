@@ -19,6 +19,8 @@ var (
 	hostVisibility string
 	audit          string
 	block          string
+
+	cidr string
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -47,6 +49,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&hostVisibility, "hostViz", "process,network", "Kubearmor host visibility. Possible values: \"none\" or any of [process,network,file,capabilities]")
 	onboardVMCmd.PersistentFlags().StringVar(&audit, "audit", "", "Kubearmor audit posture. Possible values: \"all\" or any of [file,network,capabilities]")
 	onboardVMCmd.PersistentFlags().StringVar(&block, "block", "", "Kubearmor block posture. Possible values: \"all\" or any of [file,network,capabilities]")
+
+	onboardVMCmd.PersistentFlags().StringVar(&cidr, "network-cidr", "172.20.32.0/27", "CIDR for accuknox network")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

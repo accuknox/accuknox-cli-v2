@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,7 +10,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 )
 
-func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage, vmAdapterImage, relayServerImage, siaImage, peaImage, feederImage, nodeAddress string, dryRun, workerNode bool, imagePullPolicy, visibility, hostVisibility, audit, block string) (*ClusterConfig, error) {
+func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage, vmAdapterImage, relayServerImage, siaImage, peaImage, feederImage, nodeAddress string, dryRun, workerNode bool, imagePullPolicy, visibility, hostVisibility, audit, block, cidr string) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -109,6 +110,15 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	cc.CPNodeAddr = nodeAddress
 	if cc.CPNodeAddr == "" {
 		cc.CPNodeAddr = "<address-of-this-node>"
+	}
+
+	if cidr != "" {
+		_, network, err := net.ParseCIDR(cidr)
+		if err != nil {
+			return nil, err
+		}
+
+		cc.CIDR = network.String()
 	}
 
 	if workerNode {

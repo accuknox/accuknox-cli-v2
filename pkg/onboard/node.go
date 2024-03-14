@@ -113,6 +113,8 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		KubeArmorHostCapPosture:     jc.DefaultHostCapPosture,
 
 		ConfigPath: configPath,
+
+		NetworkCIDR: jc.CIDR,
 	}
 
 	// initialize sprig for templating
@@ -129,7 +131,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		"--profile", "kubearmor-only", "up", "-d",
 		"--wait", "--wait-timeout", "60")
 	if err != nil {
-		diagnosis, diagErr := diaganose(NodeType_ControlPlane)
+		diagnosis, diagErr := diaganose(NodeType_WorkerNode)
 		if diagErr != nil {
 			diagnosis = diagErr.Error()
 		}

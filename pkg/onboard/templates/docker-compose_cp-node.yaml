@@ -260,4 +260,8 @@ services:
           - policy-enforcement-agent
 
 networks:
-  accuknox-net: {}
+  accuknox-net:
+    name: accuknox-net
+    ipam:
+      config:
+        - subnet: {{.NetworkCIDR}}

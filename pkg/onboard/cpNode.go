@@ -104,6 +104,8 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		KubeArmorHostCapPosture:     ic.DefaultHostCapPosture,
 
 		ConfigPath: configPath,
+
+		NetworkCIDR: ic.CIDR,
 	}
 
 	// initialize sprig for templating

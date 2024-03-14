@@ -74,6 +74,8 @@ type ClusterConfig struct {
 	DefaultHostNetworkPosture string
 	DefaultHostCapPosture     string
 
+	CIDR string
+
 	// internal
 	composeCmd string
 }
@@ -153,6 +155,9 @@ type TemplateConfigArgs struct {
 	SpireHostAddr       string
 	SpireHostPort       string
 	SpireTrustBundleURL string
+
+	// docker config
+	NetworkCIDR string
 }
 
 type KmuxConfigTemplateArgs struct {
