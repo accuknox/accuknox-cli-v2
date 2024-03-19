@@ -77,7 +77,8 @@ type ClusterConfig struct {
 	CIDR string
 
 	// internal
-	composeCmd string
+	composeCmd     string
+	composeVersion string
 }
 
 type InitConfig struct {
@@ -90,6 +91,7 @@ type InitConfig struct {
 
 	// advanced
 	SpireTrustBundleURL string
+	EnableLogs          bool
 
 	// internal
 	TCArgs TemplateConfigArgs
@@ -146,6 +148,7 @@ type TemplateConfigArgs struct {
 	// feeder service configuration
 	RelayServerAddr string
 	RelayServerPort string
+	EnableLogs      bool
 
 	// policy-enforcement-agent config
 	PPSHost string

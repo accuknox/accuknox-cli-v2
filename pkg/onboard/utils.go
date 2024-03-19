@@ -127,55 +127,88 @@ func copyOrGenerateFile(userConfigDir, dirPath, filePath string, tempFuncs templ
 	return fullFilePath, nil
 }
 
-func compareVersionsAndGetComposeCommand(composeCLIVersion, returnCmd string) string {
-	composeCLIVersionStr := strings.TrimSpace(string(composeCLIVersion))
-	if composeCLIVersion != "" {
-		if composeCLIVersionStr[0] != 'v' {
-			composeCLIVersionStr = "v" + composeCLIVersionStr
+func compareVersionsAndGetComposeCommand(v1, v1Cmd, v2, v2Cmd string) (string, string) {
+	v1Clean := strings.TrimSpace(string(v1))
+	v2Clean := strings.TrimSpace(string(v2))
+
+	if v1Clean != "" && v2Clean != "" {
+		if v1Clean[0] != 'v' {
+			v1Clean = "v" + v1Clean
 		}
 
-		if semver.Compare(composeCLIVersionStr, common.MinDockerComposeVersion) >= 0 {
-			return returnCmd
+		if v2Clean[0] != 'v' {
+			v2Clean = "v" + v2Clean
+		}
+
+		if semver.Compare(v1Clean, v2Clean) >= 0 && semver.Compare(v1Clean, common.MinDockerComposeVersion) >= 0 {
+			return v1Cmd, v1Clean
+		} else if semver.Compare(v1Clean, v2Clean) <= 0 && semver.Compare(v2Clean, common.MinDockerComposeVersion) >= 0 {
+			return v2Cmd, v2Clean
+		} else {
+			return "", ""
+		}
+
+	} else if v1Clean != "" {
+		if v1Clean[0] != 'v' {
+			v1Clean = "v" + v1Clean
+		}
+
+		if semver.Compare(v1Clean, common.MinDockerComposeVersion) >= 0 {
+			return v1Cmd, v1Clean
+		} else {
+			return "", ""
+		}
+	} else if v2Clean != "" {
+		if v2Clean[0] != 'v' {
+			v2Clean = "v" + v2Clean
+		}
+
+		if semver.Compare(v2Clean, common.MinDockerComposeVersion) >= 0 {
+			return v2Cmd, v2Clean
+		} else {
+			return "", ""
 		}
 	}
 
-	return ""
+	return "", ""
 }
 
 // GetComposeCommand gets the compose command with perfect version
 // caller must check for empty
-func GetComposeCommand() string {
+func GetComposeCommand() (string, string) {
 	var err error
 
 	_, err = exec.LookPath("docker-compose")
 	if err != nil {
 		// docker-compose doesn't exist
 		// we'll use "docker compose"
-		return "docker compose"
+		composeDockerCLIVersion, err := ExecComposeCommand(false, false, "docker compose", "version", "--short")
+		if err != nil {
+			return "", ""
+		}
+
+		return compareVersionsAndGetComposeCommand(composeDockerCLIVersion, "docker compose", common.MinDockerComposeVersion, "")
 	}
 
 	// docker-compose exists, compare versions
 	composeCLIVersion, err := ExecComposeCommand(false, false, "docker-compose", "version", "--short")
 	if err != nil {
-		return ""
-	}
-	composeCmd := compareVersionsAndGetComposeCommand(composeCLIVersion, "docker-compose")
-	if composeCmd != "" {
-		return composeCmd
+		return "", ""
 	}
 
 	// docker-compose didn't match requirements so
 	// check if "docker compose" meets version requirements
 	composeDockerCLIVersion, err := ExecComposeCommand(false, false, "docker compose", "version", "--short")
 	if err != nil {
-		return ""
-	}
-	composeCmd = compareVersionsAndGetComposeCommand(composeDockerCLIVersion, "docker compose")
-	if composeCmd != "" {
-		return composeCmd
+		return "", ""
 	}
 
-	return ""
+	composeCmd, finalVersion := compareVersionsAndGetComposeCommand(composeCLIVersion, "docker-compose", composeDockerCLIVersion, "docker compose")
+	if composeCmd != "" {
+		return composeCmd, finalVersion
+	}
+
+	return "", ""
 }
 
 func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (string, error) {
@@ -259,12 +292,15 @@ func (cc *ClusterConfig) validateEnv() error {
 		}
 	}
 
-	composeCmd := GetComposeCommand()
+	composeCmd, composeVersion := GetComposeCommand()
 	if composeCmd == "" {
 		return fmt.Errorf("Please install docker-compose %s+", common.MinDockerComposeVersion)
 	}
 
+	fmt.Printf("Using %s version %s\n", composeCmd, composeVersion)
+
 	cc.composeCmd = composeCmd
+	cc.composeVersion = composeVersion
 
 	return nil
 }

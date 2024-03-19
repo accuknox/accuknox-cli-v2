@@ -14,4 +14,4 @@ state-agent:
   port: 32769
 
 k8s:
-  enable:false
+  enable: false

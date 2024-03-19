@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/Masterminds/sprig"
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"golang.org/x/mod/semver"
 )
 
 func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr string) *JoinConfig {
@@ -126,16 +128,26 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		return err
 	}
 
+	diagnosis := true
+	args := []string{"-f", composeFilePath, "--profile", "kubearmor-only", "up", "-d"}
+
+	// need these flags for diagnosis
+	if semver.Compare(jc.composeVersion, common.MinDockerComposeWithWaitSupported) >= 0 {
+		args = append(args, "--wait", "--wait-timeout", "60")
+	} else {
+		diagnosis = false
+	}
+
 	// run compose command
-	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, "-f", composeFilePath,
-		"--profile", "kubearmor-only", "up", "-d",
-		"--wait", "--wait-timeout", "60")
-	if err != nil {
+	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, args...)
+	if err != nil && diagnosis {
 		diagnosis, diagErr := diaganose(NodeType_WorkerNode)
 		if diagErr != nil {
 			diagnosis = diagErr.Error()
 		}
 		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
+	} else if err != nil {
+		return err
 	}
 
 	return nil

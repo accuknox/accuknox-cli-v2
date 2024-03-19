@@ -219,7 +219,7 @@ services:
       - "KUBEARMOR_URL={{.RelayServerAddr}}"
       - "KUBEARMOR_PORT={{.RelayServerPort}}"
 
-      - "KMUX_LOGS_ENABLED=true"
+      - "KMUX_LOGS_ENABLED={{.EnableLogs}}"
       - "KMUX_CONFIG_PATH=/opt/feeder-service/kmux-config.yaml"
 
       - "SPIRE_AGENT_URL=unix:///var/run/spire/agent.sock"

@@ -17,6 +17,7 @@ var (
 
 	// non-essential
 	spireTrustBundle string
+	enableLogs       bool
 
 	// cp-node only images
 	kubeArmorRelayServerImage string
@@ -36,7 +37,7 @@ var cpNodeCmd = &cobra.Command{
 			return fmt.Errorf("Failed to create cluster config: %s", err.Error())
 		}
 
-		onboardConfig := onboard.InitCPNodeConfig(*clusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle)
+		onboardConfig := onboard.InitCPNodeConfig(*clusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle, enableLogs)
 
 		err = onboardConfig.InitializeControlPlane()
 		if err != nil {
@@ -65,6 +66,8 @@ func init() {
 	cpNodeCmd.PersistentFlags().StringVar(&knoxGateway, "knox-gateway", "", "address of knox-gateway to connect with for pushing telemetry data")
 
 	cpNodeCmd.PersistentFlags().StringVar(&spireTrustBundle, "spire-trust-bundle-addr", "", "address of spire trust bundle (CA cert for accuknox spire-server)")
+
+	cpNodeCmd.PersistentFlags().BoolVar(&enableLogs, "enable-logs", false, "enable pushing logs from feeder service")
 
 	cpNodeCmd.PersistentFlags().StringVar(&nodeAddr, "cp-node-addr", "", "address of control plane node for generating join command")
 

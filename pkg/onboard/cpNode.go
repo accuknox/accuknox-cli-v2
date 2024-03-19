@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/Masterminds/sprig"
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"golang.org/x/mod/semver"
 )
 
-func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle string) *InitConfig {
+func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle string, enableLogs bool) *InitConfig {
 	return &InitConfig{
 		ClusterConfig: cc,
 		JoinToken:     joinToken,
@@ -17,6 +19,7 @@ func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGatew
 		KnoxGateway:   knoxGateway,
 
 		SpireTrustBundleURL: spireTrustBundle,
+		EnableLogs:          enableLogs,
 	}
 }
 
@@ -90,6 +93,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 		SpireTrustBundleURL: spireTrustBundleURL,
 		ImagePullPolicy:     string(ic.ImagePullPolicy),
+		EnableLogs:          ic.EnableLogs,
 
 		// kubearmor config
 		KubeArmorVisibility:     ic.Visibility,
@@ -147,18 +151,27 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		return err
 	}
 
+	diagnosis := true
+	args := []string{"-f", composeFilePath, "--profile",
+		"spire-agent", "--profile", "kubearmor", "--profile", "accuknox-agents",
+		"up", "-d"}
+
+	if semver.Compare(ic.composeVersion, common.MinDockerComposeWithWaitSupported) >= 0 {
+		args = append(args, "--wait", "--wait-timeout", "60")
+	} else {
+		diagnosis = false
+	}
+
 	// run compose command
-	_, err = ExecComposeCommand(
-		true, ic.DryRun,
-		ic.composeCmd, "-f", composeFilePath,
-		"--profile", "spire-agent", "--profile", "kubearmor",
-		"--profile", "accuknox-agents", "up", "-d", "--wait", "--wait-timeout", "60")
-	if err != nil {
+	_, err = ExecComposeCommand(true, ic.DryRun, ic.composeCmd, args...)
+	if err != nil && diagnosis {
 		diagnosis, diagErr := diaganose(NodeType_ControlPlane)
 		if diagErr != nil {
 			diagnosis = diagErr.Error()
 		}
 		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
+	} else if err != nil {
+		return err
 	}
 
 	return nil

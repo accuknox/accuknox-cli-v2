@@ -21,7 +21,9 @@ func Deboard(nodeType onboard.NodeType, dryRun bool) (string, error) {
 		return configPath, err
 	}
 
-	composeCmd := onboard.GetComposeCommand()
+	composeCmd, composeVersion := onboard.GetComposeCommand()
+	fmt.Printf("Using %s version %s\n", composeCmd, composeVersion)
+
 	switch nodeType {
 	case onboard.NodeType_ControlPlane:
 		_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
