@@ -52,7 +52,7 @@
     "kubearmor_relay_tag": "private-relay",
     "kubearmor_vm_adapter_tag": "latest",
     "sia_tag": "v0.3.2",
-    "pea_tag": "v0.3.1",
+    "pea_tag": "v0.3.2",
     "feeder_service_tag": "v0.2.1"
   }
 }
