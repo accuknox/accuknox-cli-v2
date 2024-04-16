@@ -7,15 +7,15 @@
     "pea_tag": "v0.2.0",
     "feeder_service_tag": "v0.2.0"
   },
-  "v0.2.9": {
+  "v0.2.10": {
     "kubearmor_tag": "stable",
     "kubearmor_relay_tag": "private-relay",
     "kubearmor_vm_adapter_tag": "latest",
-    "sia_tag": "v0.1.13",
-    "pea_tag": "v0.1.7",
-    "feeder_service_tag": "v0.1.15"
+    "sia_tag": "v0.2.0",
+    "pea_tag": "v0.2.0",
+    "feeder_service_tag": "v0.2.0"
   },
-  "v0.2.10": {
+  "v0.2.10-patch": {
     "kubearmor_tag": "stable",
     "kubearmor_relay_tag": "private-relay",
     "kubearmor_vm_adapter_tag": "latest",
@@ -31,11 +31,51 @@
     "pea_tag": "v0.2.0",
     "feeder_service_tag": "v0.2.0"
   },
+  "v0.2.12": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.2.0",
+    "pea_tag": "v0.2.0",
+    "feeder_service_tag": "v0.2.0"
+  },
+  "v0.2.13": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.2.0",
+    "pea_tag": "v0.2.0",
+    "feeder_service_tag": "v0.2.0"
+  },
   "v0.3.0": {
     "kubearmor_tag": "stable",
     "kubearmor_relay_tag": "private-relay",
     "kubearmor_vm_adapter_tag": "latest",
     "sia_tag": "v0.3.0",
+    "pea_tag": "v0.3.0",
+    "feeder_service_tag": "v0.2.0"
+  },
+  "v0.3.1": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.3.1",
+    "pea_tag": "v0.3.0",
+    "feeder_service_tag": "v0.2.0"
+  },
+  "v0.3.2": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.3.2",
+    "pea_tag": "v0.3.1",
+    "feeder_service_tag": "v0.2.1"
+  },
+  "v0.3.3": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.3.1",
     "pea_tag": "v0.3.0",
     "feeder_service_tag": "v0.2.0"
   },
@@ -47,12 +87,52 @@
     "pea_tag": "v0.3.1",
     "feeder_service_tag": "v0.2.1"
   },
-  "v0.2.12": {
+  "v0.4.0-patch": {
     "kubearmor_tag": "stable",
     "kubearmor_relay_tag": "private-relay",
     "kubearmor_vm_adapter_tag": "latest",
-    "sia_tag": "v0.2.0",
-    "pea_tag": "v0.2.0",
-    "feeder_service_tag": "v0.2.0"
+    "sia_tag": "v0.3.2-patch",
+    "pea_tag": "v0.3.1",
+    "feeder_service_tag": "v0.2.1"
+  },
+  "v0.4.0-rmq": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.3.2",
+    "pea_tag": "v0.3.1",
+    "feeder_service_tag": "v0.2.1-rmq"
+  },
+  "v0.5.0": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.3.2",
+    "pea_tag": "v0.3.2",
+    "feeder_service_tag": "v0.2.1"
+  },
+  "v0.5.1": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.3.2",
+    "pea_tag": "v0.3.2",
+    "feeder_service_tag": "v0.2.1-rmq"
+  },
+  "v0.5.2": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.3.3",
+    "pea_tag": "v0.3.3",
+    "feeder_service_tag": "v0.3.0"
+  },
+  "v0.5.3": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.3.3",
+    "pea_tag": "v0.3.3",
+    "feeder_service_tag": "v0.3.0"
   }
 }

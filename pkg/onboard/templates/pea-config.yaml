@@ -27,3 +27,6 @@ annotation:
 non-k8s:
   enable: true
   policy-server-port: 32770
+
+policy-watcher:
+  enable: false

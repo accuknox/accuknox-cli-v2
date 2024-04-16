@@ -1,6 +1,11 @@
 kmux:
+  security: spire
   sink:
     stream: {{.StreamName}}
 
 knox-gateway:
   server: {{.ServerURL}}
+
+spire:
+  spiffeID:
+    format: "spiffe://<domainName>/<WSID>/<ClusterID>/<componentName>"

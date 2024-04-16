@@ -151,6 +151,11 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		return err
 	}
 
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "pea/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
+	if err != nil {
+		return err
+	}
+
 	diagnosis := true
 	args := []string{"-f", composeFilePath, "--profile",
 		"spire-agent", "--profile", "kubearmor", "--profile", "accuknox-agents",
