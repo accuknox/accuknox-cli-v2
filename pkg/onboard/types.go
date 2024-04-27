@@ -109,6 +109,8 @@ type JoinConfig struct {
 }
 
 type TemplateConfigArgs struct {
+	ReleaseVersion string
+
 	// kubearmor configuration
 	KubeArmorImage            string
 	KubeArmorInitImage        string
@@ -164,6 +166,7 @@ type TemplateConfigArgs struct {
 }
 
 type KmuxConfigTemplateArgs struct {
-	StreamName string
-	ServerURL  string
+	ReleaseVersion string
+	StreamName     string
+	ServerURL      string
 }

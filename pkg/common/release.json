@@ -1,138 +1,218 @@
 {
   "v0.0.0": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "0",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.2.0",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.2.0",
-    "feeder_service_tag": "v0.2.0"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.2.10": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1707727047",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.2.0",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.2.0",
-    "feeder_service_tag": "v0.2.0"
-  },
-  "v0.2.10-patch": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
-    "sia_tag": "v0.2.0",
-    "pea_tag": "v0.2.0",
-    "feeder_service_tag": "v0.2.0"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.2.11": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1708493489",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.2.0",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.2.0",
-    "feeder_service_tag": "v0.2.0"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
-  "v0.2.12": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+  "v0.2.10-patch": {
+    "creation_time": "1708578633",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.2.0",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.2.0",
-    "feeder_service_tag": "v0.2.0"
-  },
-  "v0.2.13": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
-    "sia_tag": "v0.2.0",
-    "pea_tag": "v0.2.0",
-    "feeder_service_tag": "v0.2.0"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.3.0": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1708590502",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.0",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.3.0",
-    "feeder_service_tag": "v0.2.0"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.3.1": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1708607855",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.1",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.3.0",
-    "feeder_service_tag": "v0.2.0"
-  },
-  "v0.3.2": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
-    "sia_tag": "v0.3.2",
-    "pea_tag": "v0.3.1",
-    "feeder_service_tag": "v0.2.1"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.3.3": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1708971665",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.1",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.3.0",
-    "feeder_service_tag": "v0.2.0"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.4.0": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1709207850",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.2",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.3.1",
-    "feeder_service_tag": "v0.2.1"
-  },
-  "v0.4.0-patch": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
-    "sia_tag": "v0.3.2-patch",
-    "pea_tag": "v0.3.1",
-    "feeder_service_tag": "v0.2.1"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.1",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.4.0-rmq": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1709317051",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.2",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.3.1",
-    "feeder_service_tag": "v0.2.1-rmq"
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.1-rmq",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+  },
+  "v0.3.2": {
+    "creation_time": "1710157380",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
+    "sia_tag": "v0.3.2",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
+    "pea_tag": "v0.3.1",
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.1",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+  },
+  "v0.2.12": {
+    "creation_time": "1710175521",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
+    "sia_tag": "v0.2.0",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
+    "pea_tag": "v0.2.0",
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.5.0": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1710913137",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.2",
+    "sia_image": "accuknox/shared-informer-agent",
     "pea_tag": "v0.3.2",
-    "feeder_service_tag": "v0.2.1"
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.1",
+    "feeder_service_image": "accuknox/feeder-service"
+  },
+  "v0.4.0-patch": {
+    "creation_time": "1710941843",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
+    "sia_tag": "v0.3.2-patch",
+    "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
+    "pea_tag": "v0.3.1",
+    "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.1",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.5.1": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1711008943",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.2",
+    "sia_image": "accuknox/shared-informer-agent",
     "pea_tag": "v0.3.2",
-    "feeder_service_tag": "v0.2.1-rmq"
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.1-rmq",
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
   },
   "v0.5.2": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1711696981",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.3",
+    "sia_image": "accuknox/shared-informer-agent",
     "pea_tag": "v0.3.3",
-    "feeder_service_tag": "v0.3.0"
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.3.0",
+    "feeder_service_image": "accuknox/feeder-service"
   },
   "v0.5.3": {
-    "kubearmor_tag": "stable",
-    "kubearmor_relay_tag": "private-relay",
-    "kubearmor_vm_adapter_tag": "latest",
+    "creation_time": "1712550507",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
     "sia_tag": "v0.3.3",
+    "sia_image": "accuknox/shared-informer-agent",
     "pea_tag": "v0.3.3",
-    "feeder_service_tag": "v0.3.0"
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.3.0",
+    "feeder_service_image": "accuknox/feeder-service"
+  },
+  "v0.2.13": {
+    "creation_time": "1712733026",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
+    "sia_tag": "v0.2.0",
+    "sia_image": "accuknox/shared-informer-agent",
+    "pea_tag": "v0.2.0",
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "accuknox/feeder-service"
+  },
+  "v0.2.14": {
+    "creation_time": "1713958879",
+    "kubearmor_tag": "v1.3.6",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.5",
+    "sia_tag": "v0.2.1",
+    "sia_image": "accuknox/shared-informer-agent",
+    "pea_tag": "v0.2.1",
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.2.0",
+    "feeder_service_image": "accuknox/feeder-service"
   }
 }

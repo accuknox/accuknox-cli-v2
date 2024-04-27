@@ -3,7 +3,11 @@ spire:
   agent: "unix:///var/run/spire/agent.sock"
 
 kmux-topic: shared-event
+
+{{- if trimPrefix "v" .ReleaseVersion | semverCompare "<0.5.0" }}
+# if <v0.5.0 add kmux-topic prefix for pulsar
 kmux-topic-prefix: persistent://accuknox/cluster-entity/
+{{- end }}
 
 heartbeat:
   interval: 5m

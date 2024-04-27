@@ -16,6 +16,7 @@ services:
       # for SPIRE socket
       - "/var/run/:/var/run/"
       # for spire SVID persistence
+      # TODO: this is not consumed right now due to user perms
       - "/var/lib/spire/agent:/var/lib/spire/agent"
     labels:
       app: spire-agent

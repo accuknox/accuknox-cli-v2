@@ -56,14 +56,18 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	cc.DefaultHostNetworkPosture = getDefaultPosture(audit, block, "network")
 	cc.DefaultHostCapPosture = getDefaultPosture(audit, block, "capabilities")
 
-	var imageTags common.ImageTags
+	var releaseInfo common.ReleaseMetadata
 	if releaseVersion == "" {
-		_, imageTags = common.GetLatestReleaseInfo()
-	} else if imageTagsValue, ok := common.ReleaseInfo[releaseVersion]; ok {
-		imageTags = imageTagsValue
+		_, releaseInfo = common.GetLatestReleaseInfo()
+	} else if releaseInfoTemp, ok := common.ReleaseInfo[releaseVersion]; ok {
+		releaseInfo = releaseInfoTemp
 	} else {
+		// TODO: publish release JSON as OCI artifact to remove dependency
+		// on needing to build knoxctl again and again
 		return nil, fmt.Errorf("Unknown image tag %s", releaseVersion)
 	}
+
+	cc.AgentsVersion = releaseVersion
 
 	switch strings.ToLower(imagePullPolicy) {
 	case string(ImagePullPolicy_Always):
@@ -81,7 +85,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	} else if kubearmorVersion != "" {
 		cc.KubeArmorImage = common.DefaultKubeArmorImage + kubearmorVersion
 	} else {
-		cc.KubeArmorImage = common.DefaultKubeArmorImage + imageTags.KubeArmorTag
+		cc.KubeArmorImage = common.DefaultKubeArmorImage + releaseInfo.KubeArmorTag
 	}
 
 	if kubearmorInitImage != "" {
@@ -89,19 +93,19 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	} else if kubearmorVersion != "" {
 		cc.KubeArmorInitImage = common.DefaultKubeArmorInitImage + kubearmorVersion
 	} else {
-		cc.KubeArmorInitImage = common.DefaultKubeArmorInitImage + imageTags.KubeArmorTag
+		cc.KubeArmorInitImage = common.DefaultKubeArmorInitImage + releaseInfo.KubeArmorTag
 	}
 
 	if relayServerImage != "" {
 		cc.KubeArmorRelayServerImage = relayServerImage
 	} else {
-		cc.KubeArmorRelayServerImage = common.DefaultRelayServerImage + imageTags.KubeArmorRelayTag
+		cc.KubeArmorRelayServerImage = common.DefaultRelayServerImage + releaseInfo.KubeArmorRelayTag
 	}
 
 	if vmAdapterImage != "" {
 		cc.KubeArmorVMAdapterImage = vmAdapterImage
 	} else {
-		cc.KubeArmorVMAdapterImage = common.DefaultVMAdapterImage + imageTags.KubeArmorVMAdapterTag
+		cc.KubeArmorVMAdapterImage = common.DefaultVMAdapterImage + releaseInfo.KubeArmorVMAdapterTag
 	}
 
 	cc.WorkerNode = workerNode
@@ -128,7 +132,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	if siaImage != "" {
 		cc.SIAImage = siaImage
 	} else if releaseVersion != "" {
-		cc.SIAImage = common.DefaultSIAImage + imageTags.SIATag
+		cc.SIAImage = releaseInfo.SIAImage + ":" + releaseInfo.SIATag
 	} else {
 		return nil, fmt.Errorf("No tag found for SIA")
 	}
@@ -136,7 +140,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	if peaImage != "" {
 		cc.PEAImage = peaImage
 	} else if releaseVersion != "" {
-		cc.PEAImage = common.DefaultPEAImage + imageTags.PEATag
+		cc.PEAImage = releaseInfo.PEAImage + ":" + releaseInfo.PEATag
 	} else {
 		return nil, fmt.Errorf("No tag found for PEA")
 	}
@@ -144,7 +148,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	if feederImage != "" {
 		cc.FeederImage = feederImage
 	} else if releaseVersion != "" {
-		cc.FeederImage = common.DefaultFeederImage + imageTags.FeederServiceTag
+		cc.FeederImage = releaseInfo.FeederServiceImage + ":" + releaseInfo.FeederServiceTag
 	} else {
 		return nil, fmt.Errorf("No tag found for feeder-service")
 	}

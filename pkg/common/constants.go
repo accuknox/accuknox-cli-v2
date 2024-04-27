@@ -48,13 +48,17 @@ const (
 
 	DefaultConfigPathDirName = ".accuknox-config"
 
+	// KubeArmor related image/image registries are fixed as of now
 	DefaultKubeArmorImage     = "kubearmor/kubearmor:"
 	DefaultKubeArmorInitImage = "kubearmor/kubearmor-init:"
 	DefaultRelayServerImage   = "accuknox/kubearmor-relay-server:"
 	DefaultVMAdapterImage     = "accuknox/vm-adapter:"
-	DefaultPEAImage           = "public.ecr.aws/k9v9d5v2/policy-enforcement-agent:"
-	DefaultSIAImage           = "public.ecr.aws/k9v9d5v2/shared-informer-agent:"
-	DefaultFeederImage        = "public.ecr.aws/k9v9d5v2/feeder-service:"
+
+	// Agent images change/have changed over release versions
+	// deprecated - do not use
+	DefaultPEAImage    = "public.ecr.aws/k9v9d5v2/policy-enforcement-agent:"
+	DefaultSIAImage    = "public.ecr.aws/k9v9d5v2/shared-informer-agent:"
+	DefaultFeederImage = "public.ecr.aws/k9v9d5v2/feeder-service:"
 
 	MinDockerVersion                  = "v19.0.3"
 	MinDockerComposeVersion           = "v1.27.0"

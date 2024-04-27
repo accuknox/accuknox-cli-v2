@@ -63,6 +63,8 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	ic.TCArgs = TemplateConfigArgs{
+		ReleaseVersion: ic.AgentsVersion,
+
 		KubeArmorImage:            ic.KubeArmorImage,
 		KubeArmorInitImage:        ic.KubeArmorInitImage,
 		KubeArmorRelayServerImage: ic.KubeArmorRelayServerImage,
@@ -137,8 +139,9 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
-		StreamName: "knox-gateway",
-		ServerURL:  ic.KnoxGateway,
+		ReleaseVersion: ic.AgentsVersion,
+		StreamName:     "knox-gateway",
+		ServerURL:      ic.KnoxGateway,
 	}
 
 	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sia/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
