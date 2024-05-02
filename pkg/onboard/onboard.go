@@ -10,7 +10,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 )
 
-func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage, vmAdapterImage, relayServerImage, siaImage, peaImage, feederImage, nodeAddress string, dryRun, workerNode bool, imagePullPolicy, visibility, hostVisibility, audit, block, cidr string) (*ClusterConfig, error) {
+func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage, vmAdapterImage, relayServerImage, spireImage, siaImage, peaImage, feederImage, nodeAddress string, dryRun, workerNode bool, imagePullPolicy, visibility, hostVisibility, audit, block, cidr string) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -127,6 +127,14 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 
 	if workerNode {
 		return cc, nil
+	}
+
+	if spireImage != "" {
+		cc.SPIREAgentImage = spireImage
+	} else if releaseVersion != "" {
+		cc.SPIREAgentImage = "accuknox/spire-agent" + ":" + releaseInfo.SPIREAgentImageTag
+	} else {
+		return nil, fmt.Errorf("No tag found for spire-agent")
 	}
 
 	if siaImage != "" {

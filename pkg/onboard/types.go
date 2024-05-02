@@ -53,6 +53,7 @@ type ClusterConfig struct {
 	KubeArmorInitImage        string
 	KubeArmorVMAdapterImage   string
 	KubeArmorRelayServerImage string
+	SPIREAgentImage           string
 	SIAImage                  string
 	PEAImage                  string
 	FeederImage               string
@@ -127,6 +128,8 @@ type TemplateConfigArgs struct {
 	KubeArmorHostFilePosture    string
 	KubeArmorHostNetworkPosture string
 	KubeArmorHostCapPosture     string
+
+	SPIREAgentImage string
 
 	SIAImage    string
 	PEAImage    string

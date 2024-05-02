@@ -69,6 +69,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		KubeArmorInitImage:        ic.KubeArmorInitImage,
 		KubeArmorRelayServerImage: ic.KubeArmorRelayServerImage,
 		KubeArmorVMAdapterImage:   ic.KubeArmorVMAdapterImage,
+		SPIREAgentImage:           ic.SPIREAgentImage,
 		SIAImage:                  ic.SIAImage,
 		PEAImage:                  ic.PEAImage,
 		FeederImage:               ic.FeederImage,

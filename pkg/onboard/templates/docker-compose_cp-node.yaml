@@ -4,7 +4,7 @@ services:
     profiles:
       - "spire-agent"
     container_name: spire-agent
-    image: "public.ecr.aws/k9v9d5v2/spire-agent:latest"
+    image: {{.SPIREAgentImage}}
     pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "-config"

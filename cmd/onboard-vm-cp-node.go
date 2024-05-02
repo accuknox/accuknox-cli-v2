@@ -24,6 +24,7 @@ var (
 	siaImage                  string
 	peaImage                  string
 	feederImage               string
+	spireAgentImage           string
 )
 
 // cpNodeCmd represents the init command
@@ -32,7 +33,7 @@ var cpNodeCmd = &cobra.Command{
 	Short: "Initialize a control plane node for onboarding onto SaaS",
 	Long:  "Initialize a control plane node for onboarding onto SaaS",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		clusterConfig, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, false, imagePullPolicy, visibility, hostVisibility, audit, block, cidr)
+		clusterConfig, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, kubearmorVersion, releaseVersion, kubeArmorImage, kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, spireAgentImage, siaImage, peaImage, feederImage, nodeAddr, dryRun, false, imagePullPolicy, visibility, hostVisibility, audit, block, cidr)
 		if err != nil {
 			return fmt.Errorf("Failed to create cluster config: %s", err.Error())
 		}
@@ -75,6 +76,7 @@ func init() {
 	cpNodeCmd.PersistentFlags().StringVar(&siaImage, "sia-image", "", "sia image to use")
 	cpNodeCmd.PersistentFlags().StringVar(&peaImage, "pea-image", "", "pea image to use")
 	cpNodeCmd.PersistentFlags().StringVar(&feederImage, "feeder-image", "", "feeder-service image to use")
+	cpNodeCmd.PersistentFlags().StringVar(&spireAgentImage, "spire-agent-image", "", "spire-agent image to use")
 
 	err := cpNodeCmd.MarkPersistentFlagRequired("join-token")
 	if err != nil {
