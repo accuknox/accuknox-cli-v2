@@ -14,7 +14,7 @@ type ReleaseMetadata struct {
 	KubeArmorTag          string `json:"kubearmor_tag"`
 	KubeArmorRelayTag     string `json:"kubearmor_relay_tag"`
 	KubeArmorVMAdapterTag string `json:"kubearmor_vm_adapter_tag"`
-	SPIREAgentImageTag    string `json:"spire_agent_image_tag"`
+	SPIREAgentImageTag    string `json:"spire_agent_tag"`
 	SIATag                string `json:"sia_tag"`
 	SIAImage              string `json:"sia_image"`
 	PEATag                string `json:"pea_tag"`

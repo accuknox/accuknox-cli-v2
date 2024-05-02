@@ -132,7 +132,9 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath, kubearmorVersi
 	if spireImage != "" {
 		cc.SPIREAgentImage = spireImage
 	} else if releaseVersion != "" {
-		cc.SPIREAgentImage = "accuknox/spire-agent" + ":" + releaseInfo.SPIREAgentImageTag
+		cc.SPIREAgentImage = "public.ecr.aws/k9v9d5v2/spire-agent:latest"
+		// TODO: once the image is pushed to dockerhub
+		//cc.SPIREAgentImage = "accuknox/spire-agent" + ":" + releaseInfo.SPIREAgentImageTag
 	} else {
 		return nil, fmt.Errorf("No tag found for spire-agent")
 	}
