@@ -1,11 +1,7 @@
 kmux:
   sink:
     stream: {{.StreamName}}
-
-{{- if trimPrefix "v" .ReleaseVersion | semverCompare ">=0.3.0" }}
-  # kmux SPIRE APIs were added after 0.3.0
   security: spire
-{{- end }}
 
 knox-gateway:
   server: {{.ServerURL}}
@@ -13,9 +9,6 @@ knox-gateway:
 spire:
   spiffeID:
     format: "spiffe://<domainName>/<WSID>/<ClusterID>/<componentName>"
-{{- if trimPrefix "v" .ReleaseVersion | semverCompare ">=0.3.0" }}
-  # kmux SPIRE APIs were added after 0.3.0
   suffixSkipSet:
     - ".sock"
     - ".socket"
-{{- end }}
