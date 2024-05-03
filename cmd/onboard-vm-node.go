@@ -39,6 +39,15 @@ var joinNodeCmd = &cobra.Command{
 				vmMode = onboard.VMMode_Systemd
 				secureContainers = false
 			}
+		} else if vmMode == onboard.VMMode_Systemd {
+			// systemd mode explicitly specified
+			if err != nil {
+				// docker requirements didn't meet - containers won't be protected
+				secureContainers = false
+			}
+		} else if vmMode == onboard.VMMode_Docker && err == nil {
+			// docker mode specified explicitly but requirements didn't match
+			return fmt.Errorf("failed to validate environment: %s", err.Error())
 		}
 		vmConfigs, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, vmMode,
 			vmAdapterTag, kubeArmorRelayServerTag, peaVersionTag, siaVersionTag,
