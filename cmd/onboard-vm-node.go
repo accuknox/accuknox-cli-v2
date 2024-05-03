@@ -45,7 +45,7 @@ var joinNodeCmd = &cobra.Command{
 				// docker requirements didn't meet - containers won't be protected
 				secureContainers = false
 			}
-		} else if vmMode == onboard.VMMode_Docker && err == nil {
+		} else if vmMode == onboard.VMMode_Docker && err != nil {
 			// docker mode specified explicitly but requirements didn't match
 			return fmt.Errorf("failed to validate environment: %s", err.Error())
 		}
