@@ -8,11 +8,17 @@ var (
 	//go:embed templates/kmux-config.yaml
 	kmuxConfig string
 
+	//go:embed templates/sumengine-kmux-config.yaml
+	sumenginekmuxConfig string
+
 	//go:embed templates/pea-config.yaml
 	peaConfig string
 
 	//go:embed templates/sia-config.yaml
 	siaConfig string
+
+	//go:embed templates/sumengine-config.yaml
+	sumengineConfig string
 
 	//go:embed templates/systemdTemplates/kubearmor-config.yaml
 	kubeArmorConfig string

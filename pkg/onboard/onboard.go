@@ -12,9 +12,9 @@ import (
 )
 
 func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode VMMode,
-	vmAdapterTag, kubeArmorRelayServerTag, peaVersionTag, siaVersionTag, feederVersionTag string,
+	vmAdapterTag, kubeArmorRelayServerTag, peaVersionTag, siaVersionTag, feederVersionTag, sumengineTag string,
 	kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage,
-	vmAdapterImage, relayServerImage, siaImage, peaImage,
+	vmAdapterImage, relayServerImage, siaImage, peaImage, sumengineImage,
 	feederImage, spireImage, nodeAddress string, dryRun, workerNode bool,
 	imagePullPolicy, visibility, hostVisibility, audit,
 	block, cidr string, secureContainers bool) (*ClusterConfig, error) {
@@ -90,7 +90,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		case string(ImagePullPolicy_Never):
 			cc.ImagePullPolicy = ImagePullPolicy_Never
 		default:
-			return nil, fmt.Errorf("Image pull policy %s unrecognized", imagePullPolicy)
+			return nil, fmt.Errorf("image pull policy %s unrecognized", imagePullPolicy)
 		}
 
 		if kubearmorImage != "" {
@@ -166,7 +166,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		} else if releaseVersion != "" {
 			cc.SIAImage = releaseInfo.SIAImage + ":" + releaseInfo.SIATag
 		} else {
-			return nil, fmt.Errorf("No tag found for SIA")
+			return nil, fmt.Errorf("no tag found for SIA")
 		}
 
 		if peaImage != "" {
@@ -174,7 +174,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		} else if releaseVersion != "" {
 			cc.PEAImage = releaseInfo.PEAImage + ":" + releaseInfo.PEATag
 		} else {
-			return nil, fmt.Errorf("No tag found for PEA")
+			return nil, fmt.Errorf("no tag found for PEA")
 		}
 
 		if feederImage != "" {
@@ -182,7 +182,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		} else if releaseVersion != "" {
 			cc.FeederImage = releaseInfo.FeederServiceImage + ":" + releaseInfo.FeederServiceTag
 		} else {
-			return nil, fmt.Errorf("No tag found for feeder-service")
+			return nil, fmt.Errorf("no tag found for feeder-service")
 		}
 		if spireImage != "" {
 			cc.SPIREAgentImage = spireImage
@@ -191,7 +191,15 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 			// TODO: once the image is pushed to dockerhub
 			//cc.SPIREAgentImage = "accuknox/spire-agent" + ":" + releaseInfo.SPIREAgentImageTag
 		} else {
-			return nil, fmt.Errorf("No tag found for spire-agent")
+			return nil, fmt.Errorf("no tag found for spire-agent")
+		}
+
+		if sumengineImage != "" {
+			cc.SumengineImage = sumengineImage
+		} else if releaseVersion != "" {
+			cc.SumengineImage = releaseInfo.SumengineImage + ":" + releaseInfo.SumengineTag
+		} else {
+			return nil, fmt.Errorf("no tag found for summary-engine")
 		}
 
 	case VMMode_Systemd:

@@ -62,6 +62,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		SIAImage:                  ic.SIAImage,
 		PEAImage:                  ic.PEAImage,
 		FeederImage:               ic.FeederImage,
+		SumengineImage:            ic.SumengineImage,
 
 		Hostname: hostname,
 		// TODO: make configurable
@@ -128,6 +129,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	ic.TCArgs.SIAImage = ic.SIAImage
 	ic.TCArgs.PEAImage = ic.PEAImage
 	ic.TCArgs.FeederImage = ic.FeederImage
+	ic.TCArgs.SumengineImage = ic.SumengineImage
 
 	ic.TCArgs.KubeArmorURL = "kubearmor:32767"
 	ic.TCArgs.KubeArmorPort = "32767"
@@ -148,6 +150,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	ic.TCArgs.KmuxConfigPathFS = "/opt/feeder-service/kmux-config.yaml"
 	ic.TCArgs.KmuxConfigPathSIA = "/opt/sia/kmux-config.yaml"
 	ic.TCArgs.KmuxConfigPathPEA = "/opt/pea/kmux-config.yaml"
+	ic.TCArgs.KmuxConfigPathSumengine = "/opt/sumengine/kmux-config.yaml"
 
 	// initialize sprig for templating
 	sprigFuncs := sprig.GenericFuncMap()
@@ -164,6 +167,11 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sia/app.yaml", sprigFuncs, siaConfig, ic.TCArgs)
+	if err != nil {
+		return err
+	}
+
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "conf/config.yaml", sprigFuncs, sumengineConfig, ic.TCArgs)
 	if err != nil {
 		return err
 	}
@@ -194,6 +202,11 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		return err
 	}
 
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "conf/kmux-config.yaml", sprigFuncs, sumenginekmuxConfig, kmuxConfigArgs)
+	if err != nil {
+		return err
+	}
+
 	diagnosis := true
 	args := []string{"-f", composeFilePath, "--profile",
 		"spire-agent", "--profile", "kubearmor", "--profile", "accuknox-agents",
@@ -212,7 +225,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		if diagErr != nil {
 			diagnosis = diagErr.Error()
 		}
-		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
+		return fmt.Errorf("error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
 	} else if err != nil {
 		return err
 	}

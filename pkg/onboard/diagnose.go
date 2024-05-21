@@ -152,7 +152,7 @@ func diaganose(nodeType NodeType) (string, error) {
 
 	diagnosis, err = getContainerDiagnosis(dockerClient, knownContainerMap, priorityList)
 	if err != nil {
-		return diagnosis, fmt.Errorf("Failed to get container diagnosis. %s", err.Error())
+		return diagnosis, fmt.Errorf("failed to get container diagnosis. %s", err.Error())
 	}
 
 	return diagnosis, nil
