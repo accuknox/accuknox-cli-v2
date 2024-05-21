@@ -1,0 +1,30 @@
+watcher:
+  enabled: true
+  kubearmor-event-type:
+    logs: true
+    alerts: true
+  kubearmor-relay:
+    name: relay-1
+    enabled: true
+    url: "localhost"
+    port: "32768"
+
+summary-engine:
+  enabled: true
+  cron-interval: "0h0m30s"
+  threshold: 10000
+  file-aggregation: true
+  topic:
+    summary-event: "summary-v2"
+  exclude-events:
+    operation:
+      process: false
+      file: true
+      network: false
+  exclude-namespaces:
+    kubearmor: true 
+
+k8s:
+  enable: false
+
+kmux-config-file: {{.KmuxConfigPathSumengine}}

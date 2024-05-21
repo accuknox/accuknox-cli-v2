@@ -261,6 +261,29 @@ services:
         aliases:
           - policy-enforcement-agent
 
+  summary-engine:
+    profiles:
+      - "accuknox-agents"
+    depends_on:
+      wait-for-it:
+        condition: service_completed_successfully
+      kubearmor-relay-server:
+        condition: service_started
+    container_name: summary-engine
+    image: "{{.SumengineImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
+    command: ["-config-path", "/opt/sumengine/"]
+    labels:
+      app: sumengine
+    volumes:
+      - "{{.ConfigPath}}:/opt"
+    restart: on-failure:4
+    pid: "host"
+    networks:
+      accuknox-net:
+        aliases:
+          - sumengine
+
 networks:
   accuknox-net:
     name: accuknox-net

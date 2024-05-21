@@ -119,7 +119,7 @@ func copyOrGenerateFile(userConfigDir, dirPath, filePath string, tempFuncs templ
 	}
 
 	if dataFile == nil {
-		return "", fmt.Errorf("Failed to read config file for %s: Empty file", filePath)
+		return "", fmt.Errorf("failed to read config file for %s: Empty file", filePath)
 	}
 
 	fullFilePath := filepath.Join(dirPath, filePath)
