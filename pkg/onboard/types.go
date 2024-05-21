@@ -61,6 +61,7 @@ type ClusterConfig struct {
 	SIAImage                  string
 	PEAImage                  string
 	FeederImage               string
+	SumengineImage            string
 
 	CPNodeAddr string
 
@@ -187,9 +188,10 @@ type TemplateConfigArgs struct {
 	NetworkCIDR string
 
 	// kmux config paths for agents
-	KmuxConfigPathFS  string
-	KmuxConfigPathSIA string
-	KmuxConfigPathPEA string
+	KmuxConfigPathFS        string
+	KmuxConfigPathSIA       string
+	KmuxConfigPathPEA       string
+	KmuxConfigPathSumengine string
 
 	// container security
 	SecureContainers bool

@@ -148,6 +148,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	ic.TCArgs.KmuxConfigPathFS = "/opt/feeder-service/kmux-config.yaml"
 	ic.TCArgs.KmuxConfigPathSIA = "/opt/sia/kmux-config.yaml"
 	ic.TCArgs.KmuxConfigPathPEA = "/opt/pea/kmux-config.yaml"
+	ic.TCArgs.KmuxConfigPathSumengine = "/opt/sumengine/kmux-config.yaml"
 
 	// initialize sprig for templating
 	sprigFuncs := sprig.GenericFuncMap()
@@ -164,6 +165,11 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sia/app.yaml", sprigFuncs, siaConfig, ic.TCArgs)
+	if err != nil {
+		return err
+	}
+
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sumengine/config.yaml", sprigFuncs, sumengineConfig, ic.TCArgs)
 	if err != nil {
 		return err
 	}
@@ -194,6 +200,11 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		return err
 	}
 
+	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sumengine/kmux-config.yaml", sprigFuncs, sumenginekmuxConfig, kmuxConfigArgs)
+	if err != nil {
+		return err
+	}
+
 	diagnosis := true
 	args := []string{"-f", composeFilePath, "--profile",
 		"spire-agent", "--profile", "kubearmor", "--profile", "accuknox-agents",
@@ -212,7 +223,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		if diagErr != nil {
 			diagnosis = diagErr.Error()
 		}
-		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
+		return fmt.Errorf("error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
 	} else if err != nil {
 		return err
 	}
