@@ -261,6 +261,42 @@ services:
         aliases:
           - policy-enforcement-agent
 
+  summary-engine:
+    profiles:
+      - "accuknox-agents"
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      kubearmor-relay-server:
+        condition: service_started
+    container_name: summary-engine
+    image: "{{.SumengineImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
+    command: ["--config", "/opt/sumengine/config.yaml", "--kmux-config", "/opt/sumengine/kmux-config.yaml"]
+    labels:
+      app: sumengine
+    volumes:
+      - "{{.ConfigPath}}:/opt"
+    restart: on-failure:4
+    pid: "host"
+    networks:
+      accuknox-net:
+        aliases:
+          - sumengine
+
+  rabbitmq:
+    image: "rabbitmq:3.12.2-management"
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: on-failure:4
+    pid: "host"  
+    networks:
+      accuknox-net:
+        aliases:
+          - rabbitmq
+
 networks:
   accuknox-net:
     name: accuknox-net

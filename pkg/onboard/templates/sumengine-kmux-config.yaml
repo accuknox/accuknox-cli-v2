@@ -1,0 +1,12 @@
+kmux:
+  sink:
+    stream: rabbitmq
+
+rabbitmq:
+  server: "rabbitmq:5672"
+  exchange:
+    name: "dev2" # exchange name
+    type: "direct" # exchange type
+    durable: true
+    auto-delete: true
+  debug: false

@@ -62,6 +62,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		SIAImage:                  ic.SIAImage,
 		PEAImage:                  ic.PEAImage,
 		FeederImage:               ic.FeederImage,
+		SumEngineImage:            ic.SumEngineImage,
 
 		Hostname: hostname,
 		// TODO: make configurable
@@ -108,7 +109,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 }
 
 func (ic *InitConfig) InitializeControlPlane() error {
-	// validate this environment
+	// Validate environment
 	dockerStatus, err := ic.ValidateEnv()
 	if err != nil {
 		return err
@@ -119,58 +120,27 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	if err != nil {
 		return err
 	}
-	ic.TCArgs.KubeArmorImage = ic.KubeArmorImage
-	ic.TCArgs.KubeArmorInitImage = ic.KubeArmorInitImage
-	ic.TCArgs.KubeArmorRelayServerImage = ic.KubeArmorRelayServerImage
-	ic.TCArgs.KubeArmorVMAdapterImage = ic.KubeArmorVMAdapterImage
 
-	// agents
-	ic.TCArgs.SIAImage = ic.SIAImage
-	ic.TCArgs.PEAImage = ic.PEAImage
-	ic.TCArgs.FeederImage = ic.FeederImage
+	// Set TCArgs with appropriate values
+	ic.setTCArgs(configPath)
 
-	ic.TCArgs.KubeArmorURL = "kubearmor:32767"
-	ic.TCArgs.KubeArmorPort = "32767"
-
-	ic.TCArgs.RelayServerURL = "kubearmor-relay-server:32768"
-	ic.TCArgs.RelayServerAddr = "kubearmor-relay-server"
-	ic.TCArgs.RelayServerPort = "32768"
-
-	ic.TCArgs.WorkerNode = ic.WorkerNode
-
-	ic.TCArgs.SIAAddr = "shared-informer-agent:32769"
-	ic.TCArgs.PEAAddr = "policy-enforcement-agent:32770"
-	ic.TCArgs.ImagePullPolicy = string(ic.ImagePullPolicy)
-
-	ic.TCArgs.ConfigPath = configPath
-
-	// kmux config file paths
-	ic.TCArgs.KmuxConfigPathFS = "/opt/feeder-service/kmux-config.yaml"
-	ic.TCArgs.KmuxConfigPathSIA = "/opt/sia/kmux-config.yaml"
-	ic.TCArgs.KmuxConfigPathPEA = "/opt/pea/kmux-config.yaml"
-
-	// initialize sprig for templating
+	// Initialize sprig functions for templating
 	sprigFuncs := sprig.GenericFuncMap()
 
-	// write compose file
-	composeFilePath, err := copyOrGenerateFile(ic.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, cpComposeFileTemplate, ic.TCArgs)
-	if err != nil {
-		return err
+	// List of config files to be generated or copied
+	fileTemplateMap := map[string]string{
+		"docker-compose.yaml":   cpComposeFileTemplate,
+		"pea/application.yaml":  peaConfig,
+		"sia/app.yaml":          siaConfig,
+		"sumengine/config.yaml": sumEngineConfig,
+		"spire/conf/agent.conf": spireAgentConfig,
 	}
 
-	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "pea/application.yaml", sprigFuncs, peaConfig, ic.TCArgs)
-	if err != nil {
-		return err
-	}
-
-	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sia/app.yaml", sprigFuncs, siaConfig, ic.TCArgs)
-	if err != nil {
-		return err
-	}
-
-	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "spire/conf/agent.conf", sprigFuncs, spireAgentConfig, ic.TCArgs)
-	if err != nil {
-		return err
+	// Generate or copy files
+	for filePath, templateString := range fileTemplateMap {
+		if _, err := copyOrGenerateFile(ic.UserConfigPath, configPath, filePath, sprigFuncs, templateString, ic.TCArgs); err != nil {
+			return err
+		}
 	}
 
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
@@ -179,25 +149,61 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		ServerURL:      ic.KnoxGateway,
 	}
 
-	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "sia/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
-	if err != nil {
-		return err
+	// List of kmux config files to be generated or copied
+	kmuxConfigFileTemplateMap := map[string]string{
+		"sia/kmux-config.yaml":            kmuxConfig,
+		"feeder-service/kmux-config.yaml": kmuxConfig,
+		"pea/kmux-config.yaml":            kmuxConfig,
+		"sumengine/kmux-config.yaml":      sumEnginekmuxConfig,
 	}
 
-	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "feeder-service/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
-	if err != nil {
-		return err
+	// Generate or copy kmux config files
+	for filePath, templateString := range kmuxConfigFileTemplateMap {
+		if _, err := copyOrGenerateFile(ic.UserConfigPath, configPath, filePath, sprigFuncs, templateString, kmuxConfigArgs); err != nil {
+			return err
+		}
 	}
 
-	_, err = copyOrGenerateFile(ic.UserConfigPath, configPath, "pea/kmux-config.yaml", sprigFuncs, kmuxConfig, kmuxConfigArgs)
-	if err != nil {
-		return err
-	}
+	// Diagnose if necessary and run compose command
+	return ic.runComposeCommand(configPath)
+}
 
+// setTCArgs sets the necessary TCArgs values
+func (ic *InitConfig) setTCArgs(configPath string) {
+	ic.TCArgs = TemplateConfigArgs{
+		KubeArmorImage:            ic.KubeArmorImage,
+		KubeArmorInitImage:        ic.KubeArmorInitImage,
+		KubeArmorRelayServerImage: ic.KubeArmorRelayServerImage,
+		KubeArmorVMAdapterImage:   ic.KubeArmorVMAdapterImage,
+		SIAImage:                  ic.SIAImage,
+		PEAImage:                  ic.PEAImage,
+		FeederImage:               ic.FeederImage,
+		SumEngineImage:            ic.SumEngineImage,
+		KubeArmorURL:              "kubearmor:32767",
+		KubeArmorPort:             "32767",
+		RelayServerURL:            "kubearmor-relay-server:32768",
+		RelayServerAddr:           "kubearmor-relay-server",
+		RelayServerPort:           "32768",
+		WorkerNode:                ic.WorkerNode,
+		SIAAddr:                   "shared-informer-agent:32769",
+		PEAAddr:                   "policy-enforcement-agent:32770",
+		ImagePullPolicy:           string(ic.ImagePullPolicy),
+		ConfigPath:                configPath,
+		KmuxConfigPathFS:          "/opt/feeder-service/kmux-config.yaml",
+		KmuxConfigPathSIA:         "/opt/sia/kmux-config.yaml",
+		KmuxConfigPathPEA:         "/opt/pea/kmux-config.yaml",
+		KmuxConfigPathSumengine:   "/opt/sumengine/kmux-config.yaml",
+	}
+}
+
+// runComposeCommand runs the Docker Compose command with the necessary arguments
+func (ic *InitConfig) runComposeCommand(composeFilePath string) error {
 	diagnosis := true
-	args := []string{"-f", composeFilePath, "--profile",
-		"spire-agent", "--profile", "kubearmor", "--profile", "accuknox-agents",
-		"up", "-d"}
+	args := []string{
+		"-f", composeFilePath, "--profile", "spire-agent",
+		"--profile", "kubearmor", "--profile", "accuknox-agents",
+		"up", "-d",
+	}
 
 	if semver.Compare(ic.composeVersion, common.MinDockerComposeWithWaitSupported) >= 0 {
 		args = append(args, "--wait", "--wait-timeout", "60")
@@ -205,17 +211,22 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		diagnosis = false
 	}
 
-	// run compose command
-	_, err = ExecComposeCommand(true, ic.DryRun, ic.composeCmd, args...)
-	if err != nil && diagnosis {
-		diagnosis, diagErr := diaganose(NodeType_ControlPlane)
-		if diagErr != nil {
-			diagnosis = diagErr.Error()
-		}
-		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
-	} else if err != nil {
-		return err
+	_, err := ExecComposeCommand(true, ic.DryRun, ic.composeCmd, args...)
+	if err != nil {
+		return ic.handleComposeError(err, diagnosis)
 	}
 
 	return nil
+}
+
+// handleComposeError handles errors from the Docker Compose command
+func (ic *InitConfig) handleComposeError(err error, diagnosis bool) error {
+	if diagnosis {
+		diagnosisMsg, diagErr := diaganose(NodeType_ControlPlane)
+		if diagErr != nil {
+			diagnosisMsg = diagErr.Error()
+		}
+		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosisMsg)
+	}
+	return err
 }
