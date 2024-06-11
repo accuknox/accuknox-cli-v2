@@ -222,7 +222,7 @@ func (cc *ClusterConfig) PrintJoinCommand(vmmode VMMode) {
 		command = fmt.Sprintf("knoxctl onboard vm node --vm-mode=\"docker\" --cp-node-addr=%s", cc.CPNodeAddr)
 
 	case VMMode_Systemd:
-		command = fmt.Sprintf("knoxctl onboard vm node --vm-mode=\"systemd\"--cp-node-addr=%s", cc.CPNodeAddr)
+		command = fmt.Sprintf("knoxctl onboard vm node --vm-mode=\"systemd\" --cp-node-addr=%s", cc.CPNodeAddr)
 	}
 
 	fmt.Println(command)

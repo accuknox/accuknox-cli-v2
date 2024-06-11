@@ -37,10 +37,12 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 		case onboard.NodeType_ControlPlane:
 			_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
 				"-f", composeFilePath, "--profile", "spire-agent",
-				"--profile", "kubearmor", "--profile", "accuknox-agents", "down")
+				"--profile", "kubearmor", "--profile", "accuknox-agents", "down",
+				"--volumes")
 		case onboard.NodeType_WorkerNode:
 			_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
-				"-f", composeFilePath, "--profile", "kubearmor", "down")
+				"-f", composeFilePath, "--profile", "kubearmor", "down",
+				"--volumes")
 		}
 		if err != nil {
 			return configPath, fmt.Errorf("error: %s", err.Error())

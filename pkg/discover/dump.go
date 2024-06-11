@@ -11,7 +11,7 @@ import (
 
 func dump(pf *PolicyForest) error {
 	baseDir := "knoxctl_out/discovered/policies"
-	if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(baseDir, 0750); err != nil {
 		return fmt.Errorf("failed to create base directory %s: %v", baseDir, err)
 	}
 
@@ -23,7 +23,7 @@ func dump(pf *PolicyForest) error {
 
 		for _, policy := range kubearmorPolicies {
 			kubearmorDir := filepath.Join(baseDir, "kubearmor_policy", ns)
-			if err := os.MkdirAll(kubearmorDir, os.ModePerm); err != nil {
+			if err := os.MkdirAll(kubearmorDir, 0750); err != nil {
 				return fmt.Errorf("failed to create directory %s: %v", kubearmorDir, err)
 			}
 
@@ -36,7 +36,7 @@ func dump(pf *PolicyForest) error {
 
 		for _, policy := range networkPolicies {
 			networkDir := filepath.Join(baseDir, "network_policy", ns)
-			if err := os.MkdirAll(networkDir, os.ModePerm); err != nil {
+			if err := os.MkdirAll(networkDir, 0750); err != nil {
 				return fmt.Errorf("failed to create directory %s: %v", networkDir, err)
 			}
 

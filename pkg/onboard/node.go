@@ -140,13 +140,21 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 
 	// run compose command
 	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, args...)
-	if err != nil && diagnosis {
-		diagnosis, diagErr := diaganose(NodeType_WorkerNode)
-		if diagErr != nil {
-			diagnosis = diagErr.Error()
+	if err != nil {
+		// cleanup volumes
+		_, volDelErr := ExecDockerCommand(true, false, "docker", "volume", "rm", "kubearmor-init-vol")
+		if volDelErr != nil {
+			fmt.Println("Error while removing volumes:", volDelErr.Error())
 		}
-		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosis)
-	} else if err != nil {
+
+		if diagnosis {
+			diagnosisResult, diagErr := diaganose(NodeType_WorkerNode)
+			if diagErr != nil {
+				diagnosisResult = diagErr.Error()
+			}
+			return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosisResult)
+		}
+
 		return err
 	}
 

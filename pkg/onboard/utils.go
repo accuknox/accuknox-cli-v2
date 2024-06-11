@@ -287,6 +287,38 @@ func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (
 	return string(stdout), nil
 }
 
+func ExecDockerCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (string, error) {
+	dockerCmd := exec.Command(tryCmd) // #nosec G204
+	if dryRun {
+		dockerCmd.Args = append(dockerCmd.Args, "--dry-run")
+	}
+
+	dockerCmd.Args = append(dockerCmd.Args, args...)
+
+	if setStdOut {
+		dockerCmd.Stdout = os.Stdout
+		dockerCmd.Stderr = os.Stderr
+
+		err := dockerCmd.Run()
+		if err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok && len(exitErr.Stderr) > 0 {
+				return "", errors.New(string(exitErr.Stderr))
+			}
+
+			return "", err
+		}
+
+		return "", nil
+	}
+
+	stdout, err := dockerCmd.CombinedOutput()
+	if err != nil {
+		return string(stdout), err
+	}
+
+	return string(stdout), nil
+}
+
 // validate the environment
 func (cc *ClusterConfig) ValidateEnv() (string, error) {
 	// check if docker exists

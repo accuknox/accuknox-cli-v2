@@ -10,7 +10,7 @@ import (
 
 func dump(pb *PolicyBucket) error {
 	dirPath := "knoxctl_out/recommended/policies"
-	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(dirPath, 0750); err != nil {
 		return fmt.Errorf("failed to create directory: %v", err)
 	}
 
@@ -21,7 +21,7 @@ func dump(pb *PolicyBucket) error {
 			ns := policy.Metadata.Namespace
 
 			nsDirPath := filepath.Join(dirPath, ns)
-			if err := os.MkdirAll(nsDirPath, os.ModePerm); err != nil {
+			if err := os.MkdirAll(nsDirPath, 0750); err != nil {
 				return fmt.Errorf("failed to create namespace directory '%s': %v", nsDirPath, err)
 			}
 

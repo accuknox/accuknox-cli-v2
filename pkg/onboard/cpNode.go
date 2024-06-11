@@ -211,22 +211,27 @@ func (ic *InitConfig) runComposeCommand(composeFilePath string) error {
 		diagnosis = false
 	}
 
+	// run compose command
 	_, err := ExecComposeCommand(true, ic.DryRun, ic.composeCmd, args...)
 	if err != nil {
+		// cleanup volumes
+		_, volDelErr := ExecDockerCommand(true, false, "docker", "volume", "rm", "spire-vol", "kubearmor-init-vol")
+		if volDelErr != nil {
+			fmt.Println("Error while removing volumes:", volDelErr.Error())
+		}
 		return ic.handleComposeError(err, diagnosis)
 	}
-
 	return nil
 }
 
 // handleComposeError handles errors from the Docker Compose command
 func (ic *InitConfig) handleComposeError(err error, diagnosis bool) error {
 	if diagnosis {
-		diagnosisMsg, diagErr := diaganose(NodeType_ControlPlane)
+		diagnosisResult, diagErr := diaganose(NodeType_ControlPlane)
 		if diagErr != nil {
-			diagnosisMsg = diagErr.Error()
+			diagnosisResult = diagErr.Error()
 		}
-		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosisMsg)
+		return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosisResult)
 	}
 	return err
 }

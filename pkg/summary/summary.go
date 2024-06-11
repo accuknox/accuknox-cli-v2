@@ -119,7 +119,7 @@ func Summary(c *k8s.Client, o Options) error {
 			}
 
 			dirPath := "knoxctl_out/summary/json"
-			if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
+			if err := os.MkdirAll(dirPath, 0750); err != nil {
 				return err
 			}
 

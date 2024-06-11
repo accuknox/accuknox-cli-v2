@@ -1,4 +1,9 @@
 version: '3.8'
+
+volumes:
+  kubearmor-init-vol:
+    name: kubearmor-init-vol
+
 services:
   kubearmor-init:
     profiles:
@@ -7,16 +12,17 @@ services:
     container_name: kubearmor-init
     image: {{.KubeArmorInitImage}}
     pull_policy: "{{.ImagePullPolicy}}"
+    user: root
     labels:
       app: kubearmor-init
     volumes:
-      - "/tmp:/opt/kubearmor/BPF:rw"
+      - "kubearmor-init-vol:/opt/kubearmor/BPF:rw"
       - "/lib/modules:/lib/modules:ro"
       - "/sys/fs/bpf:/sys/fs/bpf:ro"
       - "/sys/kernel/security:/sys/kernel/security:ro"
       - "/sys/kernel/debug:/sys/kernel/debug:ro"
       - "/media/root/etc/os-release:/media/root/etc/os-release:ro"
-    restart: on-failure:4
+    restart: on-failure
     privileged: true
     networks:
       accuknox-net:
@@ -51,7 +57,7 @@ services:
     labels:
       app: kubearmor
     volumes:
-      - "/tmp:/opt/kubearmor/BPF:rw"
+      - "kubearmor-init-vol:/opt/kubearmor/BPF"
       - "/sys/fs/bpf:/sys/fs/bpf"
       - "/sys/kernel/security:/sys/kernel/security"
       - "/sys/kernel/debug:/sys/kernel/debug"
@@ -59,7 +65,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "/run/docker:/run/docker"
       - "/var/lib/docker:/var/lib/docker"
-    restart: on-failure:4
+    restart: always
     ports:
       - "{{.KubeArmorPort}}:32767"
     networks:
@@ -88,7 +94,7 @@ services:
       - "{{.ConfigPath}}:/opt"
     labels:
       app: kubearmor-vm-adapter
-    restart: on-failure:4
+    restart: always
     network_mode: "host"
 
 networks:
