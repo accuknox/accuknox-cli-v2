@@ -14,6 +14,9 @@ kmux-topic: cluster-entity/shared-event
 heartbeat:
   interval: 5m
 
+resource-refresh:
+  interval: 5m
+
 kmux-config-file: {{.KmuxConfigPathSIA}}
 
 state-agent:
