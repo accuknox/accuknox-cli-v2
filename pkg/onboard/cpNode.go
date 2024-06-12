@@ -109,7 +109,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 }
 
 func (ic *InitConfig) InitializeControlPlane() error {
-	// Validate environment
+	// validate this environment
 	dockerStatus, err := ic.ValidateEnv()
 	if err != nil {
 		return err
@@ -120,20 +120,53 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	if err != nil {
 		return err
 	}
+	ic.TCArgs.KubeArmorImage = ic.KubeArmorImage
+	ic.TCArgs.KubeArmorInitImage = ic.KubeArmorInitImage
+	ic.TCArgs.KubeArmorRelayServerImage = ic.KubeArmorRelayServerImage
+	ic.TCArgs.KubeArmorVMAdapterImage = ic.KubeArmorVMAdapterImage
 
-	// Set TCArgs with appropriate values
-	ic.setTCArgs(configPath)
+	// agents
+	ic.TCArgs.SIAImage = ic.SIAImage
+	ic.TCArgs.PEAImage = ic.PEAImage
+	ic.TCArgs.FeederImage = ic.FeederImage
+	ic.TCArgs.SumEngineImage = ic.SumEngineImage
+
+	ic.TCArgs.KubeArmorURL = "kubearmor:32767"
+	ic.TCArgs.KubeArmorPort = "32767"
+
+	ic.TCArgs.RelayServerURL = "kubearmor-relay-server:32768"
+	ic.TCArgs.RelayServerAddr = "kubearmor-relay-server"
+	ic.TCArgs.RelayServerPort = "32768"
+
+	ic.TCArgs.WorkerNode = ic.WorkerNode
+
+	ic.TCArgs.SIAAddr = "shared-informer-agent:32769"
+	ic.TCArgs.PEAAddr = "policy-enforcement-agent:32770"
+	ic.TCArgs.ImagePullPolicy = string(ic.ImagePullPolicy)
+
+	ic.TCArgs.ConfigPath = configPath
+
+	// kmux config file paths
+	ic.TCArgs.KmuxConfigPathFS = "/opt/feeder-service/kmux-config.yaml"
+	ic.TCArgs.KmuxConfigPathSIA = "/opt/sia/kmux-config.yaml"
+	ic.TCArgs.KmuxConfigPathPEA = "/opt/pea/kmux-config.yaml"
+	ic.TCArgs.KmuxConfigPathSumengine = "/opt/sumengine/kmux-config.yaml"
 
 	// Initialize sprig functions for templating
 	sprigFuncs := sprig.GenericFuncMap()
 
+	// write compose file
+	composeFilePath, err := copyOrGenerateFile(ic.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, cpComposeFileTemplate, ic.TCArgs)
+	if err != nil {
+		return err
+	}
+
 	// List of config files to be generated or copied
 	fileTemplateMap := map[string]string{
-		"docker-compose.yaml":   cpComposeFileTemplate,
+		"spire/conf/agent.conf": spireAgentConfig,
 		"pea/application.yaml":  peaConfig,
 		"sia/app.yaml":          siaConfig,
 		"sumengine/config.yaml": sumEngineConfig,
-		"spire/conf/agent.conf": spireAgentConfig,
 	}
 
 	// Generate or copy files
@@ -151,9 +184,9 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	// List of kmux config files to be generated or copied
 	kmuxConfigFileTemplateMap := map[string]string{
+		"pea/kmux-config.yaml":            kmuxConfig,
 		"sia/kmux-config.yaml":            kmuxConfig,
 		"feeder-service/kmux-config.yaml": kmuxConfig,
-		"pea/kmux-config.yaml":            kmuxConfig,
 		"sumengine/kmux-config.yaml":      sumEnginekmuxConfig,
 	}
 
@@ -165,35 +198,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	// Diagnose if necessary and run compose command
-	return ic.runComposeCommand(configPath)
-}
-
-// setTCArgs sets the necessary TCArgs values
-func (ic *InitConfig) setTCArgs(configPath string) {
-	ic.TCArgs = TemplateConfigArgs{
-		KubeArmorImage:            ic.KubeArmorImage,
-		KubeArmorInitImage:        ic.KubeArmorInitImage,
-		KubeArmorRelayServerImage: ic.KubeArmorRelayServerImage,
-		KubeArmorVMAdapterImage:   ic.KubeArmorVMAdapterImage,
-		SIAImage:                  ic.SIAImage,
-		PEAImage:                  ic.PEAImage,
-		FeederImage:               ic.FeederImage,
-		SumEngineImage:            ic.SumEngineImage,
-		KubeArmorURL:              "kubearmor:32767",
-		KubeArmorPort:             "32767",
-		RelayServerURL:            "kubearmor-relay-server:32768",
-		RelayServerAddr:           "kubearmor-relay-server",
-		RelayServerPort:           "32768",
-		WorkerNode:                ic.WorkerNode,
-		SIAAddr:                   "shared-informer-agent:32769",
-		PEAAddr:                   "policy-enforcement-agent:32770",
-		ImagePullPolicy:           string(ic.ImagePullPolicy),
-		ConfigPath:                configPath,
-		KmuxConfigPathFS:          "/opt/feeder-service/kmux-config.yaml",
-		KmuxConfigPathSIA:         "/opt/sia/kmux-config.yaml",
-		KmuxConfigPathPEA:         "/opt/pea/kmux-config.yaml",
-		KmuxConfigPathSumengine:   "/opt/sumengine/kmux-config.yaml",
-	}
+	return ic.runComposeCommand(composeFilePath)
 }
 
 // runComposeCommand runs the Docker Compose command with the necessary arguments

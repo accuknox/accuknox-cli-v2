@@ -280,14 +280,14 @@ services:
       kubearmor-relay-server:
         condition: service_started
     container_name: summary-engine
-    image: "{{.SumengineImage}}"
+    image: "{{.SumEngineImage}}"
     pull_policy: "{{.ImagePullPolicy}}"
     command: ["--config", "/opt/sumengine/config.yaml", "--kmux-config", "/opt/sumengine/kmux-config.yaml"]
     labels:
       app: sumengine
     volumes:
       - "{{.ConfigPath}}:/opt"
-    restart: on-failure:4
+    restart: always
     pid: "host"
     networks:
       accuknox-net:
@@ -300,7 +300,7 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    restart: on-failure:4
+    restart: always
     pid: "host"  
     networks:
       accuknox-net:

@@ -23,7 +23,6 @@ summary-engine:
       network: false
   exclude-namespaces:
     kubearmor: true 
-
-k8s:
-  enable: false
+  k8s:
+    enable: false
 
