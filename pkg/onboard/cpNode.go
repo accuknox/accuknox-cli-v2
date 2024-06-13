@@ -65,6 +65,9 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		DiscoverImage:             ic.DiscoverImage,
 		SumEngineImage:            ic.SumEngineImage,
 
+		DeployDiscover:  ic.DeployDiscover,
+		DeploySumengine: ic.DeploySumengine,
+
 		Hostname: hostname,
 		// TODO: make configurable
 		KubeArmorURL:  "kubearmor:32767",
@@ -106,6 +109,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 
 		VmMode: ic.Mode,
 	}
+
 	return nil
 }
 

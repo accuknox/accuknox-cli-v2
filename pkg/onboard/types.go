@@ -99,6 +99,9 @@ type ClusterConfig struct {
 	SumEngineTag   string
 	DiscoverTag    string
 
+	DeployDiscover  bool
+	DeploySumengine bool
+
 	// container security
 	SecureContainers bool
 }
@@ -157,6 +160,9 @@ type TemplateConfigArgs struct {
 	FeederImage    string
 	DiscoverImage  string
 	SumEngineImage string
+
+	DeployDiscover  bool
+	DeploySumengine bool
 
 	DiscoverRules   string
 	ImagePullPolicy string

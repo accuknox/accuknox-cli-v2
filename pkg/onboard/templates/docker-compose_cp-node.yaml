@@ -211,10 +211,14 @@ services:
         condition: service_completed_successfully
       kubearmor-relay-server:
         condition: service_started
+      {{- if .DeploySumengine }}
       summary-engine:
         condition: service_started
+      {{- end }}
+      {{- if .DeployDiscover }}
       discover:
         condition: service_started
+      {{- end }}
     container_name: feeder-service
     image: "{{.FeederImage}}"
     pull_policy: "{{.ImagePullPolicy}}"
@@ -229,8 +233,10 @@ services:
       - "CLUSTER_NAME=default"
       - "HUBBLE_ENABLED=false"
       - "KAFKA_ENABLED=false"
+      {{- if .DeploySumengine }}
       - "DISCOVERYENGINE_ENABLED=true"
       - "DISCOVERYENGINE_VERSION=2"
+      {{- end }}
 
       - "KUBEARMOR_ENABLED=true"
       - "KUBEARMOR_URL={{.RelayServerAddr}}"
@@ -276,6 +282,10 @@ services:
       accuknox-net:
         aliases:
           - policy-enforcement-agent
+
+  # Deploy only custom images of discovery/summary engine
+  # or >=v0.1.25
+  {{- if .DeployDiscover }}
   discover:
     profiles:
       - "accuknox-agents"
@@ -300,6 +310,9 @@ services:
       accuknox-net:
         aliases:
           - discover
+  {{- end }}
+
+  {{- if .DeploySumengine }}
   summary-engine:
     profiles:
       - "accuknox-agents"
@@ -322,7 +335,9 @@ services:
       accuknox-net:
         aliases:
           - sumengine
+  {{- end }}
 
+  {{- if .DeploySumengine }}
   rabbitmq:
     image: "rabbitmq:3.12.2-management"
     container_name: rabbitmq
@@ -330,11 +345,13 @@ services:
       - "5672:5672"
       - "15672:15672"
     restart: always
-    pid: "host"  
+    pid: "host"
     networks:
       accuknox-net:
         aliases:
           - rabbitmq
+  {{- end }}
+
 networks:
   accuknox-net:
     name: accuknox-net

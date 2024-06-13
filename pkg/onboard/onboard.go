@@ -193,19 +193,26 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		} else {
 			return nil, fmt.Errorf("No tag found for spire-agent")
 		}
+
+		cc.DeployDiscover = true
+		cc.DeploySumengine = true
+
 		if discoverImage != "" {
 			cc.DiscoverImage = discoverImage
-		} else if releaseVersion != "" {
+		} else if releaseInfo.DiscoverTag != "" {
 			cc.DiscoverImage = releaseInfo.DiscoverImage + ":" + releaseInfo.DiscoverTag
 		} else {
-			return nil, fmt.Errorf("No tag found for discover")
+			cc.DeployDiscover = false
 		}
+
 		if sumEngineImage != "" {
 			cc.SumEngineImage = sumEngineImage
-		} else if releaseVersion != "" {
+		} else if releaseInfo.SumEngineTag != "" {
 			cc.SumEngineImage = releaseInfo.SumEngineImage + ":" + releaseInfo.SumEngineTag
+		} else if cc.DeployDiscover {
+			return nil, fmt.Errorf("can't deploy discover without sumengine")
 		} else {
-			return nil, fmt.Errorf("No tag found for summary-engine")
+			cc.DeploySumengine = false
 		}
 
 	case VMMode_Systemd:
@@ -213,8 +220,12 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		cc.SiaTag = GetSystemdTag(siaVersionTag, releaseInfo.SIATag)
 		cc.FsTag = GetSystemdTag(feederVersionTag, releaseInfo.FeederServiceTag)
 		cc.SpireTag = GetSystemdTag("", releaseInfo.SPIREAgentImageTag)
-		cc.SumEngineTag = GetSystemdTag("", releaseInfo.SumEngineTag)
-		cc.DiscoverTag = GetSystemdTag("", releaseInfo.DiscoverTag)
+		cc.SumEngineTag, cc.DeploySumengine = GetDev2SystemdTag(sumEngineTag, releaseInfo.SumEngineTag)
+		cc.DiscoverTag, cc.DeployDiscover = GetDev2SystemdTag(discoverVersionTag, releaseInfo.DiscoverTag)
+
+		if cc.DeployDiscover && !cc.DeployDiscover {
+			return nil, fmt.Errorf("can't deploy discover without sumengine")
+		}
 	}
 
 	return cc, nil

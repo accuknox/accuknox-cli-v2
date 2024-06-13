@@ -10,7 +10,11 @@
     "pea_tag": "v0.2.0",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.2.10": {
     "creation_time": "1707727047",
@@ -23,7 +27,11 @@
     "pea_tag": "v0.2.0",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.2.11": {
     "creation_time": "1708493489",
@@ -36,7 +44,11 @@
     "pea_tag": "v0.2.0",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.2.10-patch": {
     "creation_time": "1708578633",
@@ -49,7 +61,11 @@
     "pea_tag": "v0.2.0",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.3.0": {
     "creation_time": "1708590502",
@@ -62,7 +78,11 @@
     "pea_tag": "v0.3.0",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.3.1": {
     "creation_time": "1708607855",
@@ -75,7 +95,11 @@
     "pea_tag": "v0.3.0",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.3.3": {
     "creation_time": "1708971665",
@@ -88,7 +112,11 @@
     "pea_tag": "v0.3.0",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.4.0": {
     "creation_time": "1709207850",
@@ -101,7 +129,11 @@
     "pea_tag": "v0.3.1",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.1",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.4.0-rmq": {
     "creation_time": "1709317051",
@@ -114,7 +146,11 @@
     "pea_tag": "v0.3.1",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.1-rmq",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.3.2": {
     "creation_time": "1710157380",
@@ -127,7 +163,11 @@
     "pea_tag": "v0.3.1",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.1",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.2.12": {
     "creation_time": "1710175521",
@@ -140,7 +180,11 @@
     "pea_tag": "v0.2.0",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.0": {
     "creation_time": "1710913137",
@@ -153,7 +197,11 @@
     "pea_tag": "v0.3.2",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.1",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.4.0-patch": {
     "creation_time": "1710941843",
@@ -166,7 +214,11 @@
     "pea_tag": "v0.3.1",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.1",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.1": {
     "creation_time": "1711008943",
@@ -179,7 +231,11 @@
     "pea_tag": "v0.3.2",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.1-rmq",
-    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service"
+    "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.2": {
     "creation_time": "1711696981",
@@ -192,7 +248,11 @@
     "pea_tag": "v0.3.3",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.3.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.3": {
     "creation_time": "1712550507",
@@ -205,10 +265,14 @@
     "pea_tag": "v0.3.3",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.3.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.2.13": {
-    "note": "For systemd compatbility of SIA, PEA and FS",
+    "note": "For systemd compatbility of SIA - v0.2.2, PEA - v0.2.2 and FS - v0.2.4. Doesn't deploy dev2",
     "creation_time": "1712733026",
     "kubearmor_tag": "v1.3.8",
     "kubearmor_relay_tag": "v0.0.4",
@@ -245,7 +309,11 @@
     "pea_tag": "v0.2.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.6": {
     "creation_time": "1715746528",
@@ -258,7 +326,11 @@
     "pea_tag": "v0.3.3",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.5.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.7": {
     "creation_time": "1715776575",
@@ -271,7 +343,11 @@
     "pea_tag": "v0.4.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.5.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.4": {
     "creation_time": "1715841557",
@@ -284,7 +360,11 @@
     "pea_tag": "v0.3.3",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.3.2",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.7-demo": {
     "creation_time": "1715855259",
@@ -297,7 +377,11 @@
     "pea_tag": "v0.4.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.5.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.5": {
     "creation_time": "1716197804",
@@ -310,7 +394,11 @@
     "pea_tag": "v0.3.3",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.3.2",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.7-patch": {
     "creation_time": "1716268584",
@@ -323,7 +411,11 @@
     "pea_tag": "v0.4.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.5.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.4.0-test",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.4.0-test",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.8": {
     "creation_time": "1716458085",
@@ -336,7 +428,11 @@
     "pea_tag": "v0.4.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.5.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.2.15": {
     "creation_time": "1716462789",
@@ -349,7 +445,11 @@
     "pea_tag": "v0.2.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.9": {
     "creation_time": "1716524949",
@@ -362,7 +462,11 @@
     "pea_tag": "v0.4.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.5.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.2.16": {
     "creation_time": "1716962905",
@@ -375,7 +479,11 @@
     "pea_tag": "v0.2.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.0",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.10": {
     "creation_time": "1717353729",
@@ -388,10 +496,14 @@
     "pea_tag": "v0.4.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.5.1",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.2.17": {
-    "note": "For systemd compatbility of SIA and PEA",
+    "note": "For systemd compatbility of SIA v0.2.2 and PEA v0.2.2. Doesn't deploy dev2.",
     "creation_time": "1717354296",
     "kubearmor_tag": "v1.3.8",
     "kubearmor_relay_tag": "v0.0.4",
@@ -415,11 +527,31 @@
     "pea_tag": "v0.2.1",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.2.4",
-    "feeder_service_image": "accuknox/feeder-service"
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
+  },
+  "v0.6.0": {
+    "creation_time": "1718173582",
+    "kubearmor_tag": "v1.3.8",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.0.6",
+    "spire_agent_tag": "v1.9.4",
+    "sia_tag": "v0.5.0",
+    "sia_image": "accuknox/shared-informer-agent",
+    "pea_tag": "v0.4.1",
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.5.1",
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.1.25",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.1.25",
+    "sumengine_image": "accuknox/discovery-engine-sumengine"
   },
   "v0.5.11": {
-    "note": "Manually written. Timestamp wrong",
-    "creation_time": "1717354296",
+    "creation_time": "1718286696",
     "kubearmor_tag": "v1.3.8",
     "kubearmor_relay_tag": "v0.0.4",
     "kubearmor_vm_adapter_tag": "v0.0.6",

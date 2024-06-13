@@ -593,6 +593,27 @@ func GetSystemdTag(userTag, releaseTag string) string {
 	}
 	return tag
 }
+
+// GetDev2SystemdTag checks dev2 version and returns a blook indicating
+// it is deployable
+func GetDev2SystemdTag(userTag, releaseTag string) (string, bool) {
+	var (
+		tagSuffix = "_" + runtime.GOOS + "-" + runtime.GOARCH
+		tag       = ""
+		deploy    = false
+	)
+
+	if userTag != "" {
+		tag = strings.TrimPrefix(userTag, "v") + tagSuffix
+		deploy = true
+	} else if releaseTag != "" {
+		tag = strings.TrimPrefix(releaseTag, "v") + tagSuffix
+		deploy = true
+	}
+
+	return tag, deploy
+}
+
 func CheckSystemdInstallation() (bool, error) {
 	agents := []string{"kubearmor", cm.KA_Vm_Adapter, cm.Relay_server, cm.Pea_agent, cm.Sia_agent, cm.Feeder_service, cm.Spire_agent}
 	systemdPath := "/usr/lib/systemd/system/"
