@@ -9,99 +9,96 @@ import (
 )
 
 type ProcessNode struct {
-	ProcessName string                 `json:"processName"`
-	PID         int32                  `json:"pid"`
-	Command     string                 `json:"command"`
-	Children    map[int32]*ProcessNode `json:"children,omitempty"`
+	ProcessName string         `json:"processName"`
+	PID         int32          `json:"pid"`
+	Command     string         `json:"command"`
+	Children    []*ProcessNode `json:"children,omitempty"`
+	PPID        int32          `json:"ppid"` // Parent PID, not for JSON output
 }
 
-type ProcessTree struct {
-	Root map[int32]*ProcessNode `json:"root"`
-	mu   sync.RWMutex
+type ProcessForest struct {
+	Roots []*ProcessNode         `json:"roots"`
+	Nodes map[int32]*ProcessNode `json:"-"`
+	mu    sync.RWMutex
 }
 
-func NewProcessTree() *ProcessTree {
-	return &ProcessTree{
-		Root: make(map[int32]*ProcessNode),
+func NewProcessForest() *ProcessForest {
+	return &ProcessForest{
+		Roots: make([]*ProcessNode, 0),
+		Nodes: make(map[int32]*ProcessNode),
 	}
 }
 
-func (pt *ProcessTree) AddProcess(log *kaproto.Log) {
-	pt.mu.Lock()
-	defer pt.mu.Unlock()
-
-	currentNode := &ProcessNode{
-		ProcessName: log.ProcessName,
-		PID:         log.HostPID,
-		Command:     log.Resource,
-		Children:    make(map[int32]*ProcessNode),
-	}
-
-	parentNode := pt.findOrCreateNode(log.HostPPID)
-
-	if parentNode == nil {
-		// This is a root process
-		pt.Root[log.HostPID] = currentNode
-	} else {
-		// This is a child process
-		parentNode.Children[log.HostPID] = currentNode
-	}
-}
-
-func (pt *ProcessTree) findOrCreateNode(pid int32) *ProcessNode {
-	if node, exists := pt.Root[pid]; exists {
-		return node
-	}
-
-	for _, rootNode := range pt.Root {
-		if node := pt.dfs(rootNode, pid); node != nil {
-			return node
+func (pf *ProcessForest) AddProcess(log *kaproto.Log) {
+	pf.mu.Lock()
+	defer pf.mu.Unlock()
+	node, exists := pf.Nodes[log.HostPID]
+	if !exists {
+		node = &ProcessNode{
+			PID:      log.HostPID,
+			Children: make([]*ProcessNode, 0),
 		}
+		pf.Nodes[log.HostPID] = node
 	}
-
-	// If the node doesn't exist, create it as a root node
-	newNode := &ProcessNode{
-		PID:      pid,
-		Children: make(map[int32]*ProcessNode),
-	}
-	pt.Root[pid] = newNode
-	return newNode
+	node.ProcessName = log.ProcessName
+	node.Command = log.Resource
+	node.PPID = log.HostPPID
 }
 
-func (pt *ProcessTree) dfs(node *ProcessNode, targetPID int32) *ProcessNode {
-	if node.PID == targetPID {
-		return node
-	}
-
-	for _, child := range node.Children {
-		if foundNode := pt.dfs(child, targetPID); foundNode != nil {
-			return foundNode
-		}
-	}
-
-	return nil
-}
-
-func (pt *ProcessTree) BuildFromSegregatedData(data map[int32]kaproto.Log) {
+func (pf *ProcessForest) BuildFromSegregatedData(data map[int32]kaproto.Log) {
+	fmt.Printf("Debug: Starting to build from segregated data. Data size: %d\n", len(data))
 	for _, log := range data {
-		pt.AddProcess(&log)
+		pf.AddProcess(&log)
+	}
+	pf.constructTree()
+}
+
+func (pf *ProcessForest) constructTree() {
+	pf.mu.Lock()
+	defer pf.mu.Unlock()
+
+	childrenMap := make(map[int32][]*ProcessNode)
+	for _, node := range pf.Nodes {
+		if node.PPID != node.PID {
+			childrenMap[node.PPID] = append(childrenMap[node.PPID], node)
+		}
+	}
+
+	for _, node := range pf.Nodes {
+		children, exists := childrenMap[node.PID]
+		if exists {
+			node.Children = children
+		}
+
+		if node.PPID == 0 || node.PPID == node.PID || pf.Nodes[node.PPID] == nil {
+			if !pf.isRoot(node) {
+				pf.Roots = append(pf.Roots, node)
+			}
+		}
 	}
 }
 
-func (pt *ProcessTree) SaveProcessTreeJSON(filename string) error {
-	pt.mu.RLock()
-	defer pt.mu.RUnlock()
+func (pf *ProcessForest) isRoot(node *ProcessNode) bool {
+	for _, root := range pf.Roots {
+		if root.PID == node.PID {
+			return true
+		}
+	}
+	return false
+}
 
-	jsonData, err := json.MarshalIndent(pt.Root, "", "  ")
+func (pf *ProcessForest) SaveProcessForestJSON(filename string) error {
+	pf.mu.RLock()
+	defer pf.mu.RUnlock()
+
+	jsonData, err := json.MarshalIndent(pf, "", "  ")
 	if err != nil {
-		return fmt.Errorf("error marshaling process tree to JSON: %v", err)
+		return fmt.Errorf("error marshaling process forest to JSON: %v", err)
 	}
 
 	err = os.WriteFile(filename, jsonData, 0644)
 	if err != nil {
-		return fmt.Errorf("error writing process tree to file: %v", err)
+		return fmt.Errorf("error writing process forest to file: %v", err)
 	}
-
-	fmt.Printf("Process tree saved to %s\n", filename)
 	return nil
 }

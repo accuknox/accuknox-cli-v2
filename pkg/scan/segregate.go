@@ -16,18 +16,16 @@ type SegregatedData struct {
 	mu     sync.RWMutex
 }
 
-// [PID]: Log
 type OperationLogs struct {
-	Network map[int32]kaproto.Log
-	File    map[int32]kaproto.Log
-	Process map[int32]kaproto.Log
+	Network []kaproto.Log
+	File    []kaproto.Log
+	Process []kaproto.Log
 }
 
-// [PID]: Alert
 type OperationAlerts struct {
-	Network map[int32]kaproto.Alert
-	File    map[int32]kaproto.Alert
-	Process map[int32]kaproto.Alert
+	Network []kaproto.Alert
+	File    []kaproto.Alert
+	Process []kaproto.Alert
 }
 
 type Segregate struct {
@@ -36,18 +34,7 @@ type Segregate struct {
 
 func NewSegregator() *Segregate {
 	return &Segregate{
-		data: &SegregatedData{
-			Logs: OperationLogs{
-				Network: make(map[int32]kaproto.Log),
-				File:    make(map[int32]kaproto.Log),
-				Process: make(map[int32]kaproto.Log),
-			},
-			Alerts: OperationAlerts{
-				Network: make(map[int32]kaproto.Alert),
-				File:    make(map[int32]kaproto.Alert),
-				Process: make(map[int32]kaproto.Alert),
-			},
-		},
+		data: &SegregatedData{},
 	}
 }
 
@@ -57,37 +44,29 @@ func (sg *Segregate) SegregateAlert(alert *kaproto.Alert) {
 
 	switch alert.Operation {
 	case common.OperationFile:
-		if _, exists := sg.data.Alerts.File[alert.PID]; !exists {
-			sg.data.Alerts.File[alert.PID] = *alert
-		}
+		sg.data.Alerts.File = append(sg.data.Alerts.File, *alert)
+
 	case common.OperationNetwork:
-		if _, exists := sg.data.Alerts.Network[alert.PID]; !exists {
-			sg.data.Alerts.Network[alert.PID] = *alert
-		}
+		sg.data.Alerts.Network = append(sg.data.Alerts.Network, *alert)
+
 	case common.OperationProcess:
-		if _, exists := sg.data.Alerts.Process[alert.PID]; !exists {
-			sg.data.Alerts.Process[alert.PID] = *alert
-		}
+		sg.data.Alerts.Process = append(sg.data.Alerts.Process, *alert)
 	}
 }
 
-func (sg *Segregate) SegregateLogs(log *kaproto.Log) {
+func (sg *Segregate) SegregateLogs(logs *kaproto.Log) {
 	sg.data.mu.Lock()
 	defer sg.data.mu.Unlock()
 
-	switch log.Operation {
+	switch logs.Operation {
 	case common.OperationFile:
-		if _, exists := sg.data.Logs.File[log.PID]; !exists {
-			sg.data.Logs.File[log.PID] = *log
-		}
+		sg.data.Logs.File = append(sg.data.Logs.File, *logs)
+
 	case common.OperationNetwork:
-		if _, exists := sg.data.Logs.Network[log.PID]; !exists {
-			sg.data.Logs.Network[log.PID] = *log
-		}
+		sg.data.Logs.Network = append(sg.data.Logs.Network, *logs)
+
 	case common.OperationProcess:
-		if _, exists := sg.data.Logs.Process[log.PID]; !exists {
-			sg.data.Logs.Process[log.PID] = *log
-		}
+		sg.data.Logs.Process = append(sg.data.Logs.Process, *logs)
 	}
 }
 

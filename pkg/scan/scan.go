@@ -48,7 +48,7 @@ type Scan struct {
 	errChan chan error
 
 	// Process Tree data structure
-	processTree *ProcessTree
+	processForest *ProcessForest
 
 	// Segregator
 	segregate *Segregate
@@ -66,13 +66,13 @@ var _ Client = (*Scan)(nil)
 // New instantiates the Scan subcommand to scan CI/CD pipeline events
 func New(opts *ScanOptions) *Scan {
 	return &Scan{
-		options:     opts,
-		errChan:     make(chan error),
-		alertsChan:  make(chan []byte),
-		logsChan:    make(chan []byte),
-		done:        make(chan struct{}),
-		processTree: NewProcessTree(),
-		segregate:   NewSegregator(),
+		options:       opts,
+		errChan:       make(chan error),
+		alertsChan:    make(chan []byte),
+		logsChan:      make(chan []byte),
+		done:          make(chan struct{}),
+		processForest: NewProcessForest(),
+		segregate:     NewSegregator(),
 	}
 }
 
@@ -131,8 +131,8 @@ func (s *Scan) Start() error {
 		fmt.Println("Segregated data saved successfully.")
 	}
 
-	s.processTree.BuildFromSegregatedData(s.segregate.data.Logs.Process)
-	s.processTree.SaveProcessTreeJSON("process_tree.json")
+	// s.processForest.BuildFromSegregatedData(s.segregate.data.Logs.Process)
+	s.processForest.SaveProcessForestJSON("process_tree.json")
 	return nil
 }
 
