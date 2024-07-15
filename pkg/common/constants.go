@@ -1,5 +1,7 @@
 package common
 
+import "time"
+
 const (
 	SpecialRegexChars = `.*+?()|[]{}^$`
 
@@ -100,6 +102,14 @@ const (
 	Red   = "\033[31m"
 	Reset = "\033[0m"
 	Green = "\033[32m"
+
+	// KubeArmor gRPC service port
+	KubeArmorGRPCAddress string = "localhost:32767"
+
+	// Events
+	OperationNetwork = "Network"
+	OperationFile    = "File"
+	OperationProcess = "Process"
 )
 
 var (
@@ -113,4 +123,19 @@ var (
 	SysNwHeader = []string{"Protocol", "Command", "POD/SVC/IP", "Port", "Count", "Last Updated Time"}
 	// SysBindNwHeader variable contains protocol, command, Bind Port, Bind Address, count and timestamp
 	SysBindNwHeader = []string{"Protocol", "Command", "Bind Port", "Bind Address", "Count", "Last Updated Time"}
+)
+
+// Timeoutes
+var (
+	// Sets duration of 10 seconds
+	TenSeconds = time.Duration(10 * time.Second)
+
+	// Sets duartion of 30 seconds
+	ThirtySeconds = time.Duration(60 * time.Second)
+
+	// Sets duration of 1 minute (60 seconds)
+	OneMinute = time.Duration(60 * time.Second)
+
+	// Sets duration of 5 minutes (300 seconds)
+	FiveMinutes = time.Duration(5 * time.Minute)
 )

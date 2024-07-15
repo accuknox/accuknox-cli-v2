@@ -31,3 +31,4 @@ knoxctl
 *.pprof
 *.prof 
 *.pdf
+*.json

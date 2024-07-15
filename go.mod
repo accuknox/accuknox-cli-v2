@@ -30,6 +30,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b
 	github.com/kubearmor/kubearmor-client v0.14.2
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/olekukonko/tablewriter v0.0.5
@@ -207,7 +208,6 @@ require (
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20231019102803-e4e0e68a457b // indirect
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20231024025323-15ad34e8f01e // indirect
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231026112027-a8919b7db708 // indirect
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b // indirect
 	github.com/kyverno/kyverno v1.10.3 // indirect
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230426205424-1c7e0fd1d876 // indirect
