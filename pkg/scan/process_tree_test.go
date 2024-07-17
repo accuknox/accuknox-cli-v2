@@ -41,11 +41,11 @@ func TestAddProcess(t *testing.T) {
 
 func TestBuildFromSegregatedData(t *testing.T) {
 	pf := NewProcessForest()
-	data := map[int32]kaproto.Log{
-		1: {HostPID: 1, HostPPID: 0, ProcessName: "root"},
-		2: {HostPID: 2, HostPPID: 1, ProcessName: "child1"},
-		3: {HostPID: 3, HostPPID: 1, ProcessName: "child2"},
-		4: {HostPID: 4, HostPPID: 2, ProcessName: "grandchild"},
+	data := []kaproto.Log{
+		{HostPID: 1, HostPPID: 0, ProcessName: "root"},
+		{HostPID: 2, HostPPID: 1, ProcessName: "child1"},
+		{HostPID: 3, HostPPID: 1, ProcessName: "child2"},
+		{HostPID: 4, HostPPID: 2, ProcessName: "grandchild"},
 	}
 
 	pf.BuildFromSegregatedData(data)
@@ -66,9 +66,9 @@ func TestBuildFromSegregatedData(t *testing.T) {
 
 func TestSaveProcessForestJSON(t *testing.T) {
 	pf := NewProcessForest()
-	data := map[int32]kaproto.Log{
-		1: {HostPID: 1, HostPPID: 0, ProcessName: "root"},
-		2: {HostPID: 2, HostPPID: 1, ProcessName: "child"},
+	data := []kaproto.Log{
+		{HostPID: 1, HostPPID: 0, ProcessName: "root"},
+		{HostPID: 2, HostPPID: 1, ProcessName: "child"},
 	}
 
 	pf.BuildFromSegregatedData(data)
@@ -91,9 +91,9 @@ func TestSaveProcessForestJSON(t *testing.T) {
 
 func TestOrphanedProcesses(t *testing.T) {
 	pf := NewProcessForest()
-	data := map[int32]kaproto.Log{
-		1: {HostPID: 1, HostPPID: 0, ProcessName: "root"},
-		2: {HostPID: 2, HostPPID: 999, ProcessName: "orphan"}, // Parent doesn't exist
+	data := []kaproto.Log{
+		{HostPID: 1, HostPPID: 0, ProcessName: "root"},
+		{HostPID: 2, HostPPID: 999, ProcessName: "orphan"}, // Parent doesn't exist
 	}
 
 	pf.BuildFromSegregatedData(data)
@@ -131,23 +131,23 @@ func TestConcurrentAccess(t *testing.T) {
 
 func TestComplexProcessTree(t *testing.T) {
 	pf := NewProcessForest()
-	data := map[int32]kaproto.Log{
-		1:   {HostPID: 1, HostPPID: 0, ProcessName: "init"},
-		2:   {HostPID: 2, HostPPID: 1, ProcessName: "system_process_1"},
-		3:   {HostPID: 3, HostPPID: 1, ProcessName: "system_process_2"},
-		4:   {HostPID: 4, HostPPID: 2, ProcessName: "child_of_2"},
-		5:   {HostPID: 5, HostPPID: 2, ProcessName: "another_child_of_2"},
-		6:   {HostPID: 6, HostPPID: 3, ProcessName: "child_of_3"},
-		7:   {HostPID: 7, HostPPID: 4, ProcessName: "grandchild_1"},
-		8:   {HostPID: 8, HostPPID: 4, ProcessName: "grandchild_2"},
-		9:   {HostPID: 9, HostPPID: 6, ProcessName: "grandchild_of_3"},
-		10:  {HostPID: 10, HostPPID: 7, ProcessName: "great_grandchild"},
-		11:  {HostPID: 11, HostPPID: 999, ProcessName: "orphan_1"}, // Orphan process
-		12:  {HostPID: 12, HostPPID: 11, ProcessName: "child_of_orphan"},
-		13:  {HostPID: 13, HostPPID: 1000, ProcessName: "orphan_2"},   // Another orphan
-		14:  {HostPID: 14, HostPPID: 14, ProcessName: "self_parent"},  // Process with itself as parent
-		15:  {HostPID: 15, HostPPID: 1, ProcessName: "late_sibling"},  // Late addition to level 1
-		100: {HostPID: 100, HostPPID: 0, ProcessName: "another_root"}, // Another root process
+	data := []kaproto.Log{
+		{HostPID: 1, HostPPID: 0, ProcessName: "init"},
+		{HostPID: 2, HostPPID: 1, ProcessName: "system_process_1"},
+		{HostPID: 3, HostPPID: 1, ProcessName: "system_process_2"},
+		{HostPID: 4, HostPPID: 2, ProcessName: "child_of_2"},
+		{HostPID: 5, HostPPID: 2, ProcessName: "another_child_of_2"},
+		{HostPID: 6, HostPPID: 3, ProcessName: "child_of_3"},
+		{HostPID: 7, HostPPID: 4, ProcessName: "grandchild_1"},
+		{HostPID: 8, HostPPID: 4, ProcessName: "grandchild_2"},
+		{HostPID: 9, HostPPID: 6, ProcessName: "grandchild_of_3"},
+		{HostPID: 10, HostPPID: 7, ProcessName: "great_grandchild"},
+		{HostPID: 11, HostPPID: 999, ProcessName: "orphan_1"}, // Orphan process
+		{HostPID: 12, HostPPID: 11, ProcessName: "child_of_orphan"},
+		{HostPID: 13, HostPPID: 1000, ProcessName: "orphan_2"},   // Another orphan
+		{HostPID: 14, HostPPID: 14, ProcessName: "self_parent"},  // Process with itself as parent
+		{HostPID: 15, HostPPID: 1, ProcessName: "late_sibling"},  // Late addition to level 1
+		{HostPID: 100, HostPPID: 0, ProcessName: "another_root"}, // Another root process
 	}
 
 	pf.BuildFromSegregatedData(data)

@@ -3,25 +3,45 @@ package scan
 import (
 	"encoding/json"
 	"fmt"
-	kaproto "github.com/kubearmor/KubeArmor/protobuf"
 	"os"
+	"strings"
 	"sync"
+
+	kaproto "github.com/kubearmor/KubeArmor/protobuf"
 )
 
+// ProcessNode represents a node in Process Forest
 type ProcessNode struct {
-	ProcessName string         `json:"processName"`
-	PID         int32          `json:"pid"`
-	Command     string         `json:"command"`
-	Children    []*ProcessNode `json:"children,omitempty"`
-	PPID        int32          `json:"ppid"` // Parent PID, not for JSON output
+	// Name of the process
+	ProcessName string `json:"processName"`
+
+	// ProcessID
+	PID int32 `json:"pid"`
+
+	// Command execed by the proces
+	Command string `json:"command"`
+
+	// Map of children
+	Children []*ProcessNode `json:"children,omitempty"`
+
+	// ParentID
+	PPID int32 `json:"ppid"`
 }
 
+// ProcessForest is the data structure that holds the information related to
+// ProcessTrees, orphan nodes are considered are roots
 type ProcessForest struct {
-	Roots []*ProcessNode         `json:"roots"`
+	// Roots
+	Roots []*ProcessNode `json:"roots"`
+
+	// Nodes of forest
 	Nodes map[int32]*ProcessNode `json:"-"`
-	mu    sync.RWMutex
+
+	// Lock
+	mu sync.RWMutex
 }
 
+// NewProcessForest inits a new ProcessForest
 func NewProcessForest() *ProcessForest {
 	return &ProcessForest{
 		Roots: make([]*ProcessNode, 0),
@@ -29,9 +49,11 @@ func NewProcessForest() *ProcessForest {
 	}
 }
 
+// AddProcess adds a new node
 func (pf *ProcessForest) AddProcess(log *kaproto.Log) {
 	pf.mu.Lock()
 	defer pf.mu.Unlock()
+
 	node, exists := pf.Nodes[log.HostPID]
 	if !exists {
 		node = &ProcessNode{
@@ -40,19 +62,21 @@ func (pf *ProcessForest) AddProcess(log *kaproto.Log) {
 		}
 		pf.Nodes[log.HostPID] = node
 	}
-	node.ProcessName = log.ProcessName
-	node.Command = log.Resource
+	node.ProcessName = getActualProcessName(log.ProcessName)
+	node.Command = simplifyCommand(log.Resource)
 	node.PPID = log.HostPPID
 }
 
-func (pf *ProcessForest) BuildFromSegregatedData(data map[int32]kaproto.Log) {
-	fmt.Printf("Debug: Starting to build from segregated data. Data size: %d\n", len(data))
+// BuildFromSegregatedData will construct Forest from kubearmor logs
+func (pf *ProcessForest) BuildFromSegregatedData(data []kaproto.Log) {
 	for _, log := range data {
 		pf.AddProcess(&log)
 	}
+
 	pf.constructTree()
 }
 
+// constructTree constructs a tree
 func (pf *ProcessForest) constructTree() {
 	pf.mu.Lock()
 	defer pf.mu.Unlock()
@@ -78,6 +102,7 @@ func (pf *ProcessForest) constructTree() {
 	}
 }
 
+// isRoot checks whether the current node is a root
 func (pf *ProcessForest) isRoot(node *ProcessNode) bool {
 	for _, root := range pf.Roots {
 		if root.PID == node.PID {
@@ -87,6 +112,56 @@ func (pf *ProcessForest) isRoot(node *ProcessNode) bool {
 	return false
 }
 
+// GenerateMarkdownTree generates markdown
+func (pf *ProcessForest) GenerateMarkdownTree() string {
+	pf.mu.RLock()
+	defer pf.mu.RUnlock()
+
+	var sb strings.Builder
+	fmt.Printf("Debug: Generating Markdown tree. Root count: %d\n", len(pf.Roots))
+	for _, root := range pf.Roots {
+		pf.writeNodeMarkdown(&sb, root, 0)
+	}
+	content := sb.String()
+	return content
+}
+
+// writeNodeMarkdown writes markdown
+func (pf *ProcessForest) writeNodeMarkdown(sb *strings.Builder, node *ProcessNode, depth int) {
+	indent := strings.Repeat("    ", depth)
+	prefix := ""
+	if depth > 0 {
+		prefix = "├── "
+	}
+
+	line := fmt.Sprintf("%s%s[%d] %s: %s\n", indent, prefix, node.PID, node.ProcessName, node.Command)
+	sb.WriteString(line)
+
+	for i, child := range node.Children {
+		if i == len(node.Children)-1 && depth > 0 {
+			pf.writeLastNodeMarkdown(sb, child, depth+1)
+		} else {
+			pf.writeNodeMarkdown(sb, child, depth+1)
+		}
+	}
+}
+
+// writeLastNodeMarkdown handles the last node
+func (pf *ProcessForest) writeLastNodeMarkdown(sb *strings.Builder, node *ProcessNode, depth int) {
+	indent := strings.Repeat("    ", depth-1) + "    "
+	line := fmt.Sprintf("%s└── [%d] %s: %s\n", indent, node.PID, node.ProcessName, node.Command)
+	sb.WriteString(line)
+
+	for i, child := range node.Children {
+		if i == len(node.Children)-1 {
+			pf.writeLastNodeMarkdown(sb, child, depth+1)
+		} else {
+			pf.writeNodeMarkdown(sb, child, depth+1)
+		}
+	}
+}
+
+// SaveProcessForestJSON saves Process Forest in JSON, usually important for debugging
 func (pf *ProcessForest) SaveProcessForestJSON(filename string) error {
 	pf.mu.RLock()
 	defer pf.mu.RUnlock()
@@ -100,5 +175,19 @@ func (pf *ProcessForest) SaveProcessForestJSON(filename string) error {
 	if err != nil {
 		return fmt.Errorf("error writing process forest to file: %v", err)
 	}
+
+	markdownFilename := strings.TrimSuffix(filename, ".json") + ".md"
+	markdownContent := pf.GenerateMarkdownTree()
+
+	if len(markdownContent) == 0 {
+		fmt.Println("Debug: Generated Markdown content is empty")
+	} else {
+		err = os.WriteFile(markdownFilename, []byte(markdownContent), 0644)
+		if err != nil {
+			return fmt.Errorf("error writing process forest markdown to file: %v", err)
+		}
+		fmt.Printf("Process forest markdown saved to %s\n", markdownFilename)
+	}
+
 	return nil
 }

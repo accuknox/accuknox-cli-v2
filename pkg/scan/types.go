@@ -6,6 +6,7 @@ type ScanOptions struct {
 	FilterEvents    FilterEvents
 	GRPC            string
 	Output          string
+	ShowProcessTree bool
 }
 
 // Filter provides the basic filters for collection of data

@@ -2,6 +2,7 @@ package scan
 
 import (
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -12,3 +13,51 @@ func isKubeArmorActive() bool {
 
 	return strings.TrimSpace(string(output)) == "active"
 }
+
+// getActualProcessName name gets the name of the process given the absolute path
+// of the process
+func getActualProcessName(absolutePath string) string {
+	return filepath.Base(absolutePath)
+}
+
+// simplifyCommand removes the path from the command and returns only
+// essential parts
+func simplifyCommand(command string) string {
+	parts := strings.Fields(command)
+	if len(parts) == 0 {
+		return ""
+	}
+
+	parts[0] = filepath.Base(parts[0])
+
+	return strings.Join(parts, " ")
+}
+
+// extractNetworkType extracts network type
+func extractNetworkFlow(data, resource string) string {
+	if strings.Contains(data, "tcp_connect") || strings.Contains(data, "SYS_CONNECT") {
+		return "egress"
+	} else if strings.Contains(data, "tcp_accept") {
+		return "ingress"
+	} else if strings.Contains(data, "SYS_SOCKET") && strings.Contains(resource, "SOCK_DGRAM") {
+		return "egress"
+	}
+
+	// For now I am dropping the events that are of SYS_BIND i.e, bind events
+	return ""
+}
+
+// // handleTCPEvent
+// func handleTCPEvent(data string) string {
+//     resources := strings.Split(data, " ")
+//
+//     for _, r := range resources {
+//         if strings.Contains(r, "remoteip") {
+//
+//         } else if strings.Contains(r, "port") {
+//
+//         } else if strings.Contains(r, "protocol") {
+//
+//         }
+//     }
+// }

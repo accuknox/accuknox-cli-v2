@@ -32,3 +32,4 @@ knoxctl
 *.prof 
 *.pdf
 *.json
+*.md

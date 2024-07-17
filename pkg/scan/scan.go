@@ -50,6 +50,9 @@ type Scan struct {
 	// Process Tree data structure
 	processForest *ProcessForest
 
+	// Network event cache
+	networkCache *NetworkCache
+
 	// Segregator
 	segregate *Segregate
 
@@ -72,6 +75,7 @@ func New(opts *ScanOptions) *Scan {
 		logsChan:      make(chan []byte),
 		done:          make(chan struct{}),
 		processForest: NewProcessForest(),
+		networkCache:  NewNetworkCache(),
 		segregate:     NewSegregator(),
 	}
 }
@@ -131,8 +135,11 @@ func (s *Scan) Start() error {
 		fmt.Println("Segregated data saved successfully.")
 	}
 
-	// s.processForest.BuildFromSegregatedData(s.segregate.data.Logs.Process)
+	s.processForest.BuildFromSegregatedData(s.segregate.data.Logs.Process)
 	s.processForest.SaveProcessForestJSON("process_tree.json")
+
+	s.networkCache.StartCachingEvents(s.segregate.data.Logs.Network)
+	s.networkCache.SaveNetworkCacheJSON("network_events.json")
 	return nil
 }
 
