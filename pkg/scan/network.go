@@ -64,21 +64,24 @@ func (nc *NetworkCache) AddNetworkEvent(log *kaproto.Log) {
 
 	event.Flow = extractNetworkFlow(log.Data, log.Resource)
 	if event.Flow == "" {
-		return // only egress and ingress flows are considered
+		return
 	}
 
 	if strings.Contains(log.Data, "tcp_") {
 		event.Protocol = "TCP"
-		nc.handleTCPEvent(event, log.Resource)
-	} else if strings.Contains(log.Data, "syscall=SYS_SOCKET") &&
-		strings.Contains(log.Resource, "SOCK_DGRAM") &&
-		strings.Contains(log.Resource, "domain=AF_INET") {
 
-		fmt.Printf("handling udp")
+		nc.handleNetworkEvent(event, log.Resource)
+	} else if strings.Contains(log.Resource, "AF_UNIX") {
+
+		event.Protocol = "AF_UNIX"
+		nc.handleAFUnixEvent(event, log.Resource)
+	} else if strings.Contains(log.Data, "SYS_BIND") {
+
+		nc.handleNetworkEvent(event, log.Data)
+	} else if strings.Contains(log.Data, "SYS_SOCKET") && strings.Contains(log.Resource, "SOCK_DGRAM") {
+
+		event.Flow = "egress"
 		event.Protocol = "UDP"
-	} else if strings.Contains(log.Resource, "AF_UNIX") || strings.Contains(log.Data, "domain=SYS_BIND") {
-		// Exit and don't add
-		return
 	}
 
 	nc.Cache[event.PID] = append(nc.Cache[event.PID], event)
@@ -92,26 +95,39 @@ func (nc *NetworkCache) StartCachingEvents(logs []kaproto.Log) {
 }
 
 // handleTCPEvent handles an event if the data contains tcp
-func (nc *NetworkCache) handleTCPEvent(event *NetworkEvent, data string) {
+func (nc *NetworkCache) handleNetworkEvent(event *NetworkEvent, data string) {
 	resources := strings.Split(data, " ")
-
 	for _, r := range resources {
 		parts := strings.SplitN(r, "=", 2)
 		if len(parts) != 2 {
 			continue
 		}
-
 		key, val := parts[0], parts[1]
-
 		switch key {
-		case "remoteip":
+		case "remoteip", "sin_addr":
 			event.RemoteIP = val
-		case "port":
+		case "port", "sin_port":
 			if portInt, err := strconv.ParseInt(val, 10, 32); err == nil {
 				event.Port = int32(portInt)
 			}
-		case "protocol":
+		case "protocol", "sa_family":
+			fmt.Printf("Protocol got while hanlding network event: %s: %s/n", key, val)
 			event.Protocol = val
+		}
+	}
+}
+
+// handleAFUnixEvent handles AF_UNIX event
+func (nc *NetworkCache) handleAFUnixEvent(event *NetworkEvent, data string) {
+	var path string
+	resources := strings.Split(data, " ")
+	for _, r := range resources {
+		if strings.Contains(r, "sun_path") {
+			path = strings.Split(r, "=")[1]
+			if path != "" {
+				event.RemoteIP = path
+				break
+			}
 		}
 	}
 }
@@ -121,31 +137,67 @@ func (nc *NetworkCache) SaveNetworkCacheJSON(filename string) error {
 	nc.mu.RLock()
 	defer nc.mu.RUnlock()
 
-	// Create a slice to hold all network events
 	var allEvents []*NetworkEvent
 	for _, events := range nc.Cache {
 		allEvents = append(allEvents, events...)
 	}
 
-	// Create a struct to hold the events for JSON marshaling
 	data := struct {
 		NetworkEvents []*NetworkEvent `json:"networkEvents"`
 	}{
 		NetworkEvents: allEvents,
 	}
 
-	// Marshal the data to JSON
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshaling network cache to JSON: %v", err)
 	}
 
-	// Write the JSON data to the file
 	err = os.WriteFile(filename, jsonData, 0644)
 	if err != nil {
 		return fmt.Errorf("error writing network cache to file: %v", err)
 	}
 
 	fmt.Printf("Network cache saved to %s\n", filename)
+	return nil
+}
+
+// GenerateMarkdownTable generates a markdown table of network events
+func (nc *NetworkCache) GenerateMarkdownTable() string {
+	nc.mu.RLock()
+	defer nc.mu.RUnlock()
+
+	var sb strings.Builder
+
+	// Write table header
+	sb.WriteString("| PID | Process Name | Protocol | Flow | Remote IP | Port |\n")
+	sb.WriteString("|-----|--------------|----------|------|-----------|------|\n")
+
+	// Write table rows
+	for _, events := range nc.Cache {
+		for _, event := range events {
+			sb.WriteString(fmt.Sprintf("| %d | %s | %s | %s | %s | %d |\n",
+				event.PID,
+				event.ProcessName,
+				event.Protocol,
+				event.Flow,
+				event.RemoteIP,
+				event.Port))
+		}
+	}
+
+	return sb.String()
+}
+
+// SaveNetworkCacheMarkdown saves the NetworkCache data to a Markdown file
+func (nc *NetworkCache) SaveNetworkCacheMarkdown(filename string) error {
+	markdownContent := nc.GenerateMarkdownTable()
+
+	err := os.WriteFile(filename, []byte(markdownContent), 0644)
+	if err != nil {
+		return fmt.Errorf("error writing network cache to markdown file: %v", err)
+	}
+
+	fmt.Printf("Network cache markdown saved to %s\n", filename)
 	return nil
 }

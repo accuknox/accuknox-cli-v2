@@ -63,14 +63,20 @@ func TestAddNetworkEvent(t *testing.T) {
 			},
 		},
 		{
-			name: "Bind Event",
+			name: "AF_UNIX Event",
 			log: kaproto.Log{
-				HostPID:     24543,
+				HostPID:     24544,
 				ProcessName: "/usr/bin/python3.10",
-				Data:        "syscall=SYS_BIND fd=3",
-				Resource:    "sa_family=AF_INET sin_port=12345 sin_addr=0.0.0.0",
+				Data:        "syscall=SYS_SOCKET",
+				Resource:    "domain=AF_UNIX type=SOCK_DGRAM sun_path=/tmp/socket",
 			},
-			expected: nil, // Bind events are not added
+			expected: &NetworkEvent{
+				PID:         24544,
+				ProcessName: "python3.10",
+				Flow:        "egress",
+				Protocol:    "AF_UNIX",
+				RemoteIP:    "/tmp/socket",
+			},
 		},
 	}
 
@@ -101,26 +107,62 @@ func TestAddNetworkEvent(t *testing.T) {
 
 			event := events[0]
 			if !reflect.DeepEqual(event, tt.expected) {
-				t.Errorf("expected event %v, got %v", tt.expected, event)
+				t.Errorf("expected event %+v, got %+v", tt.expected, event)
 			}
 		})
 	}
 }
 
-func TestHandleTCPEvent(t *testing.T) {
-	event := &NetworkEvent{}
-	data := "remoteip=192.168.1.1 port=8080 protocol=TCP"
+func TestHandleNetworkEvent(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     string
+		expected *NetworkEvent
+	}{
+		{
+			name: "TCP Event",
+			data: "remoteip=192.168.1.1 port=8080 protocol=TCP",
+			expected: &NetworkEvent{
+				RemoteIP: "192.168.1.1",
+				Port:     8080,
+				Protocol: "TCP",
+			},
+		},
+		{
+			name: "SYS_BIND Event",
+			data: "sin_addr=0.0.0.0 sin_port=12345 sa_family=AF_INET",
+			expected: &NetworkEvent{
+				RemoteIP: "0.0.0.0",
+				Port:     12345,
+				Protocol: "AF_INET",
+			},
+		},
+	}
 
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			event := &NetworkEvent{}
+			nc := NewNetworkCache()
+			nc.handleNetworkEvent(event, tt.data)
+
+			if !reflect.DeepEqual(event, tt.expected) {
+				t.Errorf("expected event %+v, got %+v", tt.expected, event)
+			}
+		})
+	}
+}
+
+func TestHandleAFUnixEvent(t *testing.T) {
+	event := &NetworkEvent{}
+	data := "domain=AF_UNIX type=SOCK_DGRAM sun_path=/tmp/socket"
 	nc := NewNetworkCache()
-	nc.handleTCPEvent(event, data)
+	nc.handleAFUnixEvent(event, data)
 
 	expected := &NetworkEvent{
-		RemoteIP: "192.168.1.1",
-		Port:     8080,
-		Protocol: "TCP",
+		RemoteIP: "/tmp/socket",
 	}
 
 	if !reflect.DeepEqual(event, expected) {
-		t.Errorf("expected event %v, got %v", expected, event)
+		t.Errorf("expected event %+v, got %+v", expected, event)
 	}
 }
