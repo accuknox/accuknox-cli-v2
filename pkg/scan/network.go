@@ -3,11 +3,11 @@ package scan
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	kaproto "github.com/kubearmor/KubeArmor/protobuf"
 )
 
@@ -68,8 +68,8 @@ func (nc *NetworkCache) AddNetworkEvent(log *kaproto.Log) {
 	}
 
 	if strings.Contains(log.Data, "tcp_") {
-		event.Protocol = "TCP"
 
+		event.Protocol = "TCP"
 		nc.handleNetworkEvent(event, log.Resource)
 	} else if strings.Contains(log.Resource, "AF_UNIX") {
 
@@ -84,6 +84,9 @@ func (nc *NetworkCache) AddNetworkEvent(log *kaproto.Log) {
 		event.Protocol = "UDP"
 	}
 
+	if event.Protocol == "" {
+		return
+	}
 	nc.Cache[event.PID] = append(nc.Cache[event.PID], event)
 }
 
@@ -111,7 +114,6 @@ func (nc *NetworkCache) handleNetworkEvent(event *NetworkEvent, data string) {
 				event.Port = int32(portInt)
 			}
 		case "protocol", "sa_family":
-			fmt.Printf("Protocol got while hanlding network event: %s: %s/n", key, val)
 			event.Protocol = val
 		}
 	}
@@ -153,7 +155,7 @@ func (nc *NetworkCache) SaveNetworkCacheJSON(filename string) error {
 		return fmt.Errorf("error marshaling network cache to JSON: %v", err)
 	}
 
-	err = os.WriteFile(filename, jsonData, 0644)
+	err = common.CleanAndWrite(filename, jsonData)
 	if err != nil {
 		return fmt.Errorf("error writing network cache to file: %v", err)
 	}
@@ -193,7 +195,7 @@ func (nc *NetworkCache) GenerateMarkdownTable() string {
 func (nc *NetworkCache) SaveNetworkCacheMarkdown(filename string) error {
 	markdownContent := nc.GenerateMarkdownTable()
 
-	err := os.WriteFile(filename, []byte(markdownContent), 0644)
+	err := common.CleanAndWrite(filename, []byte(markdownContent))
 	if err != nil {
 		return fmt.Errorf("error writing network cache to markdown file: %v", err)
 	}

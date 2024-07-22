@@ -9,8 +9,10 @@ import (
 	"math/big"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	kaproto "github.com/kubearmor/KubeArmor/protobuf"
@@ -128,18 +130,8 @@ func (s *Scan) Start() error {
 		fmt.Println("Released gRPC service")
 	}
 
-	err = s.segregate.SaveSegregatedDataToFile("segregated_data.json")
-	if err != nil {
-		fmt.Printf("Error saving segregated data to file: %v\n", err)
-	} else {
-		fmt.Println("Segregated data saved successfully.")
-	}
-
-	s.processForest.BuildFromSegregatedData(s.segregate.data.Logs.Process)
-	s.processForest.SaveProcessForestJSON("process_tree.json")
-
-	s.networkCache.StartCachingEvents(s.segregate.data.Logs.Network)
-	s.networkCache.SaveNetworkCacheJSON("network_events.json")
+	// post processing data
+	s.postProcessing()
 	return nil
 }
 
@@ -357,16 +349,58 @@ func (s *Scan) processData(ctx context.Context) {
 	}
 }
 
-// func (s *Scan) addAlertToProcessTree(alert *kaproto.Alert) {
-// 	command := fmt.Sprintf("%s %s", alert.ProcessName, alert.Resource)
-// 	syscall := alert.Data // Assuming `Data` contains syscall info
-// 	fmt.Printf("Adding Alert: PID=%d, PPID=%d, Command=%s, Syscall=%s, Timestamp=%d, UpdatedTime=%s\n", alert.PID, alert.PPID, command, syscall, alert.Timestamp, alert.UpdatedTime)
-// 	s.processTree.AddProcess(alert.PID, alert.PPID, command, syscall, alert.Timestamp, alert.UpdatedTime)
-// }
-//
-// func (s *Scan) addLogToProcessTree(log *kaproto.Log) {
-// 	command := fmt.Sprintf("%s %s", log.ProcessName, log.Resource)
-// 	syscall := log.Data // Assuming `Data` contains syscall info
-// 	fmt.Printf("Adding Log: PID=%d, PPID=%d, Command=%s, Syscall=%s, Timestamp=%d, UpdatedTime=%s\n", log.PID, log.PPID, command, syscall, log.Timestamp, log.UpdatedTime)
-// 	s.processTree.AddProcess(log.PID, log.PPID, command, syscall, log.Timestamp, log.UpdatedTime)
-// }
+func (s *Scan) postProcessing() {
+	currentTime := time.Now().Format("2006-02-02_15-04-05")
+
+	outputDir := "."
+	if s.options.Output != "" {
+		outputDir = s.options.Output
+	}
+
+	createFilePath := func(baseName, ext string) string {
+		fileName := fmt.Sprintf("knoxctl_scan_%s_%s.%s", baseName, currentTime, ext)
+		return filepath.Join(outputDir, fileName)
+	}
+
+	segregatedDataPath := createFilePath("segragated_data", "json")
+	err := s.segregate.SaveSegregatedDataToFile(segregatedDataPath)
+	if err != nil {
+		fmt.Printf("error while saving segregated data: %s\n", err.Error())
+	} else {
+		fmt.Printf("Segrgated data saved successfully to %s\n", segregatedDataPath)
+	}
+
+	s.processForest.BuildFromSegregatedData(s.segregate.data.Logs.Process)
+	processTreePath := createFilePath("process_tree", "json")
+	err = s.processForest.SaveProcessForestJSON(processTreePath)
+	if err != nil {
+		fmt.Printf("failed to write process tree json file: %s\n", err.Error())
+	} else {
+		fmt.Printf("Process tree json written to %s\n", processTreePath)
+	}
+
+	s.networkCache.StartCachingEvents(s.segregate.data.Logs.Network)
+	processTreeMDPath := createFilePath("process_tree", "md")
+	err = s.processForest.SaveProcessForestMarkdown(processTreeMDPath)
+	if err != nil {
+		fmt.Printf("failed to write process tree markdown file: %s\n", err.Error())
+	} else {
+		fmt.Printf("Process tree markdown written to %s\n", processTreeMDPath)
+	}
+
+	networkFilePath := createFilePath("network_events", "json")
+	err = s.networkCache.SaveNetworkCacheJSON(networkFilePath)
+	if err != nil {
+		fmt.Printf("failed to write network json file: %s\n", err.Error())
+	} else {
+		fmt.Printf("Network events json file written to %s\n", networkFilePath)
+	}
+
+	networkMDPath := createFilePath("network_events_md", "md")
+	err = s.networkCache.SaveNetworkCacheMarkdown(networkMDPath)
+	if err != nil {
+		fmt.Printf("failed to write to network json file: %s\n", err.Error())
+	} else {
+		fmt.Printf("Network events markdown file written to %s\n", networkMDPath)
+	}
+}

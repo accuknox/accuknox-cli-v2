@@ -43,21 +43,5 @@ func extractNetworkFlow(data, resource string) string {
 		return "egress"
 	}
 
-	// For now I am dropping the events that are of SYS_BIND i.e, bind events
 	return ""
 }
-
-// // handleTCPEvent
-// func handleTCPEvent(data string) string {
-//     resources := strings.Split(data, " ")
-//
-//     for _, r := range resources {
-//         if strings.Contains(r, "remoteip") {
-//
-//         } else if strings.Contains(r, "port") {
-//
-//         } else if strings.Contains(r, "protocol") {
-//
-//         }
-//     }
-// }

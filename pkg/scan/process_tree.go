@@ -3,10 +3,10 @@ package scan
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	kaproto "github.com/kubearmor/KubeArmor/protobuf"
 )
 
@@ -118,10 +118,12 @@ func (pf *ProcessForest) GenerateMarkdownTree() string {
 	defer pf.mu.RUnlock()
 
 	var sb strings.Builder
-	fmt.Printf("Debug: Generating Markdown tree. Root count: %d\n", len(pf.Roots))
+	sb.WriteString("```\n")
 	for _, root := range pf.Roots {
 		pf.writeNodeMarkdown(&sb, root, 0)
 	}
+	sb.WriteString("```\n")
+
 	content := sb.String()
 	return content
 }
@@ -171,22 +173,20 @@ func (pf *ProcessForest) SaveProcessForestJSON(filename string) error {
 		return fmt.Errorf("error marshaling process forest to JSON: %v", err)
 	}
 
-	err = os.WriteFile(filename, jsonData, 0644)
+	err = common.CleanAndWrite(filename, jsonData)
 	if err != nil {
 		return fmt.Errorf("error writing process forest to file: %v", err)
 	}
 
-	markdownFilename := strings.TrimSuffix(filename, ".json") + ".md"
+	return nil
+}
+
+func (pf *ProcessForest) SaveProcessForestMarkdown(filename string) error {
 	markdownContent := pf.GenerateMarkdownTree()
 
-	if len(markdownContent) == 0 {
-		fmt.Println("Debug: Generated Markdown content is empty")
-	} else {
-		err = os.WriteFile(markdownFilename, []byte(markdownContent), 0644)
-		if err != nil {
-			return fmt.Errorf("error writing process forest markdown to file: %v", err)
-		}
-		fmt.Printf("Process forest markdown saved to %s\n", markdownFilename)
+	err := common.CleanAndWrite(filename, []byte(markdownContent))
+	if err != nil {
+		return fmt.Errorf("error writing process tree markdown to file: %v", err)
 	}
 
 	return nil
