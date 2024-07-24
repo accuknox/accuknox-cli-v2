@@ -3,7 +3,6 @@ package scan
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
@@ -91,11 +90,10 @@ func (sg *Segregate) SaveSegregatedDataToFile(filename string) error {
 		return fmt.Errorf("error marshaling segregated data to JSON: %v", err)
 	}
 
-	err = os.WriteFile(filename, jsonData, 0644)
+	err = common.CleanAndWrite(filename, jsonData)
 	if err != nil {
 		return fmt.Errorf("error writing segregated data to file: %v", err)
 	}
 
-	fmt.Printf("Segregated data saved to %s\n", filename)
 	return nil
 }

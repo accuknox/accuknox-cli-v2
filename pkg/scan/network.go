@@ -93,7 +93,8 @@ func (nc *NetworkCache) AddNetworkEvent(log *kaproto.Log) {
 // StartCachingEvents will cache the network log events
 func (nc *NetworkCache) StartCachingEvents(logs []kaproto.Log) {
 	for _, log := range logs {
-		nc.AddNetworkEvent(&log)
+		logCopy := log
+		nc.AddNetworkEvent(&logCopy)
 	}
 }
 
@@ -160,7 +161,6 @@ func (nc *NetworkCache) SaveNetworkCacheJSON(filename string) error {
 		return fmt.Errorf("error writing network cache to file: %v", err)
 	}
 
-	fmt.Printf("Network cache saved to %s\n", filename)
 	return nil
 }
 
@@ -200,6 +200,5 @@ func (nc *NetworkCache) SaveNetworkCacheMarkdown(filename string) error {
 		return fmt.Errorf("error writing network cache to markdown file: %v", err)
 	}
 
-	fmt.Printf("Network cache markdown saved to %s\n", filename)
 	return nil
 }

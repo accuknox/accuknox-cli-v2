@@ -126,7 +126,7 @@ func (s *Scan) Start() error {
 
 	// Close the gRPC connection
 	if s.conn != nil {
-		s.conn.Close()
+		_ = s.conn.Close()
 		fmt.Println("Released gRPC service")
 	}
 

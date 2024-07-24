@@ -70,7 +70,8 @@ func (pf *ProcessForest) AddProcess(log *kaproto.Log) {
 // BuildFromSegregatedData will construct Forest from kubearmor logs
 func (pf *ProcessForest) BuildFromSegregatedData(data []kaproto.Log) {
 	for _, log := range data {
-		pf.AddProcess(&log)
+		logCopy := log
+		pf.AddProcess(&logCopy)
 	}
 
 	pf.constructTree()
