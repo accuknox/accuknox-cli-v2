@@ -37,11 +37,6 @@ jobs:
       - name: Run Gosec Security Scanner
         run: make gosec
 
-      - name: Run Revive Action by pulling pre-built imag
-        uses: morphy2k/revive-action@v2
-        with:
-          path: "./..."
-
       - name: Build knoxctl
         run: make
 
