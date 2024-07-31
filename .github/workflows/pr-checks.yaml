@@ -50,6 +50,9 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v2
 
+      - name: AccuKnox Runtime Monitoring
+        uses: accuknox/report-action@v0.3.0
+
       - uses: actions/setup-go@v2
         with:
           go-version: "v1.21"
