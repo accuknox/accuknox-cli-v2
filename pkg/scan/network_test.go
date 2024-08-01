@@ -151,18 +151,3 @@ func TestHandleNetworkEvent(t *testing.T) {
 		})
 	}
 }
-
-func TestHandleAFUnixEvent(t *testing.T) {
-	event := &NetworkEvent{}
-	data := "domain=AF_UNIX type=SOCK_DGRAM sun_path=/tmp/socket"
-	nc := NewNetworkCache()
-	nc.handleAFUnixEvent(event, data)
-
-	expected := &NetworkEvent{
-		RemoteIP: "/tmp/socket",
-	}
-
-	if !reflect.DeepEqual(event, expected) {
-		t.Errorf("expected event %+v, got %+v", expected, event)
-	}
-}

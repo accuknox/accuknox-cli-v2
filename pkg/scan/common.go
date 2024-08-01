@@ -1,9 +1,14 @@
 package scan
 
 import (
+	"context"
+	"net"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 // isKubeArmorActive checks if KubeArmor is running as systemd service
@@ -44,4 +49,40 @@ func extractNetworkFlow(data, resource string) string {
 	}
 
 	return ""
+}
+
+// performDNSLookup atempts to resolve given an IP address to a domain name
+func performDNSLookup(ip string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	names, err := net.DefaultResolver.LookupAddr(ctx, ip)
+	if err != nil || len(names) == 0 {
+		return ""
+	}
+
+	return strings.TrimSuffix(names[0], ".")
+}
+
+// extractMainDomain tries to get TLD+1 name of a given domain
+func extractMainDomain(hostname string) string {
+	hostname = strings.TrimSuffix(hostname, ".")
+
+	parts := strings.Split(hostname, ".")
+
+	if len(parts) <= 2 {
+		return hostname
+	}
+
+	domain, err := publicsuffix.EffectiveTLDPlusOne(hostname)
+	if err != nil {
+		return strings.Join(parts[len(parts)-2:], ".")
+	}
+
+	return domain
+}
+
+// isValidIPv4 checks if the strings represents a valid IP address
+func isValidIPv4(ip string) bool {
+	return net.ParseIP(ip) != nil
 }

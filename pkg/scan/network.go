@@ -19,6 +19,9 @@ type NetworkEvent struct {
 	// IP address
 	RemoteIP string `json:"remoteIP,omitempty"`
 
+	// Remote domain name
+	RemoteDomain string `json:"remoteDomain,omitempty"`
+
 	// Port
 	Port int32 `json:"port,omitempty"`
 
@@ -39,12 +42,16 @@ type NetworkCache struct {
 
 	// Locks
 	mu sync.RWMutex
+
+	// Resolver
+	resolver *ConcurrentDNSResolver
 }
 
 // NewNetworkCache instantiates the network cache
 func NewNetworkCache() *NetworkCache {
 	return &NetworkCache{
-		Cache: make(map[int32][]*NetworkEvent),
+		Cache:    make(map[int32][]*NetworkEvent),
+		resolver: NewResolver(100),
 	}
 }
 
@@ -52,10 +59,6 @@ func NewNetworkCache() *NetworkCache {
 func (nc *NetworkCache) AddNetworkEvent(log *kaproto.Log) {
 	nc.mu.Lock()
 	defer nc.mu.Unlock()
-
-	if _, exists := nc.Cache[log.HostPID]; exists {
-		return
-	}
 
 	event := &NetworkEvent{
 		PID:         log.HostPID,
@@ -71,10 +74,6 @@ func (nc *NetworkCache) AddNetworkEvent(log *kaproto.Log) {
 
 		event.Protocol = "TCP"
 		nc.handleNetworkEvent(event, log.Resource)
-	} else if strings.Contains(log.Resource, "AF_UNIX") {
-
-		event.Protocol = "AF_UNIX"
-		nc.handleAFUnixEvent(event, log.Resource)
 	} else if strings.Contains(log.Data, "SYS_BIND") {
 
 		nc.handleNetworkEvent(event, log.Data)
@@ -87,6 +86,7 @@ func (nc *NetworkCache) AddNetworkEvent(log *kaproto.Log) {
 	if event.Protocol == "" {
 		return
 	}
+
 	nc.Cache[event.PID] = append(nc.Cache[event.PID], event)
 }
 
@@ -96,6 +96,8 @@ func (nc *NetworkCache) StartCachingEvents(logs []kaproto.Log) {
 		logCopy := log
 		nc.AddNetworkEvent(&logCopy)
 	}
+
+	nc.ResolveDomains()
 }
 
 // handleTCPEvent handles an event if the data contains tcp
@@ -120,19 +122,17 @@ func (nc *NetworkCache) handleNetworkEvent(event *NetworkEvent, data string) {
 	}
 }
 
-// handleAFUnixEvent handles AF_UNIX event
-func (nc *NetworkCache) handleAFUnixEvent(event *NetworkEvent, data string) {
-	var path string
-	resources := strings.Split(data, " ")
-	for _, r := range resources {
-		if strings.Contains(r, "sun_path") {
-			path = strings.Split(r, "=")[1]
-			if path != "" {
-				event.RemoteIP = path
-				break
-			}
-		}
+// Start resolving domains
+func (nc *NetworkCache) ResolveDomains() {
+	nc.mu.Lock()
+	defer nc.mu.Unlock()
+
+	var allEvents []*NetworkEvent
+	for _, events := range nc.Cache {
+		allEvents = append(allEvents, events...)
 	}
+
+	nc.resolver.ResolveConcurrently(allEvents)
 }
 
 // SaveNetworkCacheJSON saves the NetworkCache data to a JSON file
@@ -171,8 +171,8 @@ func (nc *NetworkCache) GenerateMarkdownTable() string {
 
 	var sb strings.Builder
 
-	sb.WriteString("| 🔢 PID | 🖥️ Process Name | 🌐 Protocol | 🔄 Flow | 🏠 Remote IP | 🚪 Port |\n")
-	sb.WriteString("|--------|-----------------|-------------|---------|--------------|--------|\n")
+	sb.WriteString("| 🔢 PID | 🖥️ Process Name | 🌐 Protocol | 🔄 Flow | 🏠 Remote IP | 🌐 Domain | 🚪 Port |\n")
+	sb.WriteString("|--------|-----------------|-------------|---------|--------------|-----------|--------|\n")
 
 	for _, events := range nc.Cache {
 		for _, event := range events {
@@ -187,16 +187,20 @@ func (nc *NetworkCache) GenerateMarkdownTable() string {
 				protocolEmoji = "🔒"
 			case "UDP":
 				protocolEmoji = "📦"
-			case "AF_UNIX":
-				protocolEmoji = "🐧"
 			}
 
-			sb.WriteString(fmt.Sprintf("| %d | %s | %s %s | %s %s | %s | %d |\n",
+			domainName := event.RemoteDomain
+			if domainName == "" {
+				domainName = "N/A"
+			}
+
+			sb.WriteString(fmt.Sprintf("| %d | %s | %s %s | %s %s | %s | %s | %d |\n",
 				event.PID,
 				event.ProcessName,
 				protocolEmoji, event.Protocol,
 				flowEmoji, event.Flow,
 				event.RemoteIP,
+				domainName,
 				event.Port))
 		}
 	}
