@@ -181,23 +181,15 @@ func (nc *NetworkCache) GenerateMarkdownTable() string {
 				flowEmoji = "🔽"
 			}
 
-			protocolEmoji := "🔓"
-			switch event.Protocol {
-			case "TCP":
-				protocolEmoji = "🔒"
-			case "UDP":
-				protocolEmoji = "📦"
-			}
-
 			domainName := event.RemoteDomain
 			if domainName == "" {
 				domainName = "N/A"
 			}
 
-			sb.WriteString(fmt.Sprintf("| %d | %s | %s %s | %s %s | %s | %s | %d |\n",
+			sb.WriteString(fmt.Sprintf("| %d | %s | %s | %s %s | %s | %s | %d |\n",
 				event.PID,
 				event.ProcessName,
-				protocolEmoji, event.Protocol,
+				event.Protocol,
 				flowEmoji, event.Flow,
 				event.RemoteIP,
 				domainName,

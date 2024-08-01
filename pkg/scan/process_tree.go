@@ -119,7 +119,7 @@ func (pf *ProcessForest) GenerateMarkdownTree() string {
 	defer pf.mu.RUnlock()
 
 	var sb strings.Builder
-	sb.WriteString("```zig\n")
+	sb.WriteString("```smalltalk\n")
 	for _, root := range pf.Roots {
 		pf.writeNodeMarkdown(&sb, root, 0)
 	}
@@ -137,7 +137,7 @@ func (pf *ProcessForest) writeNodeMarkdown(sb *strings.Builder, node *ProcessNod
 		prefix = "├── "
 	}
 
-	line := fmt.Sprintf("%s%s[%d] %s: %s\n", indent, prefix, node.PID, node.ProcessName, node.Command)
+	line := fmt.Sprintf("%s%s[%d] %s: \"%s\"\n", indent, prefix, node.PID, node.ProcessName, node.Command)
 	sb.WriteString(line)
 
 	for i, child := range node.Children {
@@ -152,7 +152,7 @@ func (pf *ProcessForest) writeNodeMarkdown(sb *strings.Builder, node *ProcessNod
 // writeLastNodeMarkdown handles the last node
 func (pf *ProcessForest) writeLastNodeMarkdown(sb *strings.Builder, node *ProcessNode, depth int) {
 	indent := strings.Repeat("    ", depth-1) + "    "
-	line := fmt.Sprintf("%s└── [%d] %s: %s\n", indent, node.PID, node.ProcessName, node.Command)
+	line := fmt.Sprintf("%s└── [%d] %s: \"%s\"\n", indent, node.PID, node.ProcessName, node.Command)
 	sb.WriteString(line)
 
 	for i, child := range node.Children {
