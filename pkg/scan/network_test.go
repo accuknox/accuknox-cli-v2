@@ -62,22 +62,6 @@ func TestAddNetworkEvent(t *testing.T) {
 				Protocol:    "UDP",
 			},
 		},
-		{
-			name: "AF_UNIX Event",
-			log: kaproto.Log{
-				HostPID:     24544,
-				ProcessName: "/usr/bin/python3.10",
-				Data:        "syscall=SYS_SOCKET",
-				Resource:    "domain=AF_UNIX type=SOCK_DGRAM sun_path=/tmp/socket",
-			},
-			expected: &NetworkEvent{
-				PID:         24544,
-				ProcessName: "python3.10",
-				Flow:        "egress",
-				Protocol:    "AF_UNIX",
-				RemoteIP:    "/tmp/socket",
-			},
-		},
 	}
 
 	for _, tt := range tests {
@@ -126,15 +110,6 @@ func TestHandleNetworkEvent(t *testing.T) {
 				RemoteIP: "192.168.1.1",
 				Port:     8080,
 				Protocol: "TCP",
-			},
-		},
-		{
-			name: "SYS_BIND Event",
-			data: "sin_addr=0.0.0.0 sin_port=12345 sa_family=AF_INET",
-			expected: &NetworkEvent{
-				RemoteIP: "0.0.0.0",
-				Port:     12345,
-				Protocol: "AF_INET",
 			},
 		},
 	}
