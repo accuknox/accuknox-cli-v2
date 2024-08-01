@@ -164,25 +164,38 @@ func (nc *NetworkCache) SaveNetworkCacheJSON(filename string) error {
 	return nil
 }
 
-// GenerateMarkdownTable generates a markdown table of network events
+// GenerateMarkdownTable generates a fancy markdown table of network events
 func (nc *NetworkCache) GenerateMarkdownTable() string {
 	nc.mu.RLock()
 	defer nc.mu.RUnlock()
 
 	var sb strings.Builder
 
-	// Write table header
-	sb.WriteString("| PID | Process Name | Protocol | Flow | Remote IP | Port |\n")
-	sb.WriteString("|-----|--------------|----------|------|-----------|------|\n")
+	sb.WriteString("| 🔢 PID | 🖥️ Process Name | 🌐 Protocol | 🔄 Flow | 🏠 Remote IP | 🚪 Port |\n")
+	sb.WriteString("|--------|-----------------|-------------|---------|--------------|--------|\n")
 
-	// Write table rows
 	for _, events := range nc.Cache {
 		for _, event := range events {
-			sb.WriteString(fmt.Sprintf("| %d | %s | %s | %s | %s | %d |\n",
+			flowEmoji := "🔼"
+			if event.Flow == "ingress" {
+				flowEmoji = "🔽"
+			}
+
+			protocolEmoji := "🔓"
+			switch event.Protocol {
+			case "TCP":
+				protocolEmoji = "🔒"
+			case "UDP":
+				protocolEmoji = "📦"
+			case "AF_UNIX":
+				protocolEmoji = "🐧"
+			}
+
+			sb.WriteString(fmt.Sprintf("| %d | %s | %s %s | %s %s | %s | %d |\n",
 				event.PID,
 				event.ProcessName,
-				event.Protocol,
-				event.Flow,
+				protocolEmoji, event.Protocol,
+				flowEmoji, event.Flow,
 				event.RemoteIP,
 				event.Port))
 		}
