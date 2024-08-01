@@ -119,7 +119,7 @@ func (pf *ProcessForest) GenerateMarkdownTree() string {
 	defer pf.mu.RUnlock()
 
 	var sb strings.Builder
-	sb.WriteString("```smalltalk\n")
+	sb.WriteString("```zig\n")
 	for _, root := range pf.Roots {
 		pf.writeNodeMarkdown(&sb, root, 0)
 	}
