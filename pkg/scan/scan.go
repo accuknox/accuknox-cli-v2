@@ -55,6 +55,9 @@ type Scan struct {
 	// Network event cache
 	networkCache *NetworkCache
 
+	// File handler
+	fileHandler *FileEventHandler
+
 	// Segregator
 	segregate *Segregate
 
@@ -79,6 +82,7 @@ func New(opts *ScanOptions) *Scan {
 		processForest: NewProcessForest(),
 		networkCache:  NewNetworkCache(),
 		segregate:     NewSegregator(),
+		fileHandler:   NewFileHandler(opts.RootDirName),
 	}
 }
 
@@ -402,5 +406,14 @@ func (s *Scan) postProcessing() {
 		fmt.Printf("failed to write to network json file: %s\n", err.Error())
 	} else {
 		fmt.Printf("Network events markdown file written to %s\n", networkMDPath)
+	}
+
+	s.fileHandler.StartAddingFileEvent(s.segregate.data.Logs.File)
+	fileEventsJSONPath := createFilePath("file_events", "json")
+	err = s.fileHandler.SaveFileEventsJSON(fileEventsJSONPath)
+	if err != nil {
+		fmt.Printf("failed to write to file events: %s\n", err.Error())
+	} else {
+		fmt.Printf("File events json written to: %s\n", fileEventsJSONPath)
 	}
 }
