@@ -55,7 +55,11 @@ func (feh *FileEventHandler) AddEvent(log *kaproto.Log) {
 	feh.mu.Lock()
 	defer feh.mu.Unlock()
 
-	if !strings.Contains(log.Data, "O_WRONLY") {
+	hasReadWriteOp := func(log string) bool {
+		return strings.Contains(log, "O_WRONLY") || strings.Contains(log, "O_RDWR")
+	}
+
+	if !hasReadWriteOp(log.Data) {
 		return
 	}
 
@@ -105,6 +109,40 @@ func (feh *FileEventHandler) SaveFileEventsJSON(filename string) error {
 	err = common.CleanAndWrite(filename, jsonData)
 	if err != nil {
 		return fmt.Errorf("error writing file cache to a file: %v", err)
+	}
+
+	return nil
+}
+
+// GenerateMarkdownTable generates a fancy markdown table of file events
+func (feh *FileEventHandler) GenerateMarkdownTable() string {
+	feh.mu.RLock()
+	defer feh.mu.RUnlock()
+
+	var sb strings.Builder
+
+	sb.WriteString("| 🔢 PID | 🖥️ Process Name | 📄 File Name |\n")
+	sb.WriteString("|--------|-----------------|-------------|\n")
+
+	for _, events := range feh.FileCache {
+		for _, event := range events {
+			sb.WriteString(fmt.Sprintf("| %d | %s | %s |\n",
+				event.PID,
+				event.ProcessName,
+				event.FileName))
+		}
+	}
+
+	return sb.String()
+}
+
+// SaveFileEventMarkdown saves the file events data to a Markdown file
+func (nc *NetworkCache) SaveFileEventMarkdown(filename string) error {
+	markdownContent := nc.GenerateMarkdownTable()
+
+	err := common.CleanAndWrite(filename, []byte(markdownContent))
+	if err != nil {
+		return fmt.Errorf("error writing network cache to markdown file: %v", err)
 	}
 
 	return nil
