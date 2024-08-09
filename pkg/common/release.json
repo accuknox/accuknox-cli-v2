@@ -790,7 +790,7 @@
     "sia_image": "accuknox/shared-informer-agent",
     "pea_tag": "v0.4.3",
     "pea_image": "accuknox/policy-enforcement-agent",
-    "feeder_service_tag": "v0.5.3",
+    "feeder_service_tag": "v0.5.4",
     "feeder_service_image": "accuknox/feeder-service",
     "discover_tag": "v0.1.29",
     "discover_image": "accuknox/discovery-engine-discover",
