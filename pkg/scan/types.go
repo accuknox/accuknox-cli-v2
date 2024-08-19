@@ -7,6 +7,7 @@ type ScanOptions struct {
 	GRPC            string
 	Output          string
 	ShowProcessTree bool
+	RootDirName     string
 }
 
 // Filter provides the basic filters for collection of data

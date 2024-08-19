@@ -55,6 +55,9 @@ type Scan struct {
 	// Network event cache
 	networkCache *NetworkCache
 
+	// File handler
+	fileHandler *FileEventHandler
+
 	// Segregator
 	segregate *Segregate
 
@@ -79,6 +82,7 @@ func New(opts *ScanOptions) *Scan {
 		processForest: NewProcessForest(),
 		networkCache:  NewNetworkCache(),
 		segregate:     NewSegregator(),
+		fileHandler:   NewFileHandler(opts.RootDirName),
 	}
 }
 
@@ -362,6 +366,7 @@ func (s *Scan) postProcessing() {
 		return filepath.Join(outputDir, fileName)
 	}
 
+	// Segregated events into buckets vis a vis "Network", "File", "Process"
 	segregatedDataPath := createFilePath("segragated_data", "json")
 	err := s.segregate.SaveSegregatedDataToFile(segregatedDataPath)
 	if err != nil {
@@ -370,6 +375,7 @@ func (s *Scan) postProcessing() {
 		fmt.Printf("Segrgated data saved successfully to %s\n", segregatedDataPath)
 	}
 
+	// Process related post processing
 	s.processForest.BuildFromSegregatedData(s.segregate.data.Logs.Process)
 	processTreePath := createFilePath("process_tree", "json")
 	err = s.processForest.SaveProcessForestJSON(processTreePath)
@@ -379,7 +385,6 @@ func (s *Scan) postProcessing() {
 		fmt.Printf("Process tree json written to %s\n", processTreePath)
 	}
 
-	s.networkCache.StartCachingEvents(s.segregate.data.Logs.Network)
 	processTreeMDPath := createFilePath("process_tree", "md")
 	err = s.processForest.SaveProcessForestMarkdown(processTreeMDPath)
 	if err != nil {
@@ -388,6 +393,8 @@ func (s *Scan) postProcessing() {
 		fmt.Printf("Process tree markdown written to %s\n", processTreeMDPath)
 	}
 
+	// Network related post processing
+	s.networkCache.StartCachingEvents(s.segregate.data.Logs.Network)
 	networkFilePath := createFilePath("network_events", "json")
 	err = s.networkCache.SaveNetworkCacheJSON(networkFilePath)
 	if err != nil {
@@ -402,5 +409,23 @@ func (s *Scan) postProcessing() {
 		fmt.Printf("failed to write to network json file: %s\n", err.Error())
 	} else {
 		fmt.Printf("Network events markdown file written to %s\n", networkMDPath)
+	}
+
+	// File related post processing
+	s.fileHandler.StartAddingFileEvent(s.segregate.data.Logs.File)
+	fileEventsJSONPath := createFilePath("file_events", "json")
+	err = s.fileHandler.SaveFileEventsJSON(fileEventsJSONPath)
+	if err != nil {
+		fmt.Printf("failed to write to file events: %s\n", err.Error())
+	} else {
+		fmt.Printf("File events json written to: %s\n", fileEventsJSONPath)
+	}
+
+	fileEventsMDPath := createFilePath("file_events", "md")
+	err = s.networkCache.SaveFileEventMarkdown(fileEventsMDPath)
+	if err != nil {
+		fmt.Printf("failed to write file event in markdown format: %s\n", err.Error())
+	} else {
+		fmt.Printf("File events markdown written to: %s\n", fileEventsMDPath)
 	}
 }
