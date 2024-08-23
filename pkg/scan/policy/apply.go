@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sync"
 
@@ -156,7 +157,7 @@ func omitEmpty(m map[string]interface{}) map[string]interface{} {
 func structToMap(obj interface{}) map[string]interface{} {
 	out := make(map[string]interface{})
 	j, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(obj)
-	jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(j, &out)
+	_ = jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(j, &out)
 	return out
 }
 
@@ -335,7 +336,7 @@ func (a *Apply) SavePolicies(filePath string) error {
 		return fmt.Errorf("no policies to save or not in dry run mode")
 	}
 
-	file, err := os.Create(filePath)
+	file, err := os.Create(filepath.Clean(filePath))
 	if err != nil {
 		return fmt.Errorf("failed to create file: %s", err.Error())
 	}
