@@ -3,6 +3,7 @@ package scan
 import (
 	"context"
 	"net"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,18 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 )
+
+// GetHostname returns the current hostname of the machine
+func getHostname() (string, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "", err
+	}
+
+	hostname = strings.SplitN(hostname, ".", 2)[0]
+
+	return hostname, nil
+}
 
 // isKubeArmorActive checks if KubeArmor is running as systemd service
 func isKubeArmorActive() bool {

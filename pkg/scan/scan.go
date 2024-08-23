@@ -15,9 +15,18 @@ import (
 	"time"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"github.com/accuknox/accuknox-cli-v2/pkg/scan/policy"
 	kaproto "github.com/kubearmor/KubeArmor/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+)
+
+const (
+	// GitHub owner of policy templates repo
+	OwnerKubeArmor = "kubearmor"
+
+	// Policy templates
+	PolicyTemplateRepo = "policy-templates"
 )
 
 // Scan structure dependencies
@@ -63,6 +72,12 @@ type Scan struct {
 
 	// Done chan
 	done chan struct{}
+
+	// Policy applier
+	policyApplier *policy.Apply
+
+	// Alerts processor
+	alertProcessor *AlertProcessor
 }
 
 // Enforce Client interface on Scan structure
@@ -70,26 +85,44 @@ var _ Client = (*Scan)(nil)
 
 // New instantiates the Scan subcommand to scan CI/CD pipeline events
 func New(opts *ScanOptions) *Scan {
-	return &Scan{
-		options:       opts,
-		errChan:       make(chan error),
-		alertsChan:    make(chan []byte),
-		logsChan:      make(chan []byte),
-		done:          make(chan struct{}),
-		processForest: NewProcessForest(),
-		networkCache:  NewNetworkCache(),
-		segregate:     NewSegregator(),
+	s := &Scan{
+		options:        opts,
+		errChan:        make(chan error),
+		alertsChan:     make(chan []byte),
+		logsChan:       make(chan []byte),
+		done:           make(chan struct{}),
+		processForest:  NewProcessForest(),
+		networkCache:   NewNetworkCache(),
+		segregate:      NewSegregator(),
+		alertProcessor: NewAlertProcessor(),
 	}
+
+	if opts.RepoBranch == "" {
+		opts.RepoBranch = "main"
+	}
+	zipURL := fmt.Sprintf("https://github.com/%s/%s/archive/refs/heads/%s.zip", OwnerKubeArmor, PolicyTemplateRepo, opts.RepoBranch)
+
+	hostname, _ := getHostname()
+	s.policyApplier = policy.NewApplier(
+		opts.GRPC,
+		zipURL,
+		hostname,
+		opts.PolicyAction,
+		opts.PolicyEvent,
+		opts.PolicyDryRun,
+	)
+
+	return s
 }
 
 // Start implements Client interface
 func (s *Scan) Start() error {
 	fmt.Println("Starting to scan...")
-	isRunning := isKubeArmorActive()
-	if !isRunning {
-		fmt.Println("KubeArmor service is not running")
-		return nil
-	}
+	// isRunning := isKubeArmorActive()
+	// if !isRunning {
+	// 	fmt.Println("KubeArmor service is not running")
+	// 	return nil
+	// }
 
 	err := s.ConnectToGRPC()
 	if err != nil {
@@ -132,6 +165,27 @@ func (s *Scan) Start() error {
 
 	// post processing data
 	s.postProcessing()
+	return nil
+}
+
+func (s *Scan) HandlePolicies() error {
+	fmt.Println("Handling policies...")
+
+	if s.options.PolicyDryRun {
+		fmt.Println(`Running in dry run mode, policies won't be 
+        applied on the system, but will get generated and saved`)
+	}
+
+	err := s.policyApplier.Apply()
+	if err != nil {
+		return fmt.Errorf("failed to apply hardening policies: %s", err.Error())
+	}
+
+	if s.options.PolicyDryRun {
+		s.postProcessing()
+	}
+
+	fmt.Println("Policies handled successfully")
 	return nil
 }
 
@@ -402,5 +456,42 @@ func (s *Scan) postProcessing() {
 		fmt.Printf("failed to write to network json file: %s\n", err.Error())
 	} else {
 		fmt.Printf("Network events markdown file written to %s\n", networkMDPath)
+	}
+
+	if s.options.PolicyDryRun {
+		policiesPath := createFilePath("generated_policies", "yaml")
+		err := s.policyApplier.SavePolicies(policiesPath)
+		if err != nil {
+			fmt.Printf("failed to save generated policies: %s\n", err.Error())
+		} else {
+			fmt.Printf("Generated policies saved to %s\n", policiesPath)
+		}
+	}
+
+	// Start handling alerts
+	s.alertProcessor.ProcessAlerts(s.segregate.data)
+
+	// Generate and save JSON
+	alertsJSON, err := s.alertProcessor.GenerateJSON()
+	if err != nil {
+		fmt.Printf("Error generating JSON for alerts: %v\n", err)
+	} else {
+		alertsJSONPath := createFilePath("processed_alerts", "json")
+		err = common.CleanAndWrite(alertsJSONPath, alertsJSON)
+		if err != nil {
+			fmt.Printf("Error writing alerts JSON to file: %v\n", err)
+		} else {
+			fmt.Printf("Processed alerts JSON written to %s\n", alertsJSONPath)
+		}
+	}
+
+	// Generate and save Markdown
+	alertsMarkdown := s.alertProcessor.GenerateMarkdownTable()
+	alertsMarkdownPath := createFilePath("processed_alerts", "md")
+	err = common.CleanAndWrite(alertsMarkdownPath, []byte(alertsMarkdown))
+	if err != nil {
+		fmt.Printf("Error writing alerts Markdown to file: %v\n", err)
+	} else {
+		fmt.Printf("Processed alerts Markdown written to %s\n", alertsMarkdownPath)
 	}
 }

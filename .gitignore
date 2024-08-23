@@ -33,3 +33,4 @@ knoxctl
 *.pdf
 *.json
 *.md
+*.yaml

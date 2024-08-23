@@ -4,9 +4,15 @@ package scan
 type ScanOptions struct {
 	FilterEventType FilterEventType
 	FilterEvents    FilterEvents
-	GRPC            string
-	Output          string
+
+	GRPC         string
+	Output       string
+	RepoBranch   string
+	PolicyAction string // Block or Audit
+	PolicyEvent  string // ADDED or DELETED
+
 	ShowProcessTree bool
+	PolicyDryRun    bool
 }
 
 // Filter provides the basic filters for collection of data
