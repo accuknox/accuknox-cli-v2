@@ -56,4 +56,3 @@ func init() {
 	policyCmd.Flags().BoolVar(&scanOpts.PolicyDryRun, "dryrun", false, "generate and save the hardening policies but don't apply them")
 	policyCmd.Flags().StringVar(&scanOpts.RepoBranch, "branch", "main", "Branch of the policy templates repository")
 }
-
