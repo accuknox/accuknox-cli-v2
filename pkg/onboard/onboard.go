@@ -16,7 +16,8 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage,
 	vmAdapterImage, relayServerImage, siaImage, peaImage,
 	feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireImage, waitForItImage, discoverImage, nodeAddress string, dryRun, workerNode, deployRMQ bool,
-	imagePullPolicy, visibility, hostVisibility, audit, block, hostAudit, hostBlock,
+	imagePullPolicy, visibility, hostVisibility, audit, block, hostAudit, hostBlock string,
+	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
 	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool) (*ClusterConfig, error) {
 
@@ -76,6 +77,10 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	cc.DefaultHostFilePosture = getDefaultPosture(hostAudit, hostBlock, "file")
 	cc.DefaultHostNetworkPosture = getDefaultPosture(hostAudit, hostBlock, "network")
 	cc.DefaultHostCapPosture = getDefaultPosture(hostAudit, hostBlock, "capabilities")
+
+	cc.AlertThrottling = alertThrottling
+	cc.MaxAlertsPerSec = maxAlertPerSec
+	cc.ThrottleSec = throttleSec
 
 	var releaseInfo cm.ReleaseMetadata
 	if releaseVersion == "" {

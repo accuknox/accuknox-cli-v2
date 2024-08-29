@@ -91,6 +91,9 @@ type ClusterConfig struct {
 	DefaultHostFilePosture    string
 	DefaultHostNetworkPosture string
 	DefaultHostCapPosture     string
+	AlertThrottling           bool
+	MaxAlertsPerSec           int
+	ThrottleSec               int
 
 	CIDR string
 
@@ -165,6 +168,10 @@ type TemplateConfigArgs struct {
 	KubeArmorHostFilePosture    string
 	KubeArmorHostNetworkPosture string
 	KubeArmorHostCapPosture     string
+
+	KubeArmorAlertThrottling bool
+	KubeArmorMaxAlertsPerSec int
+	KubeArmorThrottleSec     int
 
 	SPIREAgentImage string
 	WaitForItImage  string

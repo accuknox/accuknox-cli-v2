@@ -32,6 +32,10 @@ var (
 	kubeArmorPolicy  bool
 	secureContainers bool
 
+	alertThrottling bool
+	maxAlertPerSec  int
+	throttleSec     int
+
 	skipBTF           bool
 	systemMonitorPath string
 
@@ -79,6 +83,10 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&block, "block", "", "Kubearmor container block posture. Possible values: \"all\" or combo of [file,network,capabilities]")
 	onboardVMCmd.PersistentFlags().StringVar(&hostAudit, "hostAudit", "", "Kubearmor host audit posture. Possible values: \"all\" or combo of [file,network,capabilities]")
 	onboardVMCmd.PersistentFlags().StringVar(&hostBlock, "hostBlock", "", "Kubearmor host block posture. Possible values: \"all\" or combo of [file,network,capabilities]")
+
+	onboardVMCmd.PersistentFlags().BoolVarP(&alertThrottling, "alert-throttling", "", true, "to toggle alert-throttling")
+	onboardVMCmd.PersistentFlags().IntVarP(&maxAlertPerSec, "max-alerts-per-sec", "", 10, "specifes maximum alert rate past which throttling will be triggered")
+	onboardVMCmd.PersistentFlags().IntVarP(&throttleSec, "throttle-sec", "", 30, "duration (in seconds) for which subsequent alerts will be dropped once alert throttling comes into action")
 
 	onboardVMCmd.PersistentFlags().StringVar(&rmqAddress, "rmq-address", "", "RabbitMQ address")
 
