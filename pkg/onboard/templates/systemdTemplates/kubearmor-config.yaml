@@ -20,3 +20,8 @@ hostVisibility: {{.KubeArmorHostVisibility}}
 hostDefaultFilePosture: {{.KubeArmorHostFilePosture}}
 hostDefaultNetworkPosture: {{.KubeArmorHostNetworkPosture}}
 hostDefaultCapabilitiesPosture: {{.KubeArmorHostCapPosture}}
+
+# alert throttling config
+alertThrottling: {{.KubeArmorAlertThrottling}}
+maxAlertPerSec: {{.KubeArmorMaxAlertsPerSec}}
+throttleSec: {{.KubeArmorThrottleSec}}

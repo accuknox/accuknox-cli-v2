@@ -112,6 +112,10 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		KubeArmorNetworkPosture: jc.DefaultNetworkPosture,
 		KubeArmorCapPosture:     jc.DefaultCapPosture,
 
+		KubeArmorAlertThrottling: jc.AlertThrottling,
+		KubeArmorMaxAlertsPerSec: jc.MaxAlertsPerSec,
+		KubeArmorThrottleSec:     jc.ThrottleSec,
+
 		KubeArmorHostFilePosture:    jc.DefaultHostFilePosture,
 		KubeArmorHostNetworkPosture: jc.DefaultHostNetworkPosture,
 		KubeArmorHostCapPosture:     jc.DefaultHostCapPosture,

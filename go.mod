@@ -31,6 +31,8 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
+	github.com/json-iterator/go v1.1.12
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20231019102803-e4e0e68a457b
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b
 	github.com/kubearmor/kubearmor-client v0.14.2
 	github.com/mholt/archiver/v3 v3.5.1
@@ -200,13 +202,11 @@ require (
 	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34 // indirect
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20231019102803-e4e0e68a457b // indirect
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20231024025323-15ad34e8f01e // indirect
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231026112027-a8919b7db708 // indirect
 	github.com/kyverno/kyverno v1.10.3 // indirect

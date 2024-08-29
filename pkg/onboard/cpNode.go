@@ -118,6 +118,10 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		KubeArmorHostNetworkPosture: ic.DefaultHostNetworkPosture,
 		KubeArmorHostCapPosture:     ic.DefaultHostCapPosture,
 
+		KubeArmorAlertThrottling: ic.AlertThrottling,
+		KubeArmorMaxAlertsPerSec: ic.MaxAlertsPerSec,
+		KubeArmorThrottleSec:     ic.ThrottleSec,
+
 		NetworkCIDR: ic.CIDR,
 
 		SecureContainers: ic.SecureContainers,
