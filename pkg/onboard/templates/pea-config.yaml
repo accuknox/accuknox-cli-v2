@@ -32,3 +32,5 @@ non-k8s:
 
 policy-watcher:
   enable: false
+
+deployMode: "vm"

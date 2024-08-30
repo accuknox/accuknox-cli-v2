@@ -249,6 +249,7 @@ services:
 
       - "SPIRE_AGENT_URL=unix:///var/run/spire/agent.sock"
       - "SPIRE_ENABLED=true"
+      - "DEPLOY_MODE=vm"
 
     pid: "host"
     networks:
