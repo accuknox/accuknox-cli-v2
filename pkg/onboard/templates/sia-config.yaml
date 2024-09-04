@@ -24,3 +24,5 @@ state-agent:
 
 k8s:
   enable: false
+
+deployMode: "vm"
