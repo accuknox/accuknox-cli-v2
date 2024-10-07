@@ -314,7 +314,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 
 		// stop existing service first otherwise errors are encountered due to
 		// busy binary
-		err := StopSystemdService(obj.ServiceName, true)
+		err := StopSystemdService(obj.ServiceName, true, false)
 		if err != nil {
 			fmt.Println(color.YellowString("Failed to stop existing systemd service %s: %s", obj.ServiceName, err.Error()))
 		}
@@ -383,7 +383,7 @@ func StartSystemdService(serviceName string) error {
 	return nil
 }
 
-func StopSystemdService(serviceName string, skipDeleteDisable bool) error {
+func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error {
 	ctx := context.Background()
 	conn, err := dbus.NewWithContext(ctx)
 	if err != nil {
@@ -399,7 +399,7 @@ func StopSystemdService(serviceName string, skipDeleteDisable bool) error {
 	}
 
 	// service not active, return
-	if property.Value.Value() != "active" {
+	if property.Value.Value() != "active" && !force {
 		return nil
 	}
 
@@ -454,12 +454,7 @@ func DeboardSystemd(nodeType NodeType) error {
 	pseudoCC.createSystemdServiceObjects()
 
 	for _, obj := range pseudoCC.SystemdServiceObjects {
-		// not a worker node agent, skip deboarding
-		if (nodeType == NodeType_WorkerNode) && !obj.InstallOnWorkerNode {
-			continue
-		}
-
-		err := StopSystemdService(obj.ServiceName, false)
+		err := StopSystemdService(obj.ServiceName, false, true)
 		if err != nil {
 			fmt.Printf("error stopping %s: %s\n", obj.ServiceName, err)
 			return err
@@ -470,17 +465,21 @@ func DeboardSystemd(nodeType NodeType) error {
 	return nil
 }
 
-func CheckSystemdInstallation() (bool, error) {
-	agents := []string{"kubearmor", cm.KubeArmorVMAdapter, cm.RelayServer, cm.PEAAgent, cm.SIAAgent, cm.FeederService, cm.SpireAgent, cm.SummaryEngine, cm.DiscoverAgent, cm.HardeningAgent}
+func CheckInstalledSystemdServices() ([]string, error) {
+	allAgents := []string{"kubearmor", cm.KubeArmorVMAdapter, cm.RelayServer, cm.PEAAgent, cm.SIAAgent, cm.FeederService, cm.SpireAgent, cm.SummaryEngine, cm.DiscoverAgent, cm.HardeningAgent}
+	installedAgents := make([]string, 0)
+
 	systemdPath := "/usr/lib/systemd/system/"
-	for _, agent := range agents {
+	for _, agent := range allAgents {
 		filePath := systemdPath + agent + ".service"
 		if _, err := os.Stat(filePath); err == nil {
 			// found service file means we have agents as systemd service
-			return true, nil
+			installedAgents = append(installedAgents, agent)
 		} else if !os.IsNotExist(err) {
-			return false, fmt.Errorf("Error checking service file for %s: %v\n", agent, err)
+			fmt.Println(color.YellowString("Error checking service file %s: %v", filePath, err))
+			continue
 		}
 	}
-	return false, nil
+
+	return installedAgents, nil
 }
