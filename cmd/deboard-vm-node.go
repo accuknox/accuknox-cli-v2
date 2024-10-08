@@ -18,12 +18,13 @@ var deboardNodeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if vmMode == "" {
-			systemdInstallation, err := onboard.CheckSystemdInstallation()
+			// look for systemd and docker mode
+			installedSystemdServices, err := onboard.CheckInstalledSystemdServices()
 			if err != nil {
 				return fmt.Errorf(color.RedString("error checking systemd files: %s", err.Error()))
 			}
 
-			if systemdInstallation {
+			if len(installedSystemdServices) > 0 {
 				vmMode = onboard.VMMode_Systemd
 			} else {
 				vmMode = onboard.VMMode_Docker

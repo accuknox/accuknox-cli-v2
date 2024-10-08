@@ -20,6 +20,10 @@ const (
 	siaName           = "shared-informer-agent"
 	peaName           = "policy-enforcement-agent"
 	feederServiceName = "feeder-service"
+
+	summaryEngineName  = "summary-engine"
+	discoveryName      = "discovery"
+	hardeningAgentName = "hardening-agent"
 )
 
 var (
@@ -42,7 +46,7 @@ var (
 	}
 )
 
-func getKnownContainerMap() map[string]dockerTypes.Container {
+func GetKnownContainerMap() map[string]dockerTypes.Container {
 	knownContainerMap := make(map[string]dockerTypes.Container)
 
 	knownContainerMap[kubeArmorInitName] = dockerTypes.Container{}
@@ -54,6 +58,10 @@ func getKnownContainerMap() map[string]dockerTypes.Container {
 	knownContainerMap[siaName] = dockerTypes.Container{}
 	knownContainerMap[peaName] = dockerTypes.Container{}
 	knownContainerMap[feederServiceName] = dockerTypes.Container{}
+
+	knownContainerMap[summaryEngineName] = dockerTypes.Container{}
+	knownContainerMap[discoveryName] = dockerTypes.Container{}
+	knownContainerMap[hardeningAgentName] = dockerTypes.Container{}
 
 	return knownContainerMap
 }
@@ -132,7 +140,7 @@ func diagnose(nodeType NodeType) (string, error) {
 		return diagnosis, fmt.Errorf("Failed to list containers. %s", err.Error())
 	}
 
-	knownContainerMap := getKnownContainerMap()
+	knownContainerMap := GetKnownContainerMap()
 	for _, containerInfo := range containerList {
 		// only first index needed as name is specified in our templates
 		// key exists, add value
