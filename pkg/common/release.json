@@ -919,7 +919,7 @@
     "kubearmor_relay_tag": "v0.0.4",
     "kubearmor_vm_adapter_tag": "v0.1.1",
     "spire_agent_tag": "v1.9.4",
-    "sia_tag": "v0.6.1",
+    "sia_tag": "v0.6.2",
     "sia_image": "accuknox/shared-informer-agent",
     "pea_tag": "v0.6.0",
     "pea_image": "accuknox/policy-enforcement-agent",
