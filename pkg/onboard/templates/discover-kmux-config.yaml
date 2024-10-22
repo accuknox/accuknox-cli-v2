@@ -15,7 +15,8 @@ rabbitmq:
   queue:
     auto-delete: true
     durable: true
-    name: ""
+    name: {{.QueueName}}
+  consumer-tag: {{.ConsumerTag}}
   server: {{.RMQServer}}
   tls: 
     enabled: {{.TlsEnabled}}

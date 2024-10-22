@@ -242,6 +242,8 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 		// generate kmux config only if it exists for this agent
 		if agentObj.kmuxConfigPath != "" {
+			kmuxConfigArgs.ConsumerTag = agentObj.agentName
+			kmuxConfigArgs.QueueName = fmt.Sprintf("%s-%s", ic.TCArgs.RMQTopicPrefix, agentObj.agentName)
 			if _, err := copyOrGenerateFile(ic.UserConfigPath, agentConfigPath, agentObj.kmuxConfigFileName, sprigFuncs, agentObj.kmuxConfigTemplateString, kmuxConfigArgs); err != nil {
 				return err
 			}

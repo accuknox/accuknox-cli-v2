@@ -205,6 +205,8 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 	// Generate or copy kmux config files
 	for filePath, templateString := range kmuxConfigFileTemplateMap {
+		kmuxConfigArgs.QueueName = fmt.Sprintf("%s-%s", jc.RMQTopicPrefix, strings.Split(filePath, "/")[0])
+		kmuxConfigArgs.ConsumerTag = strings.Split(filePath, "/")[0]
 		if _, err := copyOrGenerateFile(jc.UserConfigPath, configPath, filePath, sprigFuncs, templateString, kmuxConfigArgs); err != nil {
 			return err
 		}

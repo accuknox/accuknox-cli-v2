@@ -78,6 +78,8 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 
 		// copy kmux config
 		if obj.KmuxConfigPath != "" {
+			kmuxConfigArgs.QueueName = fmt.Sprintf("%s-%s", jc.RMQTopicPrefix, strings.TrimPrefix(obj.AgentName, "accuknox-"))
+			kmuxConfigArgs.ConsumerTag = strings.TrimPrefix(obj.AgentName, "accuknox-")
 			// copy generic config files
 			_, err = copyOrGenerateFile(jc.UserConfigPath, obj.AgentDir, cm.KmuxConfigFileName, jc.TemplateFuncs, obj.KmuxConfigTemplateString, kmuxConfigArgs)
 			if err != nil {
