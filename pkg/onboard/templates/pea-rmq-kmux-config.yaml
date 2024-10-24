@@ -1,12 +1,9 @@
 kmux:
   sink:
-    stream: {{.StreamName}}
+    stream: rabbitmq
   source:
-    stream: rabbitmq  
+    stream: rabbitmq
   security: spire
-
-knox-gateway:
-  server: {{.ServerURL}}
 
 spire:
   spiffeID:
@@ -18,8 +15,10 @@ spire:
 
 rabbitmq:
   server: {{.RMQServer}}
+  username: {{.RMQUsername}}
+  password: {{.RMQPassword}}
   exchange:
-    name: "dev2" 
+    name: "agents" 
     type: "direct"
     durable: true
     auto-delete: true

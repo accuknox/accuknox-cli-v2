@@ -80,6 +80,7 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 		// copy kmux config
 		if obj.KmuxConfigPath != "" {
+			kmuxConfigArgs.ConsumerTag = obj.AgentName
 			_, err = copyOrGenerateFile(ic.UserConfigPath, obj.AgentDir, cm.KmuxConfigFileName, ic.TemplateFuncs, obj.KmuxConfigTemplateString, kmuxConfigArgs)
 			if err != nil {
 				return err

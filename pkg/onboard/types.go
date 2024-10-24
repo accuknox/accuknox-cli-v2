@@ -241,6 +241,7 @@ type KmuxConfigTemplateArgs struct {
 	StreamName     string
 	ServerURL      string
 	RMQServer      string
+	ConsumerTag    string
 }
 
 type TokenResponse struct {
