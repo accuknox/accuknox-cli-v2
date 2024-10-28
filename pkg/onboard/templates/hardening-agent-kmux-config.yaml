@@ -15,3 +15,4 @@ rabbitmq:
     name: ""
     durable: true
     auto-delete: true
+  consumer-tag: {{.ConsumerTag}}

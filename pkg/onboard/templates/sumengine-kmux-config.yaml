@@ -10,3 +10,4 @@ rabbitmq:
     durable: true
     auto-delete: true
   debug: false
+  consumer-tag: {{.ConsumerTag}}

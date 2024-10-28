@@ -219,6 +219,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 		// generate kmux config only if it exists for this agent
 		if agentObj.kmuxConfigPath != "" {
+			kmuxConfigArgs.ConsumerTag = agentObj.agentName
 			if _, err := copyOrGenerateFile(ic.UserConfigPath, agentConfigPath, common.KmuxConfigFileName, sprigFuncs, agentObj.kmuxConfigTemplateString, kmuxConfigArgs); err != nil {
 				return err
 			}
