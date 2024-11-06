@@ -1,0 +1,19 @@
+[Unit]
+Description=accuknox-rat-service
+Wants=accuknox-rat.timer
+
+[Service]
+User=root
+KillMode=process
+ExecStart=/usr/local/bin/rat analyze --profile {{.Profile}} \
+  --benchmark {{.Benchmark}} \
+  --auth-token {{.AuthToken}} \
+  --url {{.Url}} \
+  --tenant-id {{.TenantId}} \
+  --cluster-name {{.ClusterName}} \ 
+  --cluster-id {{.ClusterId}} \
+  --label {{.Label}}
+  --json 
+StandardOutput=append:/home/aryan/rat_output.json
+[Install]
+WantedBy=multi-user.target

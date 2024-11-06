@@ -15,11 +15,13 @@ var (
 
 	// for systemd mode
 	vmAdapterTag string
+	ratTag       string
 
 	kubeArmorImage          string
 	kubeArmorInitImage      string
 	kubeArmorVMAdapterImage string
 	imagePullPolicy         string
+	ratImage                string
 
 	preserveUpstream bool
 
@@ -40,6 +42,18 @@ var (
 
 	skipBTF           bool
 	systemMonitorPath string
+
+	//flags for RAT scan
+	enableVMScan bool
+	profile      string
+	benchmark    string
+	schedule     string
+	authToken    string
+	url          string
+	tenantID     string
+	clusterName  string
+	clusterID    string
+	label        string
 
 	// different meaning for both worker node but
 	// declared here as common global variables

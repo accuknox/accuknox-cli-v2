@@ -1,0 +1,10 @@
+[Unit]
+Description= Run accuknox risk assessment tool in specific intervals 
+Requires=accuknox-rat.service
+
+[Timer]
+Unit=accuknox-rat.service
+OnCalendar= {{.Schedule}}
+
+[Install]
+WantedBy=timers.target

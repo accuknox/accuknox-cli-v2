@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/coreos/go-systemd/v22/dbus"
 	"github.com/fatih/color"
@@ -291,17 +292,34 @@ func getSystemdAgentsKmuxConfigs() []SystemdServiceObject {
 }
 
 // placeServiceFiles copies service files
-func (cc *ClusterConfig) placeServiceFiles(workerNode bool) error {
+func (cc *ClusterConfig) placeServiceFiles() error {
 	for _, obj := range cc.SystemdServiceObjects {
-		if workerNode && !obj.InstallOnWorkerNode {
+		if cc.WorkerNode && !obj.InstallOnWorkerNode {
 			continue
 		}
 
 		if obj.ServiceTemplateString != "" {
-			_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, interface{}(nil))
-			if err != nil {
-				return err
+
+			if obj.AgentName == cm.RAT {
+				//place service file for RAT
+				cc.TemplateFuncs = sprig.GenericFuncMap()
+				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, cc.RATConfigObject)
+				if err != nil {
+					return err
+				}
+				//place timer file for RAT
+				_, err = copyOrGenerateFile("", cm.SystemdDir, "accuknox-rat.timer", cc.TemplateFuncs, obj.TimerTemplateString, interface{}(nil))
+				if err != nil {
+					return err
+				}
+
+			} else {
+				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, interface{}(nil))
+				if err != nil {
+					return err
+				}
 			}
+
 		}
 	}
 
@@ -310,6 +328,7 @@ func (cc *ClusterConfig) placeServiceFiles(workerNode bool) error {
 
 // downloadAgent downloads agents as OCI artifiacts
 func (cc *ClusterConfig) downloadAgent(agentName, agentRepo, agentTag string) (string, error) {
+	fmt.Println("downloading agent", agentName, agentRepo, agentTag)
 	fs, err := file.New(cm.DownloadDir)
 	if err != nil {
 		return "", err
@@ -405,6 +424,7 @@ func extractAgent(fileName string) error {
 // InstallAgent downloads agent using downloadAgent.
 // It disables the systemd service first if it is running
 func (cc *ClusterConfig) installAgent(agentName, agentRepo, agentTag string) error {
+	fmt.Println(agentTag)
 	fileName, err := cc.downloadAgent(agentName, agentRepo, agentTag)
 	if err != nil {
 		return err
@@ -466,7 +486,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 		fmt.Printf(color.CyanString("%s version %s downloaded successfully\n\n", obj.AgentName, packageMeta[1]))
 	}
 
-	err = cc.placeServiceFiles(cc.WorkerNode)
+	err = cc.placeServiceFiles()
 	if err != nil {
 		//fmt.Println(err)
 		return err
@@ -623,4 +643,44 @@ func CheckInstalledSystemdServices() ([]string, error) {
 	}
 
 	return installedAgents, nil
+}
+func InstallAgent(agentName, agentRepo, agentTag string) error {
+	fileName, err := DownloadAgent(agentName, agentRepo, agentTag)
+	if err != nil {
+		return err
+	}
+
+	err = extractAgent(fileName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// downloadAgent downloads agents as OCI artifiacts
+func DownloadAgent(agentName, agentRepo, agentTag string) (string, error) {
+	fs, err := file.New(cm.DownloadDir)
+	if err != nil {
+		return "", err
+	}
+	defer fs.Close()
+
+	// 1. Connect to a remote repository
+	ctx := context.Background()
+	repo, err := remote.NewRepository(agentRepo)
+	if err != nil {
+		return "", err
+	}
+
+	// repo.Client = cc.ORASClient
+	// repo.PlainHTTP = cc.PlainHTTP
+
+	_, err = oras.Copy(ctx, repo, agentTag, fs, agentTag, oras.DefaultCopyOptions)
+	if err != nil {
+		return "", err
+	}
+
+	filepath := path.Join(cm.DownloadDir, agentName+"_"+agentTag+".tar.gz")
+	return filepath, nil
 }

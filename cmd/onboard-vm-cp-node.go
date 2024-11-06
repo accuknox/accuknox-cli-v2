@@ -97,7 +97,9 @@ var cpNodeCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf(color.RedString("failed to create cluster config: %s", err.Error()))
 		}
-
+		if enableVMScan {
+			vmConfig.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream, vmMode)
+		}
 		onboardConfig := onboard.InitCPNodeConfig(*vmConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle, enableLogs)
 
 		err = onboardConfig.CreateBaseTemplateConfig()

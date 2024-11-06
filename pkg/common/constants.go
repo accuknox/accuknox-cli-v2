@@ -62,6 +62,7 @@ const (
 	DefaultKubeArmorInitImage = "kubearmor/kubearmor-init"
 	DefaultRelayServerImage   = "accuknox/kubearmor-relay-server"
 	DefaultVMAdapterImage     = "accuknox/vm-adapter"
+	DefaultRATImage           = "accuknox/accuknox-rat"
 
 	DefaultAccuKnoxRepo    = "accuknox"
 	DefaultSPIREAgentImage = "accuknox/spire-agent"
@@ -92,6 +93,7 @@ const (
 	SummaryEngine      string = "accuknox-sumengine"
 	DiscoverAgent      string = "accuknox-discover"
 	HardeningAgent     string = "accuknox-hardening-agent"
+	RAT                string = "accuknox-rat"
 
 	InContainerConfigDir string = "/opt"
 
@@ -106,6 +108,7 @@ const (
 	SumEngineConfigPath      string = "/opt/accuknox-sumengine/"
 	DiscoverConfigPath       string = "/opt/accuknox-discover/"
 	HardeningAgentConfigPath string = "/opt/accuknox-hardening-agent/"
+	RATPath                  string = "/usr/local/bin/"
 
 	//TODO make configurable for policy dir in accuknox policy enforcement agent
 	PeaPolicyPath string = "/opt/pea/"
@@ -155,6 +158,7 @@ var (
 		SummaryEngine:  "accuknox/accuknox-sumengine-systemd",
 		DiscoverAgent:  "accuknox/accuknox-discover-systemd",
 		HardeningAgent: "accuknox/accuknox-hardening-agent-systemd",
+		RAT:            "accuknox/accuknox-rat-systemd",
 	}
 
 	KASystemMonitorPath string = filepath.Join(KAconfigPath, "BPF", "system_monitor.bpf.o")

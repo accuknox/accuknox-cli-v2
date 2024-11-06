@@ -27,6 +27,8 @@ type ReleaseMetadata struct {
 	SumEngineImage        string `json:"sumengine_image"`
 	HardeningAgentTag     string `json:"hardening_agent_tag"`
 	HardeningAgentImage   string `json:"hardening_agent_image"`
+	RatTag                string `json:"rat_tag"`
+	RatImage              string `json:"rat_image"`
 }
 
 var (
