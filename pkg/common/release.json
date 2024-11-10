@@ -950,5 +950,13 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening"
+  },
+  "v0.8.0": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.7.2",
+    "pea_tag": "v0.6.2",
+    "feeder_service_tag": "v0.7.3"
   }
 }
