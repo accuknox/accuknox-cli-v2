@@ -3,14 +3,15 @@ package onboard
 import (
 	"fmt"
 
+	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/fatih/color"
 )
 
 // prepare template for RAT systemd service timer and the script which will call RAT
 // template for RAT variables
-func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile string, benchmark string, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection bool, ratImage, ratTag, releaseVersion string, preserveUpstream bool, vmMode VMMode) error {
-
+func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile string, benchmark string, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection bool, ratImage, ratVersionTag, releaseVersion string, preserveUpstream bool) error {
+	var err error
 	var releaseInfo cm.ReleaseMetadata
 	if releaseVersion == "" {
 		_, releaseInfo = cm.GetLatestReleaseInfo()
@@ -21,46 +22,60 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 		// on needing to build knoxctl again and again
 		// return nil, fmt.Errorf("Unknown image tag %s", releaseVersion)
 	}
-
+	cc.RATConfigObject.EnableVMScan = true
 	cc.AgentsVersion = releaseVersion
-	cc.RATAgentImage, _ = getImage(registry, cm.DefaultDockerRegistry,
-		cm.DefaultAccuKnoxRepo, ratImage, cm.AgentRepos[cm.RAT],
-		ratTag, releaseInfo.RatTag, "v", cm.SystemdTagSuffix, preserveUpstream)
-
 	cc.RATConfigObject.AuthToken = authToken
 	cc.RATConfigObject.Url = url
-	cc.RATConfigObject.TenantId = tenantID
-	cc.RATConfigObject.ClusterId = clusterID
+	cc.RATConfigObject.TenantID = tenantID
+	cc.RATConfigObject.ClusterID = clusterID
 	cc.RATConfigObject.ClusterName = clusterName
 	cc.RATConfigObject.Label = label
-	cc.RATConfigObject.Schedule = schedule
+	if schedule == "" {
+		cc.RATConfigObject.Schedule = cc.GetDefaultRatSchedule()
+	}
 	cc.RATConfigObject.Profile = profile
 	cc.RATConfigObject.Benchmark = benchmark
 
-	cc.SystemdServiceObjects = append(cc.SystemdServiceObjects,
+	switch cc.Mode {
+	case VMMode_Docker:
+		cc.RATImage, err = getImage(registry, cm.DefaultDockerRegistry,
+			cm.DefaultAccuKnoxRepo, ratImage, releaseInfo.RatImage,
+			ratVersionTag, releaseInfo.RatTag, "", "", preserveUpstream)
+		if err != nil {
+			return err
+		}
+		cc.RATConfigObject.RATImage = cc.RATImage
 
-		SystemdServiceObject{
-			AgentName:             cm.RAT,
-			PackageName:           cm.RAT,
-			ServiceName:           cm.RAT + ".service",
-			AgentDir:              cm.RATPath,
-			ServiceTemplateString: ratServiceFile,
-			TimerTemplateString:   ratTimerFile,
-			AgentImage:            cc.RATAgentImage,
-		},
-	)
-	loginOptions := LoginOptions{
-		Insecure:           insecureRegistryConnection,
-		PlainHTTP:          httpRegistryConnection,
-		Registry:           registry,
-		RegistryConfigPath: registryConfigPath,
-	}
-	loginOptions.PlainHTTP = loginOptions.isPlainHttp(registry)
-	cc.PlainHTTP = loginOptions.PlainHTTP
-	var err error
-	cc.ORASClient, err = loginOptions.ORASGetAuthClient()
-	if err != nil {
-		return err
+	case VMMode_Systemd:
+		cc.RATImage, _ = getImage(registry, cm.DefaultDockerRegistry,
+			cm.DefaultAccuKnoxRepo, ratImage, cm.AgentRepos[cm.RAT],
+			ratVersionTag, releaseInfo.RatTag, "v", cm.SystemdTagSuffix, preserveUpstream)
+
+		cc.SystemdServiceObjects = append(cc.SystemdServiceObjects,
+
+			SystemdServiceObject{
+				AgentName:             cm.RAT,
+				PackageName:           cm.RAT,
+				ServiceName:           cm.RAT + ".service",
+				AgentDir:              cm.RATPath,
+				ServiceTemplateString: ratServiceFile,
+				TimerTemplateString:   ratTimerFile,
+				AgentImage:            cc.RATImage,
+			},
+		)
+		loginOptions := LoginOptions{
+			Insecure:           insecureRegistryConnection,
+			PlainHTTP:          httpRegistryConnection,
+			Registry:           registry,
+			RegistryConfigPath: registryConfigPath,
+		}
+		loginOptions.PlainHTTP = loginOptions.isPlainHttp(registry)
+		cc.PlainHTTP = loginOptions.PlainHTTP
+		var err error
+		cc.ORASClient, err = loginOptions.ORASGetAuthClient()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -68,34 +83,57 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 
 func (cc *ClusterConfig) InstallRAT() error {
 
-	obj := cc.SystemdServiceObjects[0]
+	switch cc.Mode {
+	case VMMode_Docker:
+		var err error
+		cc.composeCmd, cc.composeVersion, err = GetComposeCommand()
+		if err != nil {
+			return err
+		}
+		configPath, err := createDefaultConfigPath()
+		if err != nil {
+			return err
+		}
+		// initialize sprig for templating
+		sprigFuncs := sprig.GenericFuncMap()
+		//create compose file
+		composeFilePath, err := copyOrGenerateFile(cc.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, ratComposeFileTemplate, cc.RATConfigObject)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		args := []string{"-f", composeFilePath, "--profile", "accuknox-agents", "up", "-d"}
+		// run compose command
+		_, err = ExecComposeCommand(true, cc.DryRun, cc.composeCmd, args...)
+		if err != nil {
+			// cleanup volumes
+			fmt.Println("error:", err)
+			return err
+		}
 
-	fmt.Print(color.CyanString("Downloading Agent - %s | Image - %s\n", obj.AgentName, obj.AgentImage))
-	packageMeta := splitLast(obj.AgentImage, ":")
+	case VMMode_Systemd:
+		obj := cc.SystemdServiceObjects[0]
 
-	err := cc.installAgent(obj.AgentName, packageMeta[0], "0.3.0"+packageMeta[1])
-	if err != nil {
-		fmt.Println("error:", err)
-		return err
+		fmt.Print(color.CyanString("Downloading Agent - %s | Image - %s\n", obj.AgentName, obj.AgentImage))
+		packageMeta := splitLast(obj.AgentImage, ":")
+
+		err := cc.installAgent(obj.AgentName, packageMeta[0], "0.3.0"+packageMeta[1])
+		if err != nil {
+			fmt.Println("error:", err)
+			return err
+		}
+		err = cc.placeServiceFiles()
+		if err != nil {
+			//fmt.Println(err)
+			return err
+		}
+		err = StartSystemdService(obj.ServiceName)
+		if err != nil {
+			//fmt.Println(err)
+			return err
+		}
 	}
-	err = cc.placeServiceFiles()
-	if err != nil {
-		//fmt.Println(err)
-		return err
-	}
-	err = StartSystemdService(obj.ServiceName)
-	if err != nil {
-		//fmt.Println(err)
-		return err
-	}
-
-	// create template for service and timer file
-
-	//place service file and timer file
 
 	return nil
-
-}
-func AddRATConfig(cc *ClusterConfig) {
 
 }

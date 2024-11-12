@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -16,20 +17,27 @@ var vmScanCmd = &cobra.Command{
 
 		// create cluster config
 		var cc onboard.ClusterConfig
+		_, err := cc.ValidateEnv()
+		if vmMode == "" {
+			if err == nil {
+				vmMode = onboard.VMMode_Docker
+			} else {
+				fmt.Print(color.YellowString("Warning: Docker requirements did not match:\n%s.\nFalling back to systemd mode for installation.\n", err.Error()))
+				vmMode = onboard.VMMode_Systemd
+			}
+		} else if vmMode == onboard.VMMode_Docker && err != nil {
+			// docker mode specified explicitly but requirements didn't match
+			return fmt.Errorf(color.RedString("failed to validate environment: %s", err.Error()))
+		}
+
 		cc.EnableVMScan = true
 		// create RAT config
+		cc.Mode = vmMode
 		cc.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
-		err := cc.InstallRAT()
+		err = cc.InstallRAT()
 		if err != nil {
-			fmt.Println("error", err)
+			return err
 		}
-		//err := onboard.InstallRAT()
-		// if err != nil {
-		// 	fmt.Println("error")
-		// }
-		// create and template service files
-
-		// install RAT
 
 		return nil
 	},
@@ -39,15 +47,6 @@ func init() {
 
 	// all flags are optional
 	// add a mode flag here for systemd or docker
-	vmScanCmd.PersistentFlags().StringVar((*string)(&profile), "profile", "", "ubuntu - rhel")
-	vmScanCmd.PersistentFlags().StringVar((*string)(&benchmark), "benchmark", "", "stig,soc2")
-	vmScanCmd.PersistentFlags().StringVar((*string)(&schedule), "schedule", "*-*-* 00:00:00", "schedule for RAT to run (default value once a day)")
-	vmScanCmd.PersistentFlags().StringVar((*string)(&authToken), "auth-token", "", "authentication token")
-	vmScanCmd.PersistentFlags().StringVar((*string)(&tenantID), "tenant-id", "", "tenant id of the cluster")
-	vmScanCmd.PersistentFlags().StringVar((*string)(&clusterName), "cluster-name", "", "cluster name")
-	vmScanCmd.PersistentFlags().StringVar((*string)(&clusterID), "cluster-id", "", "cluster id")
-	vmScanCmd.PersistentFlags().StringVar((*string)(&url), "url", "", "url")
-	vmScanCmd.PersistentFlags().StringVar((*string)(&label), "label", "", "label")
 
 	onboardVMCmd.AddCommand(vmScanCmd)
 	// TODO: hide global flags from here as they are not useful here

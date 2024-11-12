@@ -140,8 +140,18 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringArrayVar(&tls.IPs, "ips", []string{}, "List of IPs for TLS certificates")
 
 	onboardVMCmd.MarkFlagsMutuallyExclusive("tls-gen", "ca-path")
-
 	onboardVMCmd.PersistentFlags().StringVar(&sumengineVisibility, "sumengine-viz", "process,network,file", "Events other than these won't be processed by summary engine. Possible values: \"none\" or any combo of [process,network,file]")
+
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&profile), "profile", "", "ubuntu - rhel")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&benchmark), "benchmark", "", "stig,soc2")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&schedule), "schedule", "", "schedule for RAT to run (default value once a day)")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&authToken), "auth-token", "", "authentication token")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&tenantID), "tenant-id", "", "tenant id of the cluster")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterName), "cluster-name", "", "cluster name")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterID), "cluster-id", "", "cluster id")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&url), "url", "", "url")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&label), "label", "", "label")
+	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "auth-token", "url", "tenant-id", "cluster-name", "label")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

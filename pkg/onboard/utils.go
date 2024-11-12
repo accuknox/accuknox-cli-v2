@@ -503,3 +503,15 @@ func splitLast(fullString, seperator string) []string {
 
 	return []string{fullString[:colonIdx], fullString[colonIdx+1:]}
 }
+
+func (cc *ClusterConfig) GetDefaultRatSchedule() string {
+	// schedule format for daily jobs
+	switch cc.Mode {
+	case VMMode_Docker:
+		return "0 0 * * *"
+	case VMMode_Systemd:
+		return "*-*-* 00:00:00"
+	default:
+		return ""
+	}
+}

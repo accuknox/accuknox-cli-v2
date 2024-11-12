@@ -137,6 +137,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		ProcessOperation: ic.ProcessOperation,
 		FileOperation:    ic.FileOperation,
 		NetworkOperation: ic.NetworkOperation,
+		RATConfigObject:  ic.RATConfigObject,
 	}
 	return nil
 }

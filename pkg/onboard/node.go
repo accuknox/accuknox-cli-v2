@@ -156,6 +156,9 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	jc.TCArgs.SummaryKmuxConfig = common.KmuxSummaryFileName
 	jc.TCArgs.PolicyKmuxConfig = common.KmuxPolicyFileName
 
+	if jc.EnableVMScan {
+		jc.TCArgs.RATConfigObject = jc.RATConfigObject
+	}
 	return nil
 }
 

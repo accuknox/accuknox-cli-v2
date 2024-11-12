@@ -73,7 +73,7 @@ type ClusterConfig struct {
 	DiscoverImage             string
 	SumEngineImage            string
 	HardeningAgentImage       string
-	RATAgentImage             string
+	RATImage                  string
 
 	CPNodeAddr string
 
@@ -280,6 +280,9 @@ type TemplateConfigArgs struct {
 	AlertsTopic     string
 	PolicyV1Topic   string
 	SummaryV2Topic  string
+
+	// rat configs
+	RATConfigObject RATConfig
 }
 
 type KmuxConfigTemplateArgs struct {
@@ -335,15 +338,17 @@ type SystemdServiceObject struct {
 }
 
 type RATConfig struct {
-	AuthToken   string
-	Url         string
-	TenantId    string
-	ClusterName string
-	ClusterId   string
-	Label       string
-	Schedule    string
-	Benchmark   string
-	Profile     string
+	RATImage     string
+	EnableVMScan bool
+	AuthToken    string
+	Url          string
+	TenantID     string
+	ClusterName  string
+	ClusterID    string
+	Label        string
+	Schedule     string
+	Benchmark    string
+	Profile      string
 }
 
 var (
