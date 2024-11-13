@@ -144,11 +144,10 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 
 func (ic *InitConfig) InitializeControlPlane() error {
 	// validate this environment
-	dockerStatus, err := ic.ValidateEnv()
+	_, err := ic.ValidateEnv()
 	if err != nil {
 		return err
 	}
-	fmt.Println(dockerStatus)
 
 	configPath, err := createDefaultConfigPath()
 	if err != nil {

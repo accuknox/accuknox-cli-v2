@@ -174,6 +174,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	if err != nil {
 		return err
 	}
+
 	// configs specific to docker mode of installation
 
 	jc.TCArgs.KubeArmorImage = jc.KubeArmorImage

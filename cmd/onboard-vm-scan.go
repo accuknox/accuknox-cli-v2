@@ -29,16 +29,19 @@ var vmScanCmd = &cobra.Command{
 			// docker mode specified explicitly but requirements didn't match
 			return fmt.Errorf(color.RedString("failed to validate environment: %s", err.Error()))
 		}
-
 		cc.EnableVMScan = true
 		// create RAT config
 		cc.Mode = vmMode
-		cc.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
+		err = cc.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
+		if err != nil {
+			return fmt.Errorf(color.RedString(" failed to initialize RAT config:%s", err.Error()))
+		}
 		err = cc.InstallRAT()
 		if err != nil {
-			return err
+			return fmt.Errorf(color.RedString("failed to install RAT: %s", err.Error()))
 		}
 
+		fmt.Println(color.GreenString("RAT installed successfully!!"))
 		return nil
 	},
 }
@@ -46,8 +49,5 @@ var vmScanCmd = &cobra.Command{
 func init() {
 
 	// all flags are optional
-	// add a mode flag here for systemd or docker
-
 	onboardVMCmd.AddCommand(vmScanCmd)
-	// TODO: hide global flags from here as they are not useful here
 }

@@ -8,8 +8,7 @@ import (
 	"github.com/fatih/color"
 )
 
-// prepare template for RAT systemd service timer and the script which will call RAT
-// template for RAT variables
+// Initialize RAT config
 func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile string, benchmark string, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection bool, ratImage, ratVersionTag, releaseVersion string, preserveUpstream bool) error {
 	var err error
 	var releaseInfo cm.ReleaseMetadata
@@ -20,7 +19,7 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 	} else {
 		// TODO: publish release JSON as OCI artifact to remove dependency
 		// on needing to build knoxctl again and again
-		// return nil, fmt.Errorf("Unknown image tag %s", releaseVersion)
+		return fmt.Errorf("Unknown image tag %s", releaseVersion)
 	}
 	cc.RATConfigObject.EnableVMScan = true
 	cc.AgentsVersion = releaseVersion
@@ -32,6 +31,8 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 	cc.RATConfigObject.Label = label
 	if schedule == "" {
 		cc.RATConfigObject.Schedule = cc.GetDefaultRatSchedule()
+	} else {
+		cc.RATConfigObject.Schedule = schedule
 	}
 	cc.RATConfigObject.Profile = profile
 	cc.RATConfigObject.Benchmark = benchmark
@@ -47,10 +48,12 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 		cc.RATConfigObject.RATImage = cc.RATImage
 
 	case VMMode_Systemd:
-		cc.RATImage, _ = getImage(registry, cm.DefaultDockerRegistry,
+		cc.RATImage, err = getImage(registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, ratImage, cm.AgentRepos[cm.RAT],
 			ratVersionTag, releaseInfo.RatTag, "v", cm.SystemdTagSuffix, preserveUpstream)
-
+		if err != nil {
+			return err
+		}
 		cc.SystemdServiceObjects = append(cc.SystemdServiceObjects,
 
 			SystemdServiceObject{
@@ -61,6 +64,7 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 				ServiceTemplateString: ratServiceFile,
 				TimerTemplateString:   ratTimerFile,
 				AgentImage:            cc.RATImage,
+				InstallOnWorkerNode:   true,
 			},
 		)
 		loginOptions := LoginOptions{
@@ -97,43 +101,42 @@ func (cc *ClusterConfig) InstallRAT() error {
 		// initialize sprig for templating
 		sprigFuncs := sprig.GenericFuncMap()
 		//create compose file
-		composeFilePath, err := copyOrGenerateFile(cc.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, ratComposeFileTemplate, cc.RATConfigObject)
+		composeFilePath, err := copyOrGenerateFile(cc.UserConfigPath, configPath, "docker-compose_rat.yaml", sprigFuncs, ratComposeFileTemplate, cc.RATConfigObject)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 		args := []string{"-f", composeFilePath, "--profile", "accuknox-agents", "up", "-d"}
 		// run compose command
 		_, err = ExecComposeCommand(true, cc.DryRun, cc.composeCmd, args...)
 		if err != nil {
-			// cleanup volumes
-			fmt.Println("error:", err)
 			return err
 		}
 
 	case VMMode_Systemd:
-		obj := cc.SystemdServiceObjects[0]
-
+		var obj SystemdServiceObject
+		for _, agent := range cc.SystemdServiceObjects {
+			if agent.AgentName == cm.RAT {
+				obj = agent
+			}
+		}
 		fmt.Print(color.CyanString("Downloading Agent - %s | Image - %s\n", obj.AgentName, obj.AgentImage))
 		packageMeta := splitLast(obj.AgentImage, ":")
-
-		err := cc.installAgent(obj.AgentName, packageMeta[0], "0.3.0"+packageMeta[1])
+		err := cc.installAgent(obj.AgentName, packageMeta[0], packageMeta[1])
 		if err != nil {
-			fmt.Println("error:", err)
+			fmt.Println(color.RedString("RAT Installation failed!! Cleaning up downloaded asset..."))
+			Deletedir(cm.DownloadDir)
 			return err
 		}
 		err = cc.placeServiceFiles()
 		if err != nil {
-			//fmt.Println(err)
 			return err
 		}
 		err = StartSystemdService(obj.ServiceName)
 		if err != nil {
-			//fmt.Println(err)
 			return err
 		}
+		fmt.Println(color.BlueString("\nCleaning up downloaded assets..."))
+		Deletedir(cm.DownloadDir)
 	}
-
 	return nil
-
 }

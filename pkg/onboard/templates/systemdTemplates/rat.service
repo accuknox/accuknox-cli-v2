@@ -5,15 +5,17 @@ Wants=accuknox-rat.timer
 [Service]
 User=root
 KillMode=process
-ExecStart=/usr/local/bin/rat analyze --profile {{.Profile}} \
-  --benchmark {{.Benchmark}} \
-  --auth-token {{.AuthToken}} \
-  --url {{.Url}} \
-  --tenant-id {{.TenantId}} \
-  --cluster-name {{.ClusterName}} \ 
-  --cluster-id {{.ClusterId}} \
-  --label {{.Label}}
-  --json 
-StandardOutput=append:/home/aryan/rat_output.json
+ExecStart=/bin/bash -c 'for benchmark in $(echo "{{.Benchmark}}" | tr "," "\n"); do \
+  /usr/local/bin/rat analyze \
+    --profile {{.Profile}} \
+    --benchmark "$benchmark" \
+    --auth-token {{.AuthToken}} \
+    --url {{.Url}} \
+    --tenant-id {{.TenantID}} \
+    --cluster-name {{.ClusterName}} \
+    {{- if .ClusterID }}{{"\n"}} --cluster-id {{.ClusterID}} \{{ end }} \
+    --label {{.Label}} \
+    --json > /var/accuknox-rat_"$benchmark"_result.json 2>&1; \
+done'
 [Install]
 WantedBy=multi-user.target

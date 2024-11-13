@@ -108,7 +108,8 @@ const (
 	SumEngineConfigPath      string = "/opt/accuknox-sumengine/"
 	DiscoverConfigPath       string = "/opt/accuknox-discover/"
 	HardeningAgentConfigPath string = "/opt/accuknox-hardening-agent/"
-	RATPath                  string = "/usr/local/bin/"
+	RATPath                  string = "/usr/local/bin/rat"
+	SystemdPath              string = "/usr/lib/systemd/system/"
 
 	//TODO make configurable for policy dir in accuknox policy enforcement agent
 	PeaPolicyPath string = "/opt/pea/"

@@ -1,5 +1,3 @@
-version: '3.8'
-
 volumes:
   spire-vol:
     name: spire-vol
@@ -419,31 +417,10 @@ services:
       - "{{.ConfigPath}}/rabbitmq/certificate.pem:/etc/ssl/server_certificate.pem"
       - "{{.ConfigPath}}/rabbitmq/key.pem:/etc/ssl/server_key.pem"
   {{- end }}
-  {{- if .RATConfigObject.EnableVMScan }}
-  rat:
-    image: {{.RATImage}}
-    container_name: accuknox-rat
-    restart: always
-    pid: "host"  
-    volumes:
-      - /tmp:/host/tmp
-      - /:/host:ro
-    environment:
-      - CRON_SCHEDULE = {{.Schedule}}
-      - PROFILE = {{.Profile}}
-      - BENCHMARK = {{.Benchmark}}
-      - AUTH_TOKEN = {{.AuthToken}}
-      - URL = {{.RATConfigObject.Url}}
-      - TENANT_ID = {{.TenantID}}
-      - CLUSTER_NAME = {{.ClusterName}}
-      - CLUSTER_ID = {{.ClusterID}}
-      - LABEL = {{.Label}}
-    entrypoint: ["/rat/rat-cronjob.sh"]   
-  {{- end }}
-
-# networks:
-#   accuknox-net:
-#     name: accuknox-net
-#     ipam:
-#       config:
-#         - subnet: {{.NetworkCIDR}}
+ 
+networks:
+  accuknox-net:
+    name: accuknox-net
+    ipam:
+      config:
+        - subnet: {{.NetworkCIDR}}

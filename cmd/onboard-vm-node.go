@@ -62,10 +62,6 @@ var joinNodeCmd = &cobra.Command{
 			return fmt.Errorf(color.RedString("failed to create VM config: %s", err.Error()))
 		}
 
-		if enableVMScan {
-			vmConfigs.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
-		}
-
 		joinConfig := onboard.JoinClusterConfig(*vmConfigs, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr)
 
 		err = joinConfig.CreateBaseNodeConfig()
@@ -89,7 +85,17 @@ var joinNodeCmd = &cobra.Command{
 		default:
 			return fmt.Errorf(color.RedString("vm mode: %s invalid, accepted values (docker/systemd)", vmMode))
 		}
-
+		if enableVMScan {
+			err := joinConfig.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
+			if err != nil {
+				fmt.Println(color.RedString("error creating RAT config in %s mode", vmMode))
+			} else {
+				err = joinConfig.InstallRAT()
+				if err != nil {
+					fmt.Println(color.RedString("error installing RAT in %s mode", vmMode))
+				}
+			}
+		}
 		fmt.Println(color.GreenString("VM successfully joined with control-plane!"))
 		return nil
 	},
