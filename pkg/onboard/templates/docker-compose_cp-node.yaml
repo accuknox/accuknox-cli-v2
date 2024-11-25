@@ -243,7 +243,6 @@ services:
       - "KUBEARMOR_PORT={{.RelayServerPort}}"
 
       - "KMUX_LOGS_ENABLED={{.EnableLogs}}"
-      - "KMUX_CONFIG_PATH={{.KmuxConfigPath}}"
 
       - "IGNORE_SUMMARY_EVENTS=Network:AF_UNIX,AF_NETLINK"
 

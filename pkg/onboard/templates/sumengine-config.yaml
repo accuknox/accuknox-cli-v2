@@ -1,33 +1,35 @@
 watcher:
-  enabled: true
-  kubearmor-event-type:
-    logs: true
-    alerts: true
-  kubearmor-relay:
+  kubearmor:
     enabled: true
-{{- if .WorkerNode }}
-    name: kubearmor
-    url: {{.KubeArmorAddr}}
-    port: {{.KubeArmorPort}}
-{{- else }}
-    name: relay-1
-    url: {{.RelayServerAddr}}
-    port: {{.RelayServerPort}}
-{{- end }}
+    event-type:
+      logs: true
+      alerts: true
+    relay:
+      enabled: true
+      {{- if .WorkerNode }}
+      name: kubearmor
+      url: {{.KubeArmorAddr}}
+      port: {{.KubeArmorPort}}
+      {{- else }}
+      name: relay-1
+      url: {{.RelayServerAddr}}
+      port: {{.RelayServerPort}}
+      {{- end }}
 
 summary-engine:
-  enabled: true
-  cron-interval: "0h0m30s"
-  threshold: 10000
-  file-aggregation: true
-  topic:
-    summary-event: "summary-v2"
-  exclude-events:
-    operation:
-      process: {{.ProcessOperation}}
-      file: {{.FileOperation}}
-      network: {{.NetworkOperation}}
+  kubearmor:
+    enabled: true
+    cron-interval: "0h05m00s"
+    threshold: 10000
+    file-aggregation: true
+    topic:
+      summary-event: "summary-v2"
+    exclude-events:
+      operation:
+        process: {{.ProcessOperation}}
+        file: {{.FileOperation}}
+        network: {{.NetworkOperation}}
   exclude-namespaces:
-    kubearmor: true 
+    kubearmor: true
   k8s:
     enable: false
