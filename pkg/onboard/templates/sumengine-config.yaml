@@ -22,13 +22,13 @@ summary-engine:
     cron-interval: "0h05m00s"
     threshold: 10000
     file-aggregation: true
-    topic:
-      summary-event: "summary-v2"
     exclude-events:
       operation:
         process: {{.ProcessOperation}}
         file: {{.FileOperation}}
         network: {{.NetworkOperation}}
+  topic:
+    summary-event: "summary-v2"
   exclude-namespaces:
     kubearmor: true
   k8s:
