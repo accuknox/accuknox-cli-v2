@@ -19,7 +19,7 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 	} else {
 		// TODO: publish release JSON as OCI artifact to remove dependency
 		// on needing to build knoxctl again and again
-		return fmt.Errorf("Unknown image tag %s", releaseVersion)
+		return fmt.Errorf("unknown image tag %s", releaseVersion)
 	}
 	cc.RATConfigObject.EnableVMScan = true
 	cc.AgentsVersion = releaseVersion
@@ -29,11 +29,16 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 	cc.RATConfigObject.ClusterID = clusterID
 	cc.RATConfigObject.ClusterName = clusterName
 	cc.RATConfigObject.Label = label
-	if schedule == "" {
-		cc.RATConfigObject.Schedule = cc.GetDefaultRatSchedule()
+
+	if cc.Mode == VMMode_Systemd {
+		cc.RATConfigObject.Schedule, err = ConvertCronToSystemd(schedule)
+		if err != nil {
+			return err
+		}
 	} else {
 		cc.RATConfigObject.Schedule = schedule
 	}
+
 	cc.RATConfigObject.Profile = profile
 	cc.RATConfigObject.Benchmark = benchmark
 

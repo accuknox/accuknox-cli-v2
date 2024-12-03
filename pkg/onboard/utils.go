@@ -501,17 +501,6 @@ func splitLast(fullString, seperator string) []string {
 	return []string{fullString[:colonIdx], fullString[colonIdx+1:]}
 }
 
-func (cc *ClusterConfig) GetDefaultRatSchedule() string {
-	// schedule format for daily jobs
-	switch cc.Mode {
-	case VMMode_Docker:
-		return "0 0 * * *"
-	case VMMode_Systemd:
-		return "*-*-* 00:00:00"
-	default:
-		return ""
-	}
-}
 func CheckRATSystemdInstallation() (bool, error) {
 
 	// check RAT service and Timer file
@@ -523,7 +512,7 @@ func CheckRATSystemdInstallation() (bool, error) {
 			// found service or timer file means we have RAT installation as systemd
 			return true, nil
 		} else if !os.IsNotExist(err) {
-			return false, fmt.Errorf("Error checking service file %s: %v", filePath, err)
+			return false, fmt.Errorf("error checking service file %s: %v", filePath, err)
 		}
 	}
 	return false, nil
