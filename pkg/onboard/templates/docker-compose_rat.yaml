@@ -5,7 +5,8 @@ services:
     image: {{.RATImage}}
     container_name: accuknox-rat
     restart: always
-    pid: "host"  
+    pid: "host" 
+    network_mode: "host" 
     volumes:
       - /tmp:/host/tmp
       - /:/host:ro
