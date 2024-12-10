@@ -1,0 +1,22 @@
+services:
+  rat:
+    profiles:
+      - "accuknox-agents"
+    image: {{.RATImage}}
+    container_name: accuknox-rat
+    restart: always
+    pid: "host"  
+    volumes:
+      - /tmp:/host/tmp
+      - /:/host:ro
+    environment:
+      - CRON_SCHEDULE={{.Schedule}}
+      - PROFILE={{.Profile}}
+      - BENCHMARK={{.Benchmark}}
+      - AUTH_TOKEN={{.AuthToken}}
+      - URL={{.Url}}
+      - TENANT_ID={{.TenantID}}
+      - CLUSTER_NAME={{.ClusterName}}
+      - CLUSTER_ID={{.ClusterID}}
+      - LABEL={{.Label}}
+    entrypoint: ["/rat/rat-cronjob.sh"]   

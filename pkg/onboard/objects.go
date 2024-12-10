@@ -10,4 +10,7 @@ var (
 
 	//go:embed templates/docker-compose_node.yaml
 	workerNodeComposeFileTemplate string
+
+	//go:embed templates/docker-compose_rat.yaml
+	ratComposeFileTemplate string
 )

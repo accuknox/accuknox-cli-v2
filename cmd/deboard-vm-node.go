@@ -47,7 +47,19 @@ var deboardNodeCmd = &cobra.Command{
 		default:
 			return fmt.Errorf(color.RedString("vm mode: %s invalid, accepted values (docker/systemd)", vmMode))
 		}
-
+		if disableVMScan {
+			fmt.Println(color.BlueString("Removing RAT installation if it exists"))
+			err := deboard.UninstallRAT()
+			if err != nil {
+				if os.IsNotExist(err) {
+					fmt.Println(color.BlueString("RAT Installation not found"))
+				} else {
+					return fmt.Errorf("error removing RAT installation:%s", err.Error())
+				}
+			} else {
+				fmt.Println(color.GreenString("RAT uninstalled successfully."))
+			}
+		}
 		fmt.Println(color.GreenString("Worker node deboarded successfully."))
 		return nil
 	},

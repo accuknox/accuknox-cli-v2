@@ -1,0 +1,21 @@
+[Unit]
+Description=accuknox-rat-service
+Wants=accuknox-rat.timer
+
+[Service]
+User=root
+KillMode=process
+ExecStart=/bin/bash -c 'for benchmark in $(echo "{{.Benchmark}}" | tr "," "\n"); do \
+  /usr/local/bin/rat analyze \
+    --profile {{.Profile}} \
+    --benchmark "$benchmark" \
+    --auth-token {{.AuthToken}} \
+    --url {{.Url}} \
+    --tenant-id {{.TenantID}} \
+    --cluster-name {{.ClusterName}} \
+    {{- if .ClusterID }}{{"\n"}} --cluster-id {{.ClusterID}} \{{ end }} \
+    --label {{.Label}} \
+    --json > /var/accuknox-rat_"$benchmark"_result.json 2>&1; \
+done'
+[Install]
+WantedBy=multi-user.target

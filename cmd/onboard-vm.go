@@ -15,11 +15,13 @@ var (
 
 	// for systemd mode
 	vmAdapterTag string
+	ratTag       string
 
 	kubeArmorImage          string
 	kubeArmorInitImage      string
 	kubeArmorVMAdapterImage string
 	imagePullPolicy         string
+	ratImage                string
 
 	preserveUpstream bool
 
@@ -40,6 +42,18 @@ var (
 
 	skipBTF           bool
 	systemMonitorPath string
+
+	//flags for RAT scan
+	enableVMScan bool
+	profile      string
+	benchmark    string
+	schedule     string
+	authToken    string
+	url          string
+	tenantID     string
+	clusterName  string
+	clusterID    string
+	label        string
 
 	// different meaning for both worker node but
 	// declared here as common global variables
@@ -126,8 +140,20 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringArrayVar(&tls.IPs, "ips", []string{}, "List of IPs for TLS certificates")
 
 	onboardVMCmd.MarkFlagsMutuallyExclusive("tls-gen", "ca-path")
-
 	onboardVMCmd.PersistentFlags().StringVar(&sumengineVisibility, "sumengine-viz", "process,network,file", "Events other than these won't be processed by summary engine. Possible values: \"none\" or any combo of [process,network,file]")
+
+	// flags for RAT
+	onboardVMCmd.PersistentFlags().BoolVarP(&enableVMScan, "enable-vmscan", "", false, " Set to true to install RAT along with other kubearmor and accuknox-agents ")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&profile), "profile", "", "ubuntu,rhel")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&benchmark), "benchmark", "", "security benchmark (stig,soc2)")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&schedule), "schedule", "", "schedule for RAT to run")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&authToken), "auth-token", "", "authentication token")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&tenantID), "tenant-id", "", "tenant id of the cluster")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterName), "cluster-name", "", "cluster name")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterID), "cluster-id", "", "cluster id")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&url), "url", "", "url")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&label), "label", "", "label")
+	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "auth-token", "url", "tenant-id", "cluster-name", "label", "schedule")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

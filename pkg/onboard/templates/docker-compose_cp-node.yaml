@@ -1,5 +1,3 @@
-version: '3.8'
-
 volumes:
   spire-vol:
     name: spire-vol
@@ -419,7 +417,7 @@ services:
       - "{{.ConfigPath}}/rabbitmq/certificate.pem:/etc/ssl/server_certificate.pem"
       - "{{.ConfigPath}}/rabbitmq/key.pem:/etc/ssl/server_key.pem"
   {{- end }}
-
+ 
 networks:
   accuknox-net:
     name: accuknox-net

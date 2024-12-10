@@ -112,7 +112,6 @@ var cpNodeCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf(color.RedString("failed to onboard control plane node: %s", err.Error()))
 			}
-
 		case onboard.VMMode_Docker:
 			err = onboardConfig.InitializeControlPlane()
 			if err != nil {
@@ -121,6 +120,16 @@ var cpNodeCmd = &cobra.Command{
 
 		default:
 			return fmt.Errorf(color.RedString("vm mode: %s invalid, accepted values (docker/systemd)", vmMode))
+		}
+		if enableVMScan {
+			err := vmConfig.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
+			if err != nil {
+				fmt.Println(color.RedString("error initializing RAT config", vmMode))
+			}
+			err = onboardConfig.InstallRAT()
+			if err != nil {
+				fmt.Println(color.RedString("error installing RAT in %s mode /n", vmMode))
+			}
 		}
 
 		fmt.Println(color.GreenString(

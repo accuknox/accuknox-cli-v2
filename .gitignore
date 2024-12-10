@@ -34,3 +34,4 @@ knoxctl
 *.json
 *.md
 *.yaml
+!docker-compose_rat.yaml

@@ -2,10 +2,12 @@ package deboard
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
@@ -32,6 +34,7 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 
 		verifyInstallation := false
 		composeFilePath := filepath.Join(configPath, "docker-compose.yaml")
+
 		_, err = os.Stat(composeFilePath)
 		if err != nil && os.IsNotExist(err) {
 			// for handling cases when users might have deleted the docker compose file
@@ -161,4 +164,97 @@ func removeInstalledObjects(installedContainers map[string]dockerTypes.Container
 	}
 
 	return nil
+}
+
+func UninstallRAT() error {
+	//check for RAT systemd installation
+
+	exists, err := onboard.CheckRATSystemdInstallation()
+	if err != nil {
+		fmt.Println(color.RedString("error checking RAT systemd installation"))
+	}
+	if exists {
+		fmt.Println(color.BlueString("RAT found running in systemd mode"))
+		ratFiles := []string{"accuknox-rat.service", "accuknox-rat.timer"}
+		for _, file := range ratFiles {
+			err := onboard.StopSystemdService(file, false, true)
+			if err != nil {
+				fmt.Printf("error stopping %s: %s\n", file, err)
+				return err
+			}
+			onboard.Deletedir(cm.RATPath)
+		}
+		return err
+	}
+
+	//check for RAT docker installation
+	ratObj, err := getRATContainerObject()
+	if err != nil {
+		fmt.Printf("error:%s", err.Error())
+	}
+	if len(ratObj) > 0 {
+		fmt.Println(color.BlueString("RAT docker installation found"))
+		configPath, err := cm.GetDefaultConfigPath()
+		if err != nil {
+			return err
+		}
+		composeFilePath := filepath.Join(configPath, "docker-compose_rat.yaml")
+		_, err = os.Stat(composeFilePath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				err = removeInstalledObjects(ratObj, nil)
+				if err != nil {
+					fmt.Println("error", err.Error())
+				}
+				return err
+			} else {
+				return err
+			}
+		}
+		composeCmd, _, err := onboard.GetComposeCommand()
+		if err != nil {
+			return err
+		}
+		_, err = onboard.ExecComposeCommand(true, false, composeCmd,
+			"-f", composeFilePath, "--profile", "accuknox-agents", "down")
+		if err != nil {
+			return fmt.Errorf("error: %s", err.Error())
+		}
+		err = os.Remove(composeFilePath)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		// delete configdir if it is empty(for cases if only RAT is installed)
+		err = os.Remove(configPath)
+		if err != nil {
+			if !os.IsNotExist(err) && !errors.Is(err, syscall.ENOTEMPTY) && !errors.Is(err, syscall.EEXIST) {
+				return err
+			}
+		}
+		return nil
+	}
+	return os.ErrNotExist
+}
+
+func getRATContainerObject() (map[string]dockerTypes.Container, error) {
+
+	installedContainers := make(map[string]dockerTypes.Container, 0)
+	dockerClient, err := onboard.CreateDockerClient()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create docker client. %s", err.Error())
+	}
+	containerList, err := dockerClient.ContainerList(context.Background(), dockerTypes.ContainerListOptions{
+		All: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to list containers. %s", err.Error())
+	}
+	for _, container := range containerList {
+		containerName := strings.TrimPrefix(container.Names[0], "/")
+		if containerName == "accuknox-rat" {
+			installedContainers[containerName] = container
+			return installedContainers, nil
+		}
+	}
+	return nil, nil
 }

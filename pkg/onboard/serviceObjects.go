@@ -31,4 +31,10 @@ var (
 
 	//go:embed templates/systemdTemplates/hardening-agent.service
 	hardeningAgentFile string
+
+	//go:embed templates/systemdTemplates/rat.service
+	ratServiceFile string
+
+	//go:embed templates/systemdTemplates/rat.timer
+	ratTimerFile string
 )

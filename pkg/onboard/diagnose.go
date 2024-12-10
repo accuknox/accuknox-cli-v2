@@ -24,6 +24,7 @@ const (
 	summaryEngineName  = "summary-engine"
 	discoveryName      = "discovery"
 	hardeningAgentName = "hardening-agent"
+	ratName            = "accuknox-rat"
 )
 
 var (

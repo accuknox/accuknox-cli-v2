@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/coreos/go-systemd/v22/dbus"
 	"github.com/fatih/color"
@@ -291,17 +292,34 @@ func getSystemdAgentsKmuxConfigs() []SystemdServiceObject {
 }
 
 // placeServiceFiles copies service files
-func (cc *ClusterConfig) placeServiceFiles(workerNode bool) error {
+func (cc *ClusterConfig) placeServiceFiles() error {
 	for _, obj := range cc.SystemdServiceObjects {
-		if workerNode && !obj.InstallOnWorkerNode {
+		if cc.WorkerNode && !obj.InstallOnWorkerNode {
 			continue
 		}
 
 		if obj.ServiceTemplateString != "" {
-			_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, interface{}(nil))
-			if err != nil {
-				return err
+
+			if obj.AgentName == cm.RAT {
+				//place service file for RAT
+				cc.TemplateFuncs = sprig.GenericFuncMap()
+				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, cc.RATConfigObject)
+				if err != nil {
+					return err
+				}
+				//place timer file for RAT
+				_, err = copyOrGenerateFile("", cm.SystemdDir, "accuknox-rat.timer", cc.TemplateFuncs, obj.TimerTemplateString, cc.RATConfigObject)
+				if err != nil {
+					return err
+				}
+
+			} else {
+				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, interface{}(nil))
+				if err != nil {
+					return err
+				}
 			}
+
 		}
 	}
 
@@ -466,7 +484,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 		fmt.Printf(color.CyanString("%s version %s downloaded successfully\n\n", obj.AgentName, packageMeta[1]))
 	}
 
-	err = cc.placeServiceFiles(cc.WorkerNode)
+	err = cc.placeServiceFiles()
 	if err != nil {
 		//fmt.Println(err)
 		return err
@@ -610,9 +628,8 @@ func CheckInstalledSystemdServices() ([]string, error) {
 	allAgents := []string{"kubearmor", cm.KubeArmorVMAdapter, cm.RelayServer, cm.PEAAgent, cm.SIAAgent, cm.FeederService, cm.SpireAgent, cm.SummaryEngine, cm.DiscoverAgent, cm.HardeningAgent}
 	installedAgents := make([]string, 0)
 
-	systemdPath := "/usr/lib/systemd/system/"
 	for _, agent := range allAgents {
-		filePath := systemdPath + agent + ".service"
+		filePath := cm.SystemdPath + agent + ".service"
 		if _, err := os.Stat(filePath); err == nil {
 			// found service file means we have agents as systemd service
 			installedAgents = append(installedAgents, agent)
@@ -623,4 +640,38 @@ func CheckInstalledSystemdServices() ([]string, error) {
 	}
 
 	return installedAgents, nil
+}
+
+// ConvertCronToSystemd converts a crontab schedule into a systemd timer schedule format.
+func ConvertCronToSystemd(schedule string) (string, error) {
+
+	fields := strings.Fields(schedule)
+
+	// Validate that the schedule has exactly 5 fields.
+	if len(fields) != 5 {
+		return "", fmt.Errorf("invalid schedule format: expected 5 fields (minute, hour, day, month, weekday)")
+	}
+
+	weekDays := map[string]string{
+		"0": "Sun",
+		"1": "Mon",
+		"2": "Tue",
+		"3": "Wed",
+		"4": "Thu",
+		"5": "Fri",
+		"6": "Sat",
+		"7": "Sun",
+	}
+
+	minute := fields[0]
+	hour := fields[1]
+	day := fields[2]
+	month := fields[3]
+	weekDay := weekDays[fields[4]]
+
+	// Construct the systemd schedule using the template.
+	scheduleTemplate := "%s *-%s-%s %s:%s:00"
+	finalSchedule := fmt.Sprintf(scheduleTemplate, weekDay, month, day, hour, minute)
+
+	return finalSchedule, nil
 }

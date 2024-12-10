@@ -243,7 +243,6 @@ func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (
 	} else {
 		return "", fmt.Errorf("unknown compose command")
 	}
-
 	if setStdOut {
 		composeCmd.Stdout = os.Stdout
 		composeCmd.Stderr = os.Stderr
@@ -253,7 +252,6 @@ func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (
 			if exitErr, ok := err.(*exec.ExitError); ok && len(exitErr.Stderr) > 0 {
 				return "", errors.New(string(exitErr.Stderr))
 			}
-
 			return "", err
 		}
 
@@ -332,7 +330,6 @@ func (cc *ClusterConfig) ValidateEnv() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Error: %s. Please install docker-compose %s+", err.Error(), cm.MinDockerComposeVersion)
 	}
-
 	cc.composeCmd = composeCmd
 	cc.composeVersion = composeVersion
 
@@ -502,4 +499,21 @@ func splitLast(fullString, seperator string) []string {
 	}
 
 	return []string{fullString[:colonIdx], fullString[colonIdx+1:]}
+}
+
+func CheckRATSystemdInstallation() (bool, error) {
+
+	// check RAT service and Timer file
+	files := []string{"accuknox-rat.service", "accuknox-rat.timer"}
+
+	for _, file := range files {
+		filePath := cm.SystemdPath + file
+		if _, err := os.Stat(filePath); err == nil {
+			// found service or timer file means we have RAT installation as systemd
+			return true, nil
+		} else if !os.IsNotExist(err) {
+			return false, fmt.Errorf("error checking service file %s: %v", filePath, err)
+		}
+	}
+	return false, nil
 }

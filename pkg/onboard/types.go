@@ -73,6 +73,7 @@ type ClusterConfig struct {
 	DiscoverImage             string
 	SumEngineImage            string
 	HardeningAgentImage       string
+	RATImage                  string
 
 	CPNodeAddr string
 
@@ -122,6 +123,10 @@ type ClusterConfig struct {
 	SystemdServiceObjects []SystemdServiceObject
 	DeploySumengine       bool
 	RMQServer             string
+
+	// Risk assessment scanning
+	EnableVMScan    bool
+	RATConfigObject RATConfig
 
 	PlainHTTP   bool
 	InsecureTLS bool
@@ -275,6 +280,9 @@ type TemplateConfigArgs struct {
 	AlertsTopic     string
 	PolicyV1Topic   string
 	SummaryV2Topic  string
+
+	// rat configs
+	RATConfigObject RATConfig
 }
 
 type KmuxConfigTemplateArgs struct {
@@ -312,6 +320,7 @@ type SystemdServiceObject struct {
 	AgentDir              string
 	ConfigFilePath        string
 	ServiceTemplateString string
+	TimerTemplateString   string
 	ConfigTemplateString  string
 
 	// TODO: Package instead of just tag
@@ -326,6 +335,20 @@ type SystemdServiceObject struct {
 	// map of file name and path
 	ExtraFilePathSrc  map[string]string
 	ExtraFilePathDest map[string]string
+}
+
+type RATConfig struct {
+	RATImage     string
+	EnableVMScan bool
+	AuthToken    string
+	Url          string
+	TenantID     string
+	ClusterName  string
+	ClusterID    string
+	Label        string
+	Schedule     string
+	Benchmark    string
+	Profile      string
 }
 
 var (

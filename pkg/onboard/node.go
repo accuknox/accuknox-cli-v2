@@ -156,6 +156,9 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	jc.TCArgs.SummaryKmuxConfig = common.KmuxSummaryFileName
 	jc.TCArgs.PolicyKmuxConfig = common.KmuxPolicyFileName
 
+	if jc.EnableVMScan {
+		jc.TCArgs.RATConfigObject = jc.RATConfigObject
+	}
 	return nil
 }
 
@@ -171,6 +174,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	if err != nil {
 		return err
 	}
+
 	// configs specific to docker mode of installation
 
 	jc.TCArgs.KubeArmorImage = jc.KubeArmorImage
