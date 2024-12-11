@@ -136,7 +136,7 @@ func (cc *ClusterConfig) InstallRAT() error {
 		if err != nil {
 			return err
 		}
-		err = StartSystemdService(obj.ServiceName)
+		err = StartSystemdService("accuknox-rat.timer")
 		if err != nil {
 			return err
 		}
