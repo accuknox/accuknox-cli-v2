@@ -47,6 +47,7 @@ var vmScanCmd = &cobra.Command{
 }
 
 func init() {
+	vmScanCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "agents release version to use")
 
 	// all flags are optional
 	onboardVMCmd.AddCommand(vmScanCmd)
