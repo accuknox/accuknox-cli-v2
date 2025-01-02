@@ -16,7 +16,9 @@
     "sumengine_tag": "v0.1.29",
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.29",
-    "hardening_agent_image": "accuknox/discovery-engine-hardening"
+    "hardening_agent_image": "accuknox/discovery-engine-hardening",
+    "rat_tag": "v0.3.3",
+    "rat_image": "accuknox/rat"
   },
   "v0.2.10": {
     "creation_time": "1707727047",
@@ -36,7 +38,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.11": {
@@ -57,7 +59,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.10-patch": {
@@ -78,7 +80,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.3.0": {
@@ -99,7 +101,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.3.1": {
@@ -120,7 +122,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.3.3": {
@@ -141,7 +143,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.4.0": {
@@ -162,7 +164,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.4.0-rmq": {
@@ -183,7 +185,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.8": {
@@ -204,7 +206,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.3.2": {
@@ -225,7 +227,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.12": {
@@ -246,7 +248,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.0": {
@@ -267,7 +269,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.4.0-patch": {
@@ -288,7 +290,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.1": {
@@ -309,7 +311,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.2": {
@@ -330,7 +332,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.3": {
@@ -351,7 +353,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.13": {
@@ -373,7 +375,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.13-real": {
@@ -413,7 +415,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.6": {
@@ -434,7 +436,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.7": {
@@ -455,7 +457,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.4": {
@@ -476,7 +478,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.7-demo": {
@@ -497,7 +499,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.5": {
@@ -518,7 +520,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.7-patch": {
@@ -539,7 +541,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.4.0-test",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.8": {
@@ -560,7 +562,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.15": {
@@ -581,7 +583,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.9": {
@@ -602,7 +604,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.16": {
@@ -623,7 +625,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.10": {
@@ -644,7 +646,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.17": {
@@ -666,7 +668,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.2.17-real": {
@@ -706,7 +708,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.5.11": {
@@ -727,7 +729,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.0-patch": {
@@ -748,7 +750,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.1": {
@@ -769,7 +771,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.2": {
@@ -790,7 +792,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.3": {
@@ -811,7 +813,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.27",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.4": {
@@ -832,7 +834,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.28",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.5": {
@@ -853,7 +855,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.29",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.6": {
@@ -874,7 +876,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.29",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.0": {
@@ -895,7 +897,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.29",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.7": {
@@ -916,7 +918,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.29",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.1": {
@@ -937,7 +939,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.30",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.2": {
@@ -958,7 +960,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.30",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.3": {
@@ -979,7 +981,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.30",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.4": {
@@ -1000,7 +1002,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.32",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.5": {
@@ -1021,7 +1023,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.6": {
@@ -1042,7 +1044,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.7": {
@@ -1063,7 +1065,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.8-test": {
@@ -1084,7 +1086,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.8": {
@@ -1105,7 +1107,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.7-test": {
@@ -1126,7 +1128,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.8-test-1": {
@@ -1147,7 +1149,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.6.9": {
@@ -1168,7 +1170,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.1.33",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.8.0": {
@@ -1189,7 +1191,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.2.1",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.7.9": {
@@ -1210,7 +1212,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.2.1",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.8.1": {
@@ -1231,7 +1233,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.2.4",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.8.2": {
@@ -1252,14 +1254,14 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.2.5",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   },
   "v0.8.3": {
     "creation_time": "1734696216",
     "kubearmor_tag": "v1.4.8",
     "kubearmor_relay_tag": "v0.0.4",
-    "kubearmor_vm_adapter_tag": "v0.1.4",
+    "kubearmor_vm_adapter_tag": "v0.1.5",
     "spire_agent_tag": "v1.9.4",
     "sia_tag": "v0.7.3",
     "sia_image": "accuknox/shared-informer-agent",
@@ -1273,7 +1275,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.2.5",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.3.2",
+    "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
   }
 }

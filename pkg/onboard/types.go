@@ -338,6 +338,7 @@ type SystemdServiceObject struct {
 }
 
 type RATConfig struct {
+	Hostname     string
 	RATImage     string
 	EnableVMScan bool
 	AuthToken    string

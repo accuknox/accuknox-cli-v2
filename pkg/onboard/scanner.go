@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
@@ -29,6 +30,10 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 	cc.RATConfigObject.ClusterID = clusterID
 	cc.RATConfigObject.ClusterName = clusterName
 	cc.RATConfigObject.Label = label
+	cc.RATConfigObject.Hostname, err = os.Hostname()
+	if err != nil {
+		return err
+	}
 
 	if cc.Mode == VMMode_Systemd {
 		cc.RATConfigObject.Schedule, err = ConvertCronToSystemd(schedule)
