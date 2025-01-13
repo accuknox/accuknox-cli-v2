@@ -22,7 +22,7 @@ jobs:
           knoxctl_version: '0.6.2'
           kubearmor_version: '1.3.8'
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v4
         with:
           go-version-file: "go.mod"
 
