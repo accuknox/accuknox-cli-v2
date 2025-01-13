@@ -9,6 +9,7 @@ var (
 	clusterType onboard.ClusterType
 	vmMode      onboard.VMMode
 	tls         onboard.TLS
+	splunk      onboard.SplunkConfig
 
 	kubearmorVersion string
 	releaseVersion   string
@@ -154,6 +155,16 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&url), "url", "", "url")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&label), "label", "", "label")
 	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "auth-token", "url", "tenant-id", "cluster-name", "label", "schedule")
+
+	// splunk flags
+	onboardVMCmd.PersistentFlags().BoolVar(&splunk.Enabled, "splunk", false, "enable Splunk")
+	onboardVMCmd.PersistentFlags().StringVar(&splunk.Url, "splunk-url", "", "Splunk url")
+	onboardVMCmd.PersistentFlags().StringVar(&splunk.Token, "splunk-token", "", "Splunk token")
+	onboardVMCmd.PersistentFlags().StringVar(&splunk.Index, "splunk-index", "", "Splunk index")
+	onboardVMCmd.PersistentFlags().StringVar(&splunk.Source, "splunk-source", "", "Splunk source")
+	onboardVMCmd.PersistentFlags().StringVar(&splunk.SourceType, "splunk-sourcetype", "", "Splunk sourcetype")
+	onboardVMCmd.PersistentFlags().StringVar(&splunk.Certificate, "splunk-cert", "", "Splunk certificate in base64 encoded format")
+	onboardVMCmd.PersistentFlags().BoolVar(&splunk.SkipTls, "splunk-skip-tls", false, "Skip tls verification")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

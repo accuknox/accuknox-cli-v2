@@ -15,6 +15,7 @@ import (
 	"text/template"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
+	se_splunk "github.com/accuknox/dev2/sumengine/pkg/sumengine/kubearmor"
 	"github.com/docker/docker/client"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/mod/semver"
@@ -530,4 +531,8 @@ func CheckRATSystemdInstallation() (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func validateSplunkCredential(splunkConfig SplunkConfig) error {
+	return se_splunk.ValidateSplunkCredentials(splunkConfig.Url, splunkConfig.Token, splunkConfig.Source, splunkConfig.SourceType, splunkConfig.Index, splunkConfig.Certificate, splunkConfig.SkipTls)
 }

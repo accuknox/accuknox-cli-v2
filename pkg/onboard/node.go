@@ -207,6 +207,15 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		}
 	}
 
+	jc.TCArgs.SplunkConfigObject = jc.Splunk
+
+	if jc.TCArgs.SplunkConfigObject.Enabled {
+		if err := validateSplunkCredential(jc.TCArgs.SplunkConfigObject); err != nil {
+			return err
+		}
+
+	}
+
 	// write compose file
 	composeFilePath, err := copyOrGenerateFile(jc.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, workerNodeComposeFileTemplate, jc.TCArgs)
 	if err != nil {

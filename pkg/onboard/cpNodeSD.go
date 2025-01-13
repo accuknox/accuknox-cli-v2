@@ -35,6 +35,12 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	ic.populateCommonArgs()
 
+	if ic.TCArgs.SplunkConfigObject.Enabled {
+		if err := validateSplunkCredential(ic.TCArgs.SplunkConfigObject); err != nil {
+			return err
+		}
+	}
+
 	// initialize sprig for templating
 	ic.TemplateFuncs = sprig.GenericFuncMap()
 

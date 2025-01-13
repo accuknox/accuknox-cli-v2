@@ -20,9 +20,15 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix string, tls TLS, enableHostPolicyDiscoery bool) (*ClusterConfig, error) {
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix string, tls TLS, enableHostPolicyDiscoery bool, splunk SplunkConfig) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
+
+	if splunk.Enabled {
+		if err := validateSplunkCredential(splunk); err != nil {
+			return nil, err
+		}
+	}
 
 	// check if a config path is given by user
 	if userConfigPath != "" {
@@ -331,6 +337,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		}
 	}
 	cc.Tls = tls
+	cc.Splunk = splunk
 
 	return cc, nil
 }

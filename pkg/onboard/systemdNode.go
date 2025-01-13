@@ -45,6 +45,14 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		}
 	}
 
+	jc.TCArgs.SplunkConfigObject = jc.Splunk
+
+	if jc.TCArgs.SplunkConfigObject.Enabled {
+		if err := validateSplunkCredential(jc.TCArgs.SplunkConfigObject); err != nil {
+			return err
+		}
+	}
+
 	// config services
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
 		ReleaseVersion: jc.AgentsVersion,

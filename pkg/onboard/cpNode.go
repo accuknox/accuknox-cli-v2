@@ -210,6 +210,12 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	ic.populateCommonArgs()
 
+	if ic.TCArgs.SplunkConfigObject.Enabled {
+		if err := validateSplunkCredential(ic.TCArgs.SplunkConfigObject); err != nil {
+			return err
+		}
+	}
+
 	// initialize sprig for templating
 	sprigFuncs := sprig.GenericFuncMap()
 
@@ -268,6 +274,8 @@ func (ic *InitConfig) populateCommonArgs() {
 	ic.TCArgs.StateEventTopic = getTopicName(ic.RMQTopicPrefix, "state-event")
 	ic.TCArgs.PolicyV1Topic = getTopicName(ic.RMQTopicPrefix, "policy-v1")
 	ic.TCArgs.SummaryV2Topic = getTopicName(ic.RMQTopicPrefix, "summary-v2")
+
+	ic.TCArgs.SplunkConfigObject = ic.Splunk
 
 }
 

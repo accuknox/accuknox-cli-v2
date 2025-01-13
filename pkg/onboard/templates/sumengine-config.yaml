@@ -62,3 +62,14 @@ summary-engine:
     enable: false
   tls:
     enabled: {{.TlsEnabled}}
+  # splunk config
+  splunk:
+    enabled: {{.SplunkConfigObject.Enabled}}
+    url: {{.SplunkConfigObject.Url}}
+    token: {{.SplunkConfigObject.Token}}
+    source: {{.SplunkConfigObject.Source}}
+    sourcetype: {{.SplunkConfigObject.SourceType}}
+    index: {{.SplunkConfigObject.Index}}
+    certificate: {{.SplunkConfigObject.Certificate}}
+    skipTls: {{.SplunkConfigObject.SkipTls}}
+    maxRetries: 3

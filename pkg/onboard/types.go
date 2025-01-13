@@ -138,7 +138,8 @@ type ClusterConfig struct {
 
 	RMQTopicPrefix string `json:"rmq_topic_prefix,omitempty"`
 
-	Tls TLS `json:"tls,omitempty"`
+	Tls    TLS          `json:"tls,omitempty"`
+	Splunk SplunkConfig `json:"splunk,omitempty"`
 }
 
 type InitConfig struct {
@@ -283,6 +284,9 @@ type TemplateConfigArgs struct {
 
 	// rat configs
 	RATConfigObject RATConfig `json:"-"`
+
+	// splunk config
+	SplunkConfigObject SplunkConfig `json:"-"`
 }
 
 type KmuxConfigTemplateArgs struct {
@@ -368,4 +372,15 @@ type TLS struct {
 	CommonName     string   `json:"common_name,omitempty"`
 	IPs            []string `json:"ips,omitempty"`
 	DNS            []string `json:"dns,omitempty"`
+}
+
+type SplunkConfig struct {
+	Enabled     bool
+	Url         string
+	Token       string
+	Source      string
+	SourceType  string
+	Index       string
+	Certificate string
+	SkipTls     bool
 }

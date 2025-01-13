@@ -120,10 +120,10 @@ var cpNodeCmd = &cobra.Command{
 			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
 			false, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumengineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
-			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, tls, enableHostPolicyDiscovery)
+			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, tls, enableHostPolicyDiscovery, splunk)
 		if err != nil {
 			errConfig := onboard.DumpConfig(vmConfig, configDumpPath)
-			if err != nil {
+			if errConfig != nil {
 				logger.Warn("Failed to create config dump at %s: %s", configDumpPath, errConfig.Error())
 			}
 
