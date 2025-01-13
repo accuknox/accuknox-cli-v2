@@ -24,7 +24,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version-file: "accuknox-cli-v2/go.mod"
+          go-version: "1.22"
 
       - name: Setup GH Token
         env:
