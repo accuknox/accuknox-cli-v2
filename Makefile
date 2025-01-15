@@ -56,15 +56,10 @@ gosec:
 ifeq (, $(shell which gosec))
 	@{ \
 	set -e ;\
-	GOSEC_TMP_DIR=$$(mktemp -d) ;\
-	cd $$GOSEC_TMP_DIR ;\
-	mkdir bin ;\
-	go mod init tmp ;\
-	go install github.com/securego/gosec/v2/cmd/gosec@latest ;\
-	rm -rf $$GOSEC_TMP_DIR ;\
+	curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b  ~/.bin ;\
 	}
 endif
-	cd $(CURDIR); gosec ./...
+	cd $(CURDIR); ~/.bin/gosec ./...
 
 .PHONY: test 
 test: 

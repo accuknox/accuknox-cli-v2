@@ -27,7 +27,7 @@ jobs:
         name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version-file: "accuknox-cli-v2/go.mod"
+          go-version-file: "go.mod"
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
