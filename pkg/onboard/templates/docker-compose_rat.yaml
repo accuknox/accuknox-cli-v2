@@ -1,3 +1,4 @@
+name: accuknox-rat
 services:
   rat:
     profiles:
