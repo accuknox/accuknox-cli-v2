@@ -9,10 +9,11 @@ watcher:
       protocolFamily:
       - AF_INET
       - AF_INET6
+      - BIND
+      - TCP
       operations:
       - CONNECT
       - ACCEPT
-      - BIND
     denyList:
       enabled: true
       urls:

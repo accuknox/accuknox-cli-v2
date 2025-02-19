@@ -1298,5 +1298,26 @@
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
     "rat_tag": "v0.3.3",
     "rat_image": "accuknox/rat"
+  },
+    "v0.9.3": {
+    "creation_time": "1736508314",
+    "kubearmor_tag": "v1.4.8",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.1.5",
+    "spire_agent_tag": "v1.9.4",
+    "sia_tag": "v0.7.5",
+    "sia_image": "accuknox/shared-informer-agent",
+    "pea_tag": "v0.6.5",
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.8.1",
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.2.8",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.2.8",
+    "sumengine_image": "accuknox/discovery-engine-sumengine",
+    "hardening_agent_tag": "v0.2.8",
+    "hardening_agent_image": "accuknox/discovery-engine-hardening",
+    "rat_tag": "v0.3.3",
+    "rat_image": "accuknox/rat"
   }
 }

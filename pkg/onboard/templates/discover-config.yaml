@@ -1,4 +1,3 @@
-
 discover:
   policy:
     host: {{.EnableHostPolicyDiscovery}}
@@ -28,5 +27,8 @@ discover:
     enable: false
   tls:
     enabled: {{.TlsEnabled}}
+  aggregation:
+    enabled: true
+    threshold: 10
 logging:
   level: info
