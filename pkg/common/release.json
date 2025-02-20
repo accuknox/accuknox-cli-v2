@@ -1,4 +1,4 @@
-{
+  {
   "v0.0.0": {
     "creation_time": "0",
     "kubearmor_tag": "v1.4.3",
@@ -1331,6 +1331,27 @@
     "pea_tag": "v0.6.4",
     "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.7.4",
+    "feeder_service_image": "accuknox/feeder-service",
+    "discover_tag": "v0.2.6",
+    "discover_image": "accuknox/discovery-engine-discover",
+    "sumengine_tag": "v0.2.6",
+    "sumengine_image": "accuknox/discovery-engine-sumengine",
+    "hardening_agent_tag": "v0.2.6",
+    "hardening_agent_image": "accuknox/discovery-engine-hardening",
+    "rat_tag": "v0.3.3",
+    "rat_image": "accuknox/rat"
+  },
+  "v0.8.7": {
+    "creation_time": "1740052058",
+    "kubearmor_tag": "v1.4.8",
+    "kubearmor_relay_tag": "v0.0.4",
+    "kubearmor_vm_adapter_tag": "v0.1.5",
+    "spire_agent_tag": "v1.9.4",
+    "sia_tag": "v0.7.4",
+    "sia_image": "accuknox/shared-informer-agent",
+    "pea_tag": "v0.6.4",
+    "pea_image": "accuknox/policy-enforcement-agent",
+    "feeder_service_tag": "v0.7.5",
     "feeder_service_image": "accuknox/feeder-service",
     "discover_tag": "v0.2.6",
     "discover_image": "accuknox/discovery-engine-discover",
