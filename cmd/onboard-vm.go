@@ -61,7 +61,11 @@ var (
 	rmqAddress string
 	nodeAddr   string
 
-	sumengineVisibility string
+	rmqConnectionName string
+
+	sumEngineVisibility  string
+	sumEngineCronTime    string
+	nodeStateRefreshTime int
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -125,6 +129,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&sumEngineImage, "sumengine-image", "", "summary-engine image to use")
 	onboardVMCmd.PersistentFlags().StringVar(&sumEngineVersionTag, "sumengine-version", "", "summary-engine version to use")
 
+	onboardVMCmd.PersistentFlags().StringVar(&sumEngineCronTime, "sumengine-cron-time", "15m", "cron time for summary-engine in minutes (default: 15m)")
+
 	onboardVMCmd.PersistentFlags().BoolVar(&tls.Enabled, "tls", false, "enable TLS for rabbitmq connection")
 	onboardVMCmd.PersistentFlags().BoolVar(&tls.Generate, "tls-gen", false, "generate TLS certificates for rabbitmq connection (generates CA, Cert, and Key)")
 	onboardVMCmd.PersistentFlags().StringVar(&tls.CaPath, "ca-path", "", "path to ca certificate file")
@@ -141,7 +147,7 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringArrayVar(&tls.IPs, "ips", []string{}, "List of IPs for TLS certificates")
 
 	onboardVMCmd.MarkFlagsMutuallyExclusive("tls-gen", "ca-path")
-	onboardVMCmd.PersistentFlags().StringVar(&sumengineVisibility, "sumengine-viz", "process,network,file", "Events other than these won't be processed by summary engine. Possible values: \"none\" or any combo of [process,network,file]")
+	onboardVMCmd.PersistentFlags().StringVar(&sumEngineVisibility, "sumengine-viz", "process,network,file", "Events other than these won't be processed by summary engine. Possible values: \"none\" or any combo of [process,network,file]")
 
 	// flags for RAT
 	onboardVMCmd.PersistentFlags().BoolVarP(&enableVMScan, "enable-vmscan", "", false, " Set to true to install RAT along with other kubearmor and accuknox-agents ")
@@ -165,6 +171,10 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&splunk.SourceType, "splunk-sourcetype", "", "Splunk sourcetype")
 	onboardVMCmd.PersistentFlags().StringVar(&splunk.Certificate, "splunk-cert", "", "Splunk certificate in base64 encoded format")
 	onboardVMCmd.PersistentFlags().BoolVar(&splunk.SkipTls, "splunk-skip-tls", false, "Skip tls verification")
+
+	onboardVMCmd.PersistentFlags().StringVar(&rmqConnectionName, "rmq-connection-name", "", "Rabbitmq connection name")
+
+	onboardVMCmd.PersistentFlags().IntVar(&nodeStateRefreshTime, "node-state-refresh-time", 10, "Refresh time for node state (default 10 minutes)")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

@@ -173,6 +173,7 @@ services:
     pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
+      - "--node-state-refresh={{.NodeStateRefreshTime}}"
       {{- if .TlsEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"

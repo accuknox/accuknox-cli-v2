@@ -2,6 +2,8 @@ kubearmor-addr: {{.KubeArmorURL}}
 
 relay-server-addr: {{.RelayServerURL}}
 
+node-state-refresh: {{.NodeStateRefreshTime}}
+
 {{- if .TlsEnabled }}
 tls: {{.TlsEnabled}}
 policy-topic: {{.PoliciesTopic}}

@@ -20,6 +20,7 @@ watcher:
       - "localhost"
       - "127.0.0.1"
       - "::1"
+      - "0.0.0.0"
       ports:
       - 53
     relay:
@@ -45,7 +46,7 @@ watcher:
 summary-engine:
   kubearmor:
     enabled: true
-    cron-interval: "0h15m00s"
+    cron-interval: {{.SumEngineCronTime}}
     threshold: 10000
     file-aggregation: true
     exclude-events:

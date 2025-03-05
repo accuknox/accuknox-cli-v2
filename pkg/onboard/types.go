@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"errors"
+	"time"
 
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
@@ -101,6 +102,8 @@ type ClusterConfig struct {
 	FileOperation    bool `json:"file_operation,omitempty"`
 	NetworkOperation bool `json:"network_operation,omitempty"`
 
+	SumEngineCronTime time.Duration `json:"sumengine_cron_time,omitempty"`
+
 	CIDR string `json:"cidr,omitempty"`
 
 	TemplateFuncs map[string]interface{} `json:"-"`
@@ -136,10 +139,12 @@ type ClusterConfig struct {
 	CaCert         string `json:"ca_cert,omitempty"`
 	RMQCredentials string `json:"rmq_credentials,omitempty"`
 
-	RMQTopicPrefix string `json:"rmq_topic_prefix,omitempty"`
+	RMQTopicPrefix    string `json:"rmq_topic_prefix,omitempty"`
+	RMQConnectionName string `json:"rmq_connection_name,omitempty"`
 
-	Tls    TLS          `json:"tls,omitempty"`
-	Splunk SplunkConfig `json:"splunk,omitempty"`
+	Tls                  TLS          `json:"tls,omitempty"`
+	Splunk               SplunkConfig `json:"splunk,omitempty"`
+	NodeStateRefreshTime int          `json:"node_state_refresh_time,omitempty"`
 }
 
 type InitConfig struct {
@@ -287,6 +292,10 @@ type TemplateConfigArgs struct {
 
 	// splunk config
 	SplunkConfigObject SplunkConfig `json:"-"`
+
+	SumEngineCronTime time.Duration `json:"sumengine_cron_time,omitempty"`
+
+	NodeStateRefreshTime int `json:"node_state_refresh_time,omitempty"`
 }
 
 type KmuxConfigTemplateArgs struct {
@@ -303,6 +312,7 @@ type KmuxConfigTemplateArgs struct {
 	ExchangeName    string `json:"exchange_name,omitempty"`
 	QueueName       string `json:"queue_name,omitempty"`
 	QueueDurability bool   `json:"queue_durability,omitempty"`
+	ConnectionName  string `json:"connection_name,omitempty"`
 }
 
 type TokenResponse struct {

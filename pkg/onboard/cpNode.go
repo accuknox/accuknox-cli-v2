@@ -135,10 +135,12 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 
 		EnableHostPolicyDiscovery: ic.EnableHostPolicyDiscovery,
 
-		ProcessOperation: ic.ProcessOperation,
-		FileOperation:    ic.FileOperation,
-		NetworkOperation: ic.NetworkOperation,
-		RATConfigObject:  ic.RATConfigObject,
+		ProcessOperation:     ic.ProcessOperation,
+		FileOperation:        ic.FileOperation,
+		NetworkOperation:     ic.NetworkOperation,
+		RATConfigObject:      ic.RATConfigObject,
+		SumEngineCronTime:    ic.SumEngineCronTime,
+		NodeStateRefreshTime: ic.NodeStateRefreshTime,
 	}
 	return nil
 }
@@ -208,6 +210,8 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	kmuxConfigArgs.RMQPassword = ic.TCArgs.RMQPassword
 	kmuxConfigArgs.TlsEnabled = ic.TCArgs.TlsEnabled
 
+	ic.TCArgs.NodeStateRefreshTime = ic.NodeStateRefreshTime
+
 	ic.populateCommonArgs()
 
 	if ic.TCArgs.SplunkConfigObject.Enabled {
@@ -242,10 +246,9 @@ func (ic *InitConfig) InitializeControlPlane() error {
 				return err
 			}
 		}
-
 		// generate kmux config only if it exists for this agent
 		if agentObj.kmuxConfigPath != "" {
-			populateKmuxArgs(&kmuxConfigArgs, agentObj.agentName, agentObj.kmuxConfigFileName, ic.TCArgs.RMQTopicPrefix, tcArgs.Hostname)
+			populateKmuxArgs(&kmuxConfigArgs, agentObj.agentName, agentObj.kmuxConfigFileName, ic.TCArgs.RMQTopicPrefix, tcArgs.Hostname, ic.RMQConnectionName)
 			if _, err := copyOrGenerateFile(ic.UserConfigPath, agentConfigPath, agentObj.kmuxConfigFileName, sprigFuncs, agentObj.kmuxConfigTemplateString, kmuxConfigArgs); err != nil {
 				return err
 			}
@@ -288,7 +291,7 @@ func populateAgentArgs(tcArgs *TemplateConfigArgs, configDir string) {
 	tcArgs.PolicyKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxPolicyFileName)
 }
 
-func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFile, prefix, hostname string) {
+func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFile, prefix, hostname, connName string) {
 
 	if prefix == "" {
 		prefix = "agents"
@@ -327,6 +330,15 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 			kmuxConfigArgs.QueueName = kmuxConfigArgs.QueueName[:common.MaxQueueLength]
 		}
 	}
+
+	if connName == "" {
+		if hostname == "" {
+			hostname, _ = os.Hostname()
+		}
+		connName = fmt.Sprintf("%s-%s-%s-%v", prefix, hostname, agentName, time.Now().Unix())
+		connName = strings.TrimPrefix(connName, "-")
+	}
+	kmuxConfigArgs.ConnectionName = connName
 }
 
 // runComposeCommand runs the Docker Compose command with the necessary arguments

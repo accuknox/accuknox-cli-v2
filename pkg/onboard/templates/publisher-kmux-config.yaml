@@ -19,3 +19,4 @@ rabbitmq:
     enabled: {{.TlsEnabled}}
     cert-file: {{.TlsCertFile}}
     skip-verify: false
+  connection-name: {{.ConnectionName}}

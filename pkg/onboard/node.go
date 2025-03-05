@@ -144,9 +144,11 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 
 		EnableHostPolicyDiscovery: jc.EnableHostPolicyDiscovery,
 
-		ProcessOperation: jc.ProcessOperation,
-		FileOperation:    jc.FileOperation,
-		NetworkOperation: jc.NetworkOperation,
+		ProcessOperation:     jc.ProcessOperation,
+		FileOperation:        jc.FileOperation,
+		NetworkOperation:     jc.NetworkOperation,
+		SumEngineCronTime:    jc.SumEngineCronTime,
+		NodeStateRefreshTime: jc.NodeStateRefreshTime,
 	}
 
 	jc.TCArgs.PoliciesKmuxConfig = common.KmuxPoliciesFileName
@@ -248,7 +250,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	for filePath, templateString := range kmuxConfigFileTemplateMap {
 		agentName, file := strings.Split(filePath, "/")[0], strings.Split(filePath, "/")[1]
 		populateAgentArgs(&jc.TCArgs, "kubearmor-vm-adapter")
-		populateKmuxArgs(&kmuxConfigArgs, agentName, file, jc.RMQTopicPrefix, jc.TCArgs.Hostname)
+		populateKmuxArgs(&kmuxConfigArgs, agentName, file, jc.RMQTopicPrefix, jc.TCArgs.Hostname, jc.RMQConnectionName)
 		if _, err := copyOrGenerateFile(jc.UserConfigPath, configPath, filePath, sprigFuncs, templateString, kmuxConfigArgs); err != nil {
 			return err
 		}

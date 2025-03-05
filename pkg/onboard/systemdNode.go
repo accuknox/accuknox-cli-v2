@@ -68,6 +68,9 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		if !obj.InstallOnWorkerNode {
 			continue
 		}
+		if obj.AgentName == cm.SummaryEngine && !jc.DeploySumengine {
+			continue
+		}
 
 		if obj.ConfigFilePath != "" {
 			// copy template args
@@ -84,10 +87,9 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 				return err
 			}
 		}
-
 		// copy kmux config
 		if obj.KmuxConfigPath != "" {
-			populateKmuxArgs(&kmuxConfigArgs, obj.AgentName, obj.KmuxConfigFileName, jc.RMQTopicPrefix, jc.TCArgs.Hostname)
+			populateKmuxArgs(&kmuxConfigArgs, obj.AgentName, obj.KmuxConfigFileName, jc.RMQTopicPrefix, jc.TCArgs.Hostname, jc.RMQConnectionName)
 			// copy generic config files
 			_, err = copyOrGenerateFile(jc.UserConfigPath, obj.AgentDir, obj.KmuxConfigFileName, jc.TemplateFuncs, obj.KmuxConfigTemplateString, kmuxConfigArgs)
 			if err != nil {
@@ -121,6 +123,9 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 	logger.Info2("\nEnabling services...")
 	for _, obj := range jc.SystemdServiceObjects {
 		if !obj.InstallOnWorkerNode {
+			continue
+		}
+		if obj.AgentName == cm.SummaryEngine && !jc.DeploySumengine {
 			continue
 		}
 		err = StartSystemdService(obj.ServiceName)

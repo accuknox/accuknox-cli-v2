@@ -15,9 +15,10 @@ rabbitmq:
     auto-delete: true
     durable: {{.QueueDurability}}
     name: {{.QueueName}}
-  consumer-tag: {{.ConsumerTag}}
+  consumer-tag: {{.ConsumerTag}}  
   debug: false
   tls: 
     enabled: {{.TlsEnabled}}
     cert-file: {{.TlsCertFile}}
     skip-verify: false
+  connection-name: {{.ConnectionName}}

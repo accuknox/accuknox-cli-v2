@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
@@ -20,7 +21,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix string, tls TLS, enableHostPolicyDiscoery bool, splunk SplunkConfig) (*ClusterConfig, error) {
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -52,6 +53,14 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	}
 
 	cc.RMQTopicPrefix = topicPrefix
+
+	cc.RMQConnectionName = connName
+
+	cronTime, cronErr := time.ParseDuration(sumEngineCronTime)
+	if cronErr != nil {
+		cronTime = 15 * time.Minute
+	}
+	cc.SumEngineCronTime = cronTime
 
 	// systemd or docker
 	cc.Mode = vmMode
@@ -145,7 +154,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		return nil, fmt.Errorf("Image pull policy %s unrecognized", imagePullPolicy)
 	}
 
-	cc.EnableHostPolicyDiscovery = enableHostPolicyDiscoery
+	cc.EnableHostPolicyDiscovery = enableHostPolicyDiscovery
 
 	// mode specific config
 	var err error
@@ -338,6 +347,8 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	}
 	cc.Tls = tls
 	cc.Splunk = splunk
+
+	cc.NodeStateRefreshTime = stateRefreshTime
 
 	return cc, nil
 }

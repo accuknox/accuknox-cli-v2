@@ -468,6 +468,10 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 
+		if obj.AgentName == cm.SummaryEngine && !cc.DeploySumengine {
+			continue
+		}
+
 		// stop existing service first otherwise errors are encountered due to
 		// busy binary
 		err := StopSystemdService(obj.ServiceName, true, false)

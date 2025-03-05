@@ -118,9 +118,9 @@ var cpNodeCmd = &cobra.Command{
 			feederVersionTag, sumEngineVersionTag, discoverVersionTag, hardeningAgentVersionTag, kubearmorVersion, releaseVersion, kubeArmorImage,
 			kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage,
 			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
-			false, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumengineVisibility, audit, block, hostAudit, hostBlock,
+			false, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
-			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, tls, enableHostPolicyDiscovery, splunk)
+			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime)
 		if err != nil {
 			errConfig := onboard.DumpConfig(vmConfig, configDumpPath)
 			if errConfig != nil {
