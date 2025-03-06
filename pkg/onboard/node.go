@@ -81,7 +81,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	}
 
 	// RMQServer that would be used by summary engine
-	if jc.DeploySumengine {
+	if jc.Tls.Enabled {
 		if jc.RMQServer == "" && jc.CPNodeAddr != "" {
 			cpNodeServerAddr, cpNodePort, err := parseURL(jc.CPNodeAddr)
 			if err != nil {

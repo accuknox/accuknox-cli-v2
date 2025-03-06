@@ -468,15 +468,15 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 
-		if obj.AgentName == cm.SummaryEngine && !cc.DeploySumengine {
-			continue
-		}
-
 		// stop existing service first otherwise errors are encountered due to
 		// busy binary
 		err := StopSystemdService(obj.ServiceName, true, false)
 		if err != nil {
 			logger.Warn("Failed to stop existing systemd service %s: %s", obj.ServiceName, err.Error())
+		}
+
+		if obj.AgentName == cm.SummaryEngine && !cc.DeploySumengine {
+			continue
 		}
 
 		logger.Print("Downloading Agent - %s | Image - %s", obj.AgentName, obj.AgentImage)
