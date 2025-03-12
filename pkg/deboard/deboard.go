@@ -187,7 +187,12 @@ func UninstallRAT() error {
 		}
 		return err
 	}
-
+	var cc onboard.ClusterConfig
+	// validate docker environment
+	_, err = cc.ValidateEnv()
+	if err != nil {
+		return os.ErrNotExist
+	}
 	//check for RAT docker installation
 	ratObj, err := getRATContainerObject()
 	if err != nil {
