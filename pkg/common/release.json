@@ -1456,7 +1456,7 @@
     "sia_image": "accuknox/shared-informer-agent",
     "pea_tag": "v0.6.5",
     "pea_image": "accuknox/policy-enforcement-agent",
-    "feeder_service_tag": "v0.8.1",
+    "feeder_service_tag": "v0.8.3",
     "feeder_service_image": "accuknox/feeder-service",
     "discover_tag": "v0.2.9",
     "discover_image": "accuknox/discovery-engine-discover",
@@ -1464,7 +1464,7 @@
     "sumengine_image": "accuknox/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.2.9",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
-    "rat_tag": "v0.4.0",
+    "rat_tag": "v0.4.1",
     "rat_image": "accuknox/rat"
   }
 }
