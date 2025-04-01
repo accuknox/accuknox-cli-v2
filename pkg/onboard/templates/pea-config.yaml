@@ -42,3 +42,9 @@ policy-watcher:
   enable: false
 
 deployMode: "vm"
+
+reconciler:
+  enable: true
+  interval: 30m
+
+log-level: info

@@ -398,7 +398,7 @@ func createPayload(onboardingToken, clusterName string) ([]byte, error) {
 	payload := map[string]interface{}{
 		"cluster_name": clusterName,
 		"token":        onboardingToken,
-		"type":         "vm",
+		"type":         "VM",
 	}
 
 	jsonPayload, err := json.Marshal(payload)
