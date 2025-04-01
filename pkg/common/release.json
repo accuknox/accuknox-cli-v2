@@ -1486,7 +1486,6 @@
     "hardening_agent_tag": "v0.2.9",
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
     "rat_tag": "v0.4.1",
->>>>>>> main
     "rat_image": "accuknox/rat"
   }
 }
