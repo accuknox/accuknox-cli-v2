@@ -69,14 +69,15 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			LogRotate:             cc.LogRotate,
 		},
 		{
-			AgentName:            cm.SpireAgent,
-			PackageName:          cm.SpireAgent,
-			ServiceName:          cm.SpireAgent + ".service",
-			AgentDir:             cm.SpireConfigPath,
-			ConfigFilePath:       "conf/agent/agent.conf",
-			ConfigTemplateString: spireAgentConfig,
-			AgentImage:           cc.SPIREAgentImage,
-			LogRotate:            cc.LogRotate,
+			AgentName:             cm.SpireAgent,
+			PackageName:           cm.SpireAgent,
+			ServiceName:           cm.SpireAgent + ".service",
+			AgentDir:              cm.SpireConfigPath,
+			ServiceTemplateString: spireAgentFile,
+			ConfigFilePath:        "conf/agent/agent.conf",
+			ConfigTemplateString:  spireAgentConfig,
+			AgentImage:            cc.SPIREAgentImage,
+			LogRotate:             cc.LogRotate,
 		},
 		{
 			AgentName:                cm.SIAAgent,
@@ -175,6 +176,11 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 		if obj.AgentName == cm.SummaryEngine && cc.WorkerNode && cc.DeploySumengine {
 			systemdObjects[i].InstallOnWorkerNode = true
 		}
+
+		if obj.AgentName == cm.SpireAgent && cc.WorkerNode && cc.SpireEnabled {
+			systemdObjects[i].InstallOnWorkerNode = true
+		}
+
 	}
 
 	cc.SystemdServiceObjects = systemdObjects

@@ -10,14 +10,17 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr string) *JoinConfig {
+func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr, spireHost, spireTrustBundleURL, joinToken string) *JoinConfig {
 	return &JoinConfig{
-		ClusterConfig:   cc,
-		KubeArmorAddr:   kubeArmorAddr,
-		RelayServerAddr: relayServerAddr,
-		SIAAddr:         siaAddr,
-		PEAAddr:         peaAddr,
-		HardenAddr:      hardenAddr,
+		ClusterConfig:       cc,
+		KubeArmorAddr:       kubeArmorAddr,
+		RelayServerAddr:     relayServerAddr,
+		SIAAddr:             siaAddr,
+		PEAAddr:             peaAddr,
+		HardenAddr:          hardenAddr,
+		SpireHost:           spireHost,
+		SpireTrustBundleURL: spireTrustBundleURL,
+		JoinToken:           joinToken,
 	}
 }
 func (jc *JoinConfig) CreateBaseNodeConfig() error {
@@ -149,6 +152,8 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		NetworkOperation:     jc.NetworkOperation,
 		SumEngineCronTime:    jc.SumEngineCronTime,
 		NodeStateRefreshTime: jc.NodeStateRefreshTime,
+		SpireEnabled:         jc.SpireEnabled,
+		SpireCert:            jc.SpireCert,
 	}
 
 	jc.TCArgs.PoliciesKmuxConfig = common.KmuxPoliciesFileName
@@ -161,6 +166,24 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	if jc.EnableVMScan {
 		jc.TCArgs.RATConfigObject = jc.RATConfigObject
 	}
+
+	if jc.SpireEnabled {
+
+		spireHost, spirePort, spireTrustBundleURL, err := getSpireDetails(jc.SpireHost, jc.SpireTrustBundleURL)
+		if err != nil {
+			return err
+		}
+
+		jc.TCArgs.JoinToken = jc.JoinToken
+		jc.TCArgs.SpireHostAddr = spireHost
+		jc.TCArgs.SpireHostPort = spirePort
+
+		jc.TCArgs.SpireTrustBundleURL = spireTrustBundleURL
+		jc.TCArgs.SPIREAgentImage = jc.SPIREAgentImage
+
+		jc.TCArgs.WaitForItImage = jc.WaitForItImage
+	}
+
 	return nil
 }
 
@@ -176,6 +199,8 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	if err != nil {
 		return err
 	}
+
+	jc.TCArgs.AccessKey = jc.AccessKey
 
 	// configs specific to docker mode of installation
 
@@ -238,6 +263,12 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		return err
 	}
 
+	if jc.SpireEnabled {
+		if _, err := copyOrGenerateFile(jc.UserConfigPath, configPath, "spire/conf/agent.conf", sprigFuncs, spireAgentConfig, jc.TCArgs); err != nil {
+			return err
+		}
+	}
+
 	kmuxConfigFileTemplateMap := map[string]string{
 		"sumengine/" + common.KmuxConfigFileName:                kmuxPublisherConfig,
 		"sumengine/" + common.KmuxSummaryFileName:               kmuxPublisherConfig,
@@ -262,6 +293,9 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	args := []string{"-f", composeFilePath, "--profile", "kubearmor-only"}
 	if jc.DeploySumengine {
 		args = append(args, "--profile", "accuknox-agents")
+	}
+	if jc.SpireEnabled {
+		args = append(args, "--profile", "spire-agent")
 	}
 	args = append(args, "up", "-d")
 

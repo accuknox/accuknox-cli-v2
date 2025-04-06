@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	se_splunk "github.com/accuknox/dev2/sumengine/pkg/sumengine/kubearmor"
@@ -374,9 +375,19 @@ func verifyBTF() (bool, error) {
 	}
 }
 
-func GetJoinTokenFromAccessKey(accessKey, vmName, url string, insecure bool) (string, error) {
-	if accessKey == "" || vmName == "" || url == "" {
-		return "", fmt.Errorf("invalid accessKey, vmName or url")
+func GetJoinTokenFromAccessKey(accessKey, clusterName, vmName, vmType, url string, insecure bool) (string, error) {
+	if accessKey == "" || url == "" {
+		return "", fmt.Errorf("invalid accessKey or url")
+	}
+
+	if vmName == "" && vmType == "Node" {
+		host, _ := os.Hostname()
+		vmName = fmt.Sprintf("%v-%v", host, time.Now().Unix())
+		vmName = strings.TrimSuffix(vmName, "-")
+	}
+
+	if vmName == "" && clusterName == "" {
+		return "", fmt.Errorf("clusterName or vmName is required")
 	}
 
 	if !strings.HasPrefix(url, "https://") {
@@ -385,7 +396,7 @@ func GetJoinTokenFromAccessKey(accessKey, vmName, url string, insecure bool) (st
 
 	url = url + AccessKeyEndpoint
 
-	payload, err := createPayload(accessKey, vmName)
+	payload, err := createPayload(accessKey, clusterName, vmName, vmType)
 	if err != nil {
 		fmt.Printf("createPayload failed: %v\n", err)
 		return "", err
@@ -393,11 +404,12 @@ func GetJoinTokenFromAccessKey(accessKey, vmName, url string, insecure bool) (st
 	return getJoinToken(payload, url, accessKey, insecure)
 }
 
-func createPayload(onboardingToken, clusterName string) ([]byte, error) {
+func createPayload(onboardingToken, clusterName, vmName, vmType string) ([]byte, error) {
 	payload := map[string]interface{}{
 		"cluster_name": clusterName,
 		"token":        onboardingToken,
-		"type":         "vm",
+		"type":         vmType,
+		"node_name":    vmName,
 	}
 
 	jsonPayload, err := json.Marshal(payload)

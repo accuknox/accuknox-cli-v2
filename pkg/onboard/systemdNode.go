@@ -27,6 +27,8 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 
 	jc.TCArgs.TlsEnabled = jc.Tls.Enabled
 
+	jc.TCArgs.AccessKey = jc.AccessKey
+
 	if jc.Tls.RMQCredentials != "" {
 
 		rmqData := strings.Split(Decode(jc.Tls.RMQCredentials), ":")

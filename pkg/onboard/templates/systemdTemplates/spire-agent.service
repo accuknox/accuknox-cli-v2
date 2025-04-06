@@ -1,0 +1,19 @@
+[Unit]
+Description=Spire Agent
+
+[Service]
+User=root
+KillMode=control-group
+WorkingDirectory=/opt/spire-agent/
+ExecStart=/opt/spire-agent/spire-agent run
+{{- if .UseSystemdAppend }}
+StandardOutput=append:/opt/spire-agent/spire-agent.log
+StandardError=append:/opt/spire-agent/spire-agent-err.log
+{{- else }}
+StandardOutput=file:/opt/spire-agent/spire-agent.log
+StandardError=file:/opt/spire-agent/spire-agent-err.log
+{{- end }}
+Restart=always
+RestartSec=10
+[Install]
+WantedBy=multi-user.target

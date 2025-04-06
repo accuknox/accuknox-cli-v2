@@ -53,6 +53,7 @@ func init() {
 	onboardCmd.PersistentFlags().BoolVarP(&insecure, "insecure", "", false, "skip verifying TLS certs")
 	onboardCmd.PersistentFlags().Lookup("plain-http").NoOptDefVal = "true"
 	onboardCmd.PersistentFlags().Lookup("insecure").NoOptDefVal = "true"
+	onboardCmd.PersistentFlags().StringVar(&joinToken, "join-token", "", "join-token to use")
 
 	rootCmd.AddCommand(onboardCmd)
 }
