@@ -27,7 +27,7 @@ func DumpConfig(config interface{}, path string) error {
 		return err
 	}
 
-	err = os.WriteFile(path, byteData, 0644) // #nosec G306 need perms to be this for archiving
+	err = os.WriteFile(path, byteData, 0o644) // #nosec G306 need perms to be this for archiving
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func copyOrGenerateFile(userConfigDir, dirPath, filePath string, tempFuncs templ
 	// ignoring G302 - if containers are run by the root user, members of the
 	// docker group should be able to read the files
 	// overwrite files if need
-	resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644) // #nosec G304 G302
+	resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0o644) // #nosec G304 G302
 	if err != nil {
 		return "", err
 	}
@@ -391,7 +391,6 @@ func GetJoinTokenFromAccessKey(accessKey, vmName, url string, insecure bool) (st
 		return "", err
 	}
 	return getJoinToken(payload, url, accessKey, insecure)
-
 }
 
 func createPayload(onboardingToken, clusterName string) ([]byte, error) {
@@ -411,7 +410,6 @@ func createPayload(onboardingToken, clusterName string) ([]byte, error) {
 }
 
 func getJoinToken(payload []byte, apiURL, token string, insecure bool) (string, error) {
-
 	// create a new request using http [method; POST]
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(payload))
 	if err != nil {
@@ -459,7 +457,6 @@ func getJoinToken(payload []byte, apiURL, token string, insecure bool) (string, 
 }
 
 func getTenantID(onboardingToken string) (string, error) {
-
 	parts := strings.Split(onboardingToken, ".")
 	if len(parts) != 3 {
 		return "", ErrInvalidToken
@@ -517,7 +514,6 @@ func splitLast(fullString, seperator string) []string {
 }
 
 func CheckRATSystemdInstallation() (bool, error) {
-
 	// check RAT service and Timer file
 	files := []string{"accuknox-rat.service", "accuknox-rat.timer"}
 

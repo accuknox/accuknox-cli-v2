@@ -45,7 +45,9 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release
+          # parallel builds causes race conditions while building the RRA
+          # binary.
+          args: release --parallelism 1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

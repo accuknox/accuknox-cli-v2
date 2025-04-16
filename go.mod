@@ -381,3 +381,5 @@ require (
 	sigs.k8s.io/release-utils v0.7.3 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
+
+replace github.com/accuknox/rat => ./pkg/vm/RRA

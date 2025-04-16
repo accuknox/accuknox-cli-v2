@@ -36,6 +36,7 @@ func init() {
 	clusterCmd.AddCommand(clusterAlertsCmd)
 
 	clusterAlertsCmd.Flags().StringVar(&clusterAlertsOptions.AlertType, "type", "kubearmor", "Set alert type")
+	clusterAlertsCmd.Flags().StringVar(&clusterAlertsOptions.Cluster_id, "cluster-id", "", "Set Cluster ID (eg: 1234,5678,9012)")
 	clusterAlertsCmd.Flags().StringVar(&clusterAlertsOptions.LogType, "log-type", "active", "Set log type [active|suppressed|all]")
 	clusterAlertsCmd.Flags().StringVar(&clusterAlertsOptions.ClusterAlertJQ, "clusterjq", ".[]", "JQ filter for cluster list output")
 	clusterAlertsCmd.Flags().StringVar(&clusterAlertsOptions.AlertJQ, "alertjq", ".response[]", "JQ filter for alert output")

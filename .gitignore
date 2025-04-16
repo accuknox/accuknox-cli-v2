@@ -35,3 +35,4 @@ knoxctl
 *.md
 *.yaml
 !docker-compose_rat.yaml
+rra

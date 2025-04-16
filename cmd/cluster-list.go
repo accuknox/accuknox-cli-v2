@@ -29,7 +29,7 @@ func init() {
 	clusterCmd.AddCommand(clusterListCmd)
 
 	clusterListCmd.Flags().StringVar(&clusterListOptions.ClusterListJQ, "clusterjq", ".[]", "JQ filter to apply on cluster list output")
-	clusterListCmd.Flags().StringVar(&clusterListOptions.NodeJQ, "nodejq", ".result[].NodeName", "JQ filter to apply on node list output")
+	clusterListCmd.Flags().StringVar(&clusterListOptions.NodeJQ, "nodejq", ".result[]", "JQ filter to apply on node list output")
 	clusterListCmd.Flags().BoolVar(&clusterListOptions.ShowNodes, "nodes", false, "Display nodes across all the clusters")
 	clusterListCmd.Flags().BoolVar(&clusterListOptions.NoPager, "noPager", false, "Dumps complete cluster list")
 	clusterListCmd.Flags().StringVar(&clusterListOptions.ClusterName, "clusterName", "", "List nodes based on cluster name")

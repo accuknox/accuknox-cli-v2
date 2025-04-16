@@ -24,7 +24,35 @@ const ClusterListDescription = `
 2. knoxctl api cluster list --clusterjq '.[] | select((.type == "vm") and (.Status == "Inactive"))
 ... list all the Inactive VM clusters and print their ID,name,status
 
+3. knoxctl api cluster list --nodes --nodejq '.result[] | select(.NodeName == "node-name")'
+... list node info for specified 'node-name'
+
 NOTE: In clusterjq flag ".[]" is an array we get from AccuKnox API and then further we can provide a condition, as shown in above example, this condition will be applied on every cluster we get from API. If no further condition is applied, it will dump all the clusters.
+In nodejq flag ".[]result" is an array we get from AccuKnox API and then further we can provide a condition, as shown in above example, this condition will be applied on every cluster's node dump we get from API. If no further condition is applied, it will dump all the nodes for that respective cluster.
+
+Node json object example for filtering:
+"result": [
+      {
+        "AlertsCount": 0,
+        "ClusterID": 188,
+        "ContainerCount": 0,
+        "ID": 2788,
+        "LabelCount": 5,
+        "Location": "",
+        "NamespaceCount": 0,
+        "NodeName": "simulated-node-d6bc422f",
+        "PodCount": 0,
+        "PolicyCount": 0,
+        "Status": "Inactive",
+        "WorkspaceID": 11,
+        "created_at": "0001-01-01T00:00:00Z",
+        "last_updated_time": "2024-10-14T06:37:49.084513Z",
+        "tags": null
+      }
+    ]
+
+Any of these fileds can be used to filer nodes further
+
 `
 
 type CLusterListOptions struct {
@@ -262,17 +290,6 @@ func fetchNodes(ClusterInfo Cluster, options CLusterListOptions, tableNode *tabl
 			return nil
 		}
 
-		var nodeInfo nodeInfo
-		err = json.Unmarshal(body, &nodeInfo)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error unmarshalling nodes response: %v\n", err)
-			logger.Error("api responce: %v\n", string(body))
-			return nil
-		}
-		if !options.JsonFormat {
-			fmt.Printf("\rTotal nodes found : %v, fetching nodes from: %d to next: %d for cluster %s", nodeInfo.Total_Record, pagePrevious, pageNext, ClusterInfo.ClusterName)
-		}
-
 		// jq filtering
 		nodes, err := jqFilter(nodeData, options.NodeJQ)
 		if err != nil {
@@ -280,24 +297,51 @@ func fetchNodes(ClusterInfo Cluster, options CLusterListOptions, tableNode *tabl
 			return nil
 		}
 
-		if len(nodes) == 0 {
-			break
+		total_record, err := jqFilter(nodeData, ".total_record")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error applying jq filter: %v\n", err)
+			return nil
 		}
-		if !options.JsonFormat {
-			for _, node := range nodeInfo.Result {
-				tableNode.Append([]string{strconv.FormatFloat(node.ID, 'f', -1, 64), ClusterInfo.ClusterName, node.NodeName, node.Status})
+
+		var record float64
+		if len(total_record) > 0 {
+			record = total_record[0].(float64)
+		}
+
+		for _, nodeData := range nodes {
+			var nodeInfo node
+			nodeBytes, _ := json.MarshalIndent(nodeData, "", "  ")
+			if !options.JsonFormat {
+				err = json.Unmarshal(nodeBytes, &nodeInfo)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error unmarshalling node: %v\n", err)
+					return nil
+				}
+
+				fmt.Printf("\rTotal nodes found : %v, fetching nodes from: %d to next: %d for cluster %s", record, pagePrevious, pageNext, ClusterInfo.ClusterName)
+
+				tableNode.Append([]string{strconv.FormatFloat(nodeInfo.ID, 'f', -1, 64), ClusterInfo.ClusterName, nodeInfo.NodeName, nodeInfo.Status})
 				tableNode.SetRowLine(true)
 			}
 		}
-		clusterNode = append(clusterNode, nodes...)
+
+		if len(nodes) == 0 && record <= float64(pageNext) {
+			break
+		}
+
+		if options.JsonFormat {
+			clusterNode = append(clusterNode, nodes...)
+		}
 		pagePrevious = pageNext
 	}
-	clusterNodes := map[string]interface{}{
-		"cluster": ClusterInfo.ClusterName,
-		"nodes":   clusterNode,
+	if options.JsonFormat && clusterNode != nil {
+		clusterNodes := map[string]interface{}{
+			"cluster": ClusterInfo.ClusterName,
+			"result":  clusterNode,
+		}
+		return clusterNodes
 	}
-
-	return clusterNodes
+	return nil
 }
 
 func jqFilter(data interface{}, jqFilter string) ([]interface{}, error) {

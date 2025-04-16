@@ -7,7 +7,7 @@ import (
 )
 
 // onboardVM scan represents the sub-command to onboard VM clusters
-var vmScanCmd = &cobra.Command{
+var onboardVmScanCmd = &cobra.Command{
 	Use:   "scanner",
 	Short: "sub-command for onboarding RAT(risk assessment tool)",
 	Long:  "sub-command for onboarding RAT(risk assessment tool)",
@@ -49,8 +49,8 @@ var vmScanCmd = &cobra.Command{
 }
 
 func init() {
-	vmScanCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "agents release version to use")
+	onboardVmScanCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "agents release version to use")
 
 	// all flags are optional
-	onboardVMCmd.AddCommand(vmScanCmd)
+	onboardVMCmd.AddCommand(onboardVmScanCmd)
 }

@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
+	"strings"
 	"time"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/api/asset"
@@ -44,6 +44,7 @@ type ClusterALertOptions struct {
 	Tenant_id      string
 	CfgFile        string
 	LogType        string
+	Cluster_id     string
 }
 
 var done = make(chan bool, 1)
@@ -99,9 +100,13 @@ func FetchClusterAlerts(options ClusterALertOptions) {
 
 func queryClusterAlerts(clusterIDs []float64, options ClusterALertOptions) {
 	var allResults []interface{}
-	var clusterIDsS []string
+	clusterIDsS := []string{}
 
 	apiURL := fmt.Sprintf("%s/monitors/v1/alerts/events?orderby=desc", config.Cfg.CWPP_URL)
+
+	if options.Cluster_id != "" {
+		clusterIDsS = strings.Split(options.Cluster_id, ",")
+	}
 
 	for pageID := 1; ; pageID++ {
 		if options.Page != 0 && pageID > options.Page {
@@ -109,9 +114,6 @@ func queryClusterAlerts(clusterIDs []float64, options ClusterALertOptions) {
 				done <- true
 			}
 			break
-		}
-		for _, id := range clusterIDs {
-			clusterIDsS = append(clusterIDsS, strconv.FormatFloat(id, 'f', -1, 64))
 		}
 
 		var filter FilterField
