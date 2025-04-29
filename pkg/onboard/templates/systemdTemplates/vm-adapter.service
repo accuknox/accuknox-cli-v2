@@ -7,6 +7,7 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/kubearmor-vm-adapter/
 ExecStart=/opt/kubearmor-vm-adapter/kubearmor-vm-adapter
+StandardOutput=append:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter.log
 Restart=always
 RestartSec=10
 

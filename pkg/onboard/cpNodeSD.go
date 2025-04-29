@@ -84,6 +84,9 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	logger.Info2("\nConfiguring services...")
 	for _, obj := range ic.SystemdServiceObjects {
 		// copy generic config files
+		if obj.AgentName == cm.SummaryEngine && !ic.DeploySumengine {
+			continue
+		}
 		if obj.ConfigFilePath != "" {
 			// copy template args
 			tcArgs := ic.TCArgs
@@ -102,7 +105,7 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 		// copy kmux config
 		if obj.KmuxConfigPath != "" {
 			populateKmuxArgs(&kmuxConfigArgs, obj.AgentName, obj.KmuxConfigFileName, ic.TCArgs.RMQTopicPrefix, ic.TCArgs.Hostname, ic.RMQConnectionName)
-
+			kmuxConfigArgs.UseCaFile = useCaFile(&ic.TCArgs, obj.AgentName, obj.AgentImage)
 			_, err = copyOrGenerateFile(ic.UserConfigPath, obj.AgentDir, obj.KmuxConfigFileName, ic.TemplateFuncs, obj.KmuxConfigTemplateString, kmuxConfigArgs)
 			if err != nil {
 				logger.Error("err kmux generate: %v\n", err)
@@ -136,6 +139,9 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	// FINALLY START THE SYSTEMD SERVICES //
 	logger.Info2("\nEnabling services...")
 	for _, obj := range ic.SystemdServiceObjects {
+		if obj.AgentName == cm.SummaryEngine && !ic.DeploySumengine {
+			continue
+		}
 		err = StartSystemdService(obj.ServiceName)
 		if err != nil {
 			logger.Warn("failed to start service %s: %s\n", obj.ServiceName, err.Error())

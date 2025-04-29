@@ -7,6 +7,7 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/accuknox-policy-enforcement-agent/
 ExecStart=/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent
+StandardOutput=append:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent.log
 Restart=always
 RestartSec=10
 [Install]

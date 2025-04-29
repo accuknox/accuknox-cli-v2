@@ -11,6 +11,7 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/accuknox-sumengine/
 ExecStart=/opt/accuknox-sumengine/sumengine --config conf/config.yaml --kmux-config kmux-config.yaml
+StandardOutput=append:/opt/accuknox-sumengine/accuknox-sumengine.log
 Restart=always
 RestartSec=10
 

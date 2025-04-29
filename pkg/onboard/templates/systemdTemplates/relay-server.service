@@ -7,6 +7,7 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/kubearmor-relay-server/
 ExecStart=/opt/kubearmor-relay-server/kubearmor-relay-server
+StandardOutput=append:/opt/kubearmor-relay-server/kubearmor-relay-server.log
 Restart=always
 RestartSec=10
 

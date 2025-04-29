@@ -7,6 +7,7 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/accuknox-hardening-agent/
 ExecStart=/opt/accuknox-hardening-agent/hardening start --config conf/config.yaml --kmux-config kmux-config.yaml --templates /opt/accuknox-hardening-agent/resources/policy_templates.zip
+StandardOutput=append:/opt/accuknox-hardening-agent/accuknox-hardening-agent.log
 Restart=always
 RestartSec=10
 

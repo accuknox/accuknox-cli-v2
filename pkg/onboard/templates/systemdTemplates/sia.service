@@ -7,6 +7,7 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/accuknox-shared-informer-agent/
 ExecStart=/opt/accuknox-shared-informer-agent/shared-informer-agent
+StandardOutput=append:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent.log
 Restart=always
 RestartSec=10
 [Install]

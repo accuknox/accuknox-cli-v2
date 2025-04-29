@@ -17,6 +17,10 @@ rabbitmq:
   debug: false
   tls: 
     enabled: {{.TlsEnabled}}
+    {{- if .UseCaFile }}
+    ca-file: {{.TlsCertFile}}
+    {{- else }}
     cert-file: {{.TlsCertFile}}
+    {{- end }}
     skip-verify: false
   connection-name: {{.ConnectionName}}

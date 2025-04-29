@@ -71,7 +71,6 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		if obj.AgentName == cm.SummaryEngine && !jc.DeploySumengine {
 			continue
 		}
-
 		if obj.ConfigFilePath != "" {
 			// copy template args
 			tcArgs := jc.TCArgs
@@ -90,6 +89,7 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		// copy kmux config
 		if obj.KmuxConfigPath != "" {
 			populateKmuxArgs(&kmuxConfigArgs, obj.AgentName, obj.KmuxConfigFileName, jc.RMQTopicPrefix, jc.TCArgs.Hostname, jc.RMQConnectionName)
+			kmuxConfigArgs.UseCaFile = useCaFile(&jc.TCArgs, obj.AgentName, obj.AgentImage)
 			// copy generic config files
 			_, err = copyOrGenerateFile(jc.UserConfigPath, obj.AgentDir, obj.KmuxConfigFileName, jc.TemplateFuncs, obj.KmuxConfigTemplateString, kmuxConfigArgs)
 			if err != nil {

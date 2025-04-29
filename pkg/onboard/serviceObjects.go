@@ -37,4 +37,7 @@ var (
 
 	//go:embed templates/systemdTemplates/rat.timer
 	ratTimerFile string
+
+	//go:embed templates/systemdTemplates/logrotate
+	logRotateFile string
 )

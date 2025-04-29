@@ -6,6 +6,7 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/kubearmor/
 ExecStart=/opt/kubearmor/kubearmor
+StandardOutput=append:/opt/kubearmor/kubearmor.log
 Restart=always
 RestartSec=10
 

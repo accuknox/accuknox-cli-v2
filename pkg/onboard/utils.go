@@ -532,3 +532,7 @@ func CheckRATSystemdInstallation() (bool, error) {
 func validateSplunkCredential(splunkConfig SplunkConfig) error {
 	return se_splunk.ValidateSplunkCredentials(splunkConfig.Url, splunkConfig.Token, splunkConfig.Source, splunkConfig.SourceType, splunkConfig.Index, splunkConfig.Certificate, splunkConfig.SkipTls)
 }
+
+func getLastOldVersion(agentName string) string {
+	return cm.LastOldAgentVersion[agentName]
+}

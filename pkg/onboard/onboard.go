@@ -21,7 +21,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int) (*ClusterConfig, error) {
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, logRotate string) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -326,7 +326,8 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		if err != nil {
 			return nil, err
 		}
-
+		// log file size
+		cc.LogRotate = strings.ToUpper(logRotate)
 		// create systemd service objects
 		cc.CreateSystemdServiceObjects()
 

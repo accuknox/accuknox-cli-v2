@@ -249,6 +249,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		// generate kmux config only if it exists for this agent
 		if agentObj.kmuxConfigPath != "" {
 			populateKmuxArgs(&kmuxConfigArgs, agentObj.agentName, agentObj.kmuxConfigFileName, ic.TCArgs.RMQTopicPrefix, tcArgs.Hostname, ic.RMQConnectionName)
+			kmuxConfigArgs.UseCaFile = useCaFile(&tcArgs, agentObj.agentName, "")
 			if _, err := copyOrGenerateFile(ic.UserConfigPath, agentConfigPath, agentObj.kmuxConfigFileName, sprigFuncs, agentObj.kmuxConfigTemplateString, kmuxConfigArgs); err != nil {
 				return err
 			}
@@ -667,4 +668,56 @@ func getQueueDurability(kmuxFile string) bool {
 		return false
 	}
 	return durable
+}
+
+func useCaFile(tcArgs *TemplateConfigArgs, agentName, agentImage string) bool {
+	oldVersion := getLastOldVersion(agentName)
+	if oldVersion == "" {
+		return false
+	}
+	if !strings.HasPrefix(oldVersion, "v") {
+		oldVersion = "v" + oldVersion
+	}
+
+	currentVersion := getCurrentVersion(tcArgs, agentName, agentImage)
+	if currentVersion == "" {
+		return false
+	}
+
+	if !strings.HasPrefix(currentVersion, "v") {
+		currentVersion = "v" + currentVersion
+	}
+	return semver.Compare(currentVersion, oldVersion) > 0
+
+}
+
+func getCurrentVersion(tcArgs *TemplateConfigArgs, agentName, agentImage string) string {
+
+	if agentImage != "" {
+		image := strings.Split(agentImage, ":")[1]
+		return strings.Split(image, "_")[0]
+	}
+
+	image := ""
+	switch agentName {
+	case common.KubeArmorVMAdapter:
+		image = tcArgs.KubeArmorVMAdapterImage
+	case common.PEAAgent:
+		image = tcArgs.PEAImage
+	case common.SIAAgent:
+		image = tcArgs.SIAImage
+	case common.FeederService:
+		image = tcArgs.FeederImage
+	case common.SummaryEngine, "sumengine":
+		image = tcArgs.SumEngineImage
+	case common.DiscoverAgent:
+		image = tcArgs.DiscoverImage
+	case common.HardeningAgent:
+		image = tcArgs.HardeningAgentImage
+	}
+
+	if image == "" {
+		return ""
+	}
+	return strings.Split(image, ":")[1]
 }

@@ -66,6 +66,8 @@ var (
 	sumEngineVisibility  string
 	sumEngineCronTime    string
 	nodeStateRefreshTime int
+
+	logRotate string
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -148,6 +150,8 @@ func init() {
 
 	onboardVMCmd.MarkFlagsMutuallyExclusive("tls-gen", "ca-path")
 	onboardVMCmd.PersistentFlags().StringVar(&sumEngineVisibility, "sumengine-viz", "process,network,file", "Events other than these won't be processed by summary engine. Possible values: \"none\" or any combo of [process,network,file]")
+
+	onboardVMCmd.PersistentFlags().StringVar(&logRotate, "log-rotate", "50M", "log rotate file size. Acceptable format similar to journalctl(10K, 200M, 2G, etc). Default: 50M")
 
 	// flags for RAT
 	onboardVMCmd.PersistentFlags().BoolVarP(&enableVMScan, "enable-vmscan", "", false, " Set to true to install RAT along with other kubearmor and accuknox-agents ")

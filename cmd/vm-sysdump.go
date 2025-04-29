@@ -60,8 +60,8 @@ var sysdumpVMCmd = &cobra.Command{
 		switch vmMode {
 		case onboard.VMMode_Systemd:
 			// get logs from all the installed systemd services of our interest
-			fmt.Println(color.GreenString("Copying logs..."))
-			onboard.DumpSystemdLogs(tmpDir, installedSystemdServices)
+			// fmt.Println(color.GreenString("Copying logs..."))
+			// onboard.DumpSystemdLogs(tmpDir, installedSystemdServices)
 
 			fmt.Println(color.GreenString("Copying agent installation..."))
 			onboard.DumpSystemdAgentInstallation(tmpDir)

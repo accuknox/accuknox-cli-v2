@@ -116,6 +116,7 @@ const (
 
 	//systemd path
 	SystemdDir         string = "/usr/lib/systemd/system/"
+	LogrotateDir       string = "/etc/logrotate.d/"
 	KmuxConfigFileName string = "kmux-config.yaml"
 
 	// KubeArmor gRPC service port
@@ -211,4 +212,11 @@ var QueueDurability = map[string]bool{
 	KmuxLogsFileName:    true,
 	KmuxSummaryFileName: true,
 	KmuxPolicyFileName:  true,
+}
+
+var LastOldAgentVersion = map[string]string{
+	KubeArmorVMAdapter: "v0.1.8",
+	VMAdapter:          "v0.1.8",
+	SummaryEngine:      "v0.3.0",
+	"sumengine":        "v0.3.0",
 }

@@ -145,6 +145,9 @@ type ClusterConfig struct {
 	Tls                  TLS          `json:"tls,omitempty"`
 	Splunk               SplunkConfig `json:"splunk,omitempty"`
 	NodeStateRefreshTime int          `json:"node_state_refresh_time,omitempty"`
+	// logrotateString
+	LogRotateTemplateString string `json:"-"`
+	LogRotate               string `json:"logrotate,omitempty"`
 }
 
 type InitConfig struct {
@@ -313,6 +316,7 @@ type KmuxConfigTemplateArgs struct {
 	QueueName       string `json:"queue_name,omitempty"`
 	QueueDurability bool   `json:"queue_durability,omitempty"`
 	ConnectionName  string `json:"connection_name,omitempty"`
+	UseCaFile       bool   `json:"use_ca_file,omitempty"`
 }
 
 type TokenResponse struct {
@@ -349,6 +353,8 @@ type SystemdServiceObject struct {
 	// map of file name and path
 	ExtraFilePathSrc  map[string]string
 	ExtraFilePathDest map[string]string
+
+	LogRotate string
 }
 
 type RATConfig struct {

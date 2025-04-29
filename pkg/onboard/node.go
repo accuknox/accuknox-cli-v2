@@ -251,6 +251,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		agentName, file := strings.Split(filePath, "/")[0], strings.Split(filePath, "/")[1]
 		populateAgentArgs(&jc.TCArgs, "kubearmor-vm-adapter")
 		populateKmuxArgs(&kmuxConfigArgs, agentName, file, jc.RMQTopicPrefix, jc.TCArgs.Hostname, jc.RMQConnectionName)
+		kmuxConfigArgs.UseCaFile = useCaFile(&jc.TCArgs, agentName, "")
 		if _, err := copyOrGenerateFile(jc.UserConfigPath, configPath, filePath, sprigFuncs, templateString, kmuxConfigArgs); err != nil {
 			return err
 		}
