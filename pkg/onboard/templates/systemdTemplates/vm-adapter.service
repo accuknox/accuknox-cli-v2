@@ -7,7 +7,11 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/kubearmor-vm-adapter/
 ExecStart=/opt/kubearmor-vm-adapter/kubearmor-vm-adapter
+{{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter.log
+{{- else }}
+StandardOutput=file:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter.log
+{{- end }}
 Restart=always
 RestartSec=10
 

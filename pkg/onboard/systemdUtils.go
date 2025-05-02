@@ -324,6 +324,10 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 
 // placeServiceFiles copies service files
 func (cc *ClusterConfig) placeServiceFiles() error {
+	configArgs := map[string]interface{}{
+		"WorkerNode":       cc.WorkerNode,
+		"UseSystemdAppend": useSystemdAppend(),
+	}
 	for _, obj := range cc.SystemdServiceObjects {
 		if cc.WorkerNode && !obj.InstallOnWorkerNode {
 			continue
@@ -347,7 +351,7 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 				}
 
 			} else {
-				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, interface{}(nil))
+				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, configArgs)
 				if err != nil {
 					return err
 				}

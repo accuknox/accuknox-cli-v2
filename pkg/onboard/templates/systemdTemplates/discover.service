@@ -7,7 +7,11 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/accuknox-discover/
 ExecStart=/opt/accuknox-discover/discover --config conf/config.yaml --kmux-config kmux-config.yaml
+{{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/accuknox-discover/accuknox-discover.log
+{{- else }}
+StandardOutput=file:/opt/accuknox-discover/accuknox-discover.log
+{{- end }}
 Restart=always
 RestartSec=10
 

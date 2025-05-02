@@ -1471,7 +1471,7 @@
     "creation_time": "1742909967",
     "kubearmor_tag": "v1.5.5",
     "kubearmor_relay_tag": "v0.0.4",
-    "kubearmor_vm_adapter_tag": "v0.1.9",
+    "kubearmor_vm_adapter_tag": "v0.1.10",
     "spire_agent_tag": "v1.9.4",
     "sia_tag": "v0.7.5",
     "sia_image": "accuknox/shared-informer-agent",

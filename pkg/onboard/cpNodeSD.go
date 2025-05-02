@@ -2,7 +2,10 @@ package onboard
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
@@ -154,4 +157,26 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	logger.Info1("\nCleaning up downloaded assets...")
 	Deletedir(cm.DownloadDir)
 	return nil
+}
+
+func useSystemdAppend() bool {
+
+	cmd := exec.Command("systemctl", "--version")
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	lines := strings.Split(string(out), "\n")
+	if len(lines) == 0 {
+		return false
+	}
+	fields := strings.Fields(lines[0])
+	if len(fields) < 2 {
+		return false
+	}
+	version, err := strconv.Atoi(fields[1])
+	if err != nil {
+		return false
+	}
+	return version > 240
 }

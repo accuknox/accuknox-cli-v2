@@ -7,7 +7,11 @@ User=root
 KillMode=process
 WorkingDirectory=/opt/accuknox-shared-informer-agent/
 ExecStart=/opt/accuknox-shared-informer-agent/shared-informer-agent
+{{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent.log
+{{- else }}
+StandardOutput=file:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent.log
+{{- end }}
 Restart=always
 RestartSec=10
 [Install]
