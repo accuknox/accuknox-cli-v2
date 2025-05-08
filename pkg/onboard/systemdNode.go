@@ -8,6 +8,7 @@ import (
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"golang.org/x/mod/semver"
 )
 
 func (jc *JoinConfig) JoinSystemdNode() error {
@@ -126,6 +127,9 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 			continue
 		}
 		if obj.AgentName == cm.SummaryEngine && !jc.DeploySumengine {
+			continue
+		}
+		if obj.AgentName == cm.HardeningAgent && semver.Compare(jc.TCArgs.ReleaseVersion, "v0.9.4") >= 0 {
 			continue
 		}
 		err = StartSystemdService(obj.ServiceName)

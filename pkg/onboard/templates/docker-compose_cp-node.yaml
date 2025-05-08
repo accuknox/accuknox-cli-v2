@@ -173,7 +173,9 @@ services:
     pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
+      {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
       - "--node-state-refresh={{.NodeStateRefreshTime}}"
+      {{- end }}
       {{- if .TlsEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"
@@ -242,7 +244,7 @@ services:
         condition: service_started
       discover:
         condition: service_started
-      {{- if not .TlsEnabled }}
+      {{- if and (not .TlsEnabled) (semverCompare "<0.9.4" (trimPrefix "v" .ReleaseVersion)) }}
       hardening-agent:
         condition: service_started
       {{- end }}
@@ -370,6 +372,7 @@ services:
       accuknox-net:
         aliases:
           - sumengine
+  {{- if trimPrefix "v" .ReleaseVersion | semverCompare "<0.9.4" }}
   hardening-agent:
     profiles:
       - "accuknox-agents"
@@ -396,7 +399,7 @@ services:
       accuknox-net:
         aliases:
           - hardening-agent
-
+  {{- end }}
   {{- if .DeployRMQ }}
   rabbitmq:
     image: {{.RMQImage}}

@@ -1371,7 +1371,7 @@
     "sia_tag": "v0.7.3",
     "sia_image": "accuknox/shared-informer-agent",
     "pea_tag": "v0.6.4",
-    "pea_image": "accuknox/polcy-enforcement-agent",
+    "pea_image": "accuknox/policy-enforcement-agent",
     "feeder_service_tag": "v0.8.0",
     "feeder_service_image": "accuknox/feeder-service",
     "discover_tag": "v0.2.6",
@@ -1404,7 +1404,7 @@
     "rat_tag": "v0.4.1",
     "rat_image": "accuknox/rat"
   },
-  "v0.9.2   ": {
+  "v0.9.2": {
     "creation_time": "1736508314",
     "kubearmor_tag": "v1.5.2",
     "kubearmor_relay_tag": "v0.0.4",
@@ -1469,7 +1469,7 @@
   },
   "v0.9.5": {
     "creation_time": "1742909967",
-    "kubearmor_tag": "v1.5.5",
+    "kubearmor_tag": "v1.5.6",
     "kubearmor_relay_tag": "v0.0.4",
     "kubearmor_vm_adapter_tag": "v0.1.10",
     "spire_agent_tag": "v1.9.4",
@@ -1480,11 +1480,11 @@
     "feeder_service_tag": "v0.8.3",
     "feeder_service_image": "accuknox/feeder-service",
     "discover_tag": "v0.3.1",
-    "discover_image": "accuknox/discovery-engine-discover",
+    "discover_image": "public.ecr.aws/k9v9d5v2/discovery-engine-discover",
     "sumengine_tag": "v0.3.1",
-    "sumengine_image": "accuknox/discovery-engine-sumengine",
+    "sumengine_image": "public.ecr.aws/k9v9d5v2/discovery-engine-sumengine",
     "hardening_agent_tag": "v0.3.1",
-    "hardening_agent_image": "accuknox/discovery-engine-hardening",
+    "hardening_agent_image": "public.ecr.aws/k9v9d5v2/discovery-engine-hardening",
     "rat_tag": "v0.4.1",
     "rat_image": "accuknox/rat"
   }
