@@ -1487,5 +1487,13 @@
     "hardening_agent_image": "accuknox/discovery-engine-hardening",
     "rat_tag": "v0.4.1",
     "rat_image": "accuknox/rat"
+  },
+  "v0.7.7-onprem": {
+    "kubearmor_tag": "stable",
+    "kubearmor_relay_tag": "private-relay",
+    "kubearmor_vm_adapter_tag": "latest",
+    "sia_tag": "v0.7.0",
+    "pea_tag": "v0.6.1",
+    "feeder_service_tag": "v0.7.1"
   }
 }
