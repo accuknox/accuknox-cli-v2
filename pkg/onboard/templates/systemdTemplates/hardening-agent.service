@@ -4,13 +4,15 @@ After=kubearmor-relay.service kubearmor-vm-adapter.service
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 WorkingDirectory=/opt/accuknox-hardening-agent/
 ExecStart=/opt/accuknox-hardening-agent/hardening start --config conf/config.yaml --kmux-config kmux-config.yaml --templates /opt/accuknox-hardening-agent/resources/policy_templates.zip
 {{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/accuknox-hardening-agent/accuknox-hardening-agent.log
+StandardError=append:/opt/accuknox-hardening-agent/accuknox-hardening-agent-err.log
 {{- else }}
 StandardOutput=file:/opt/accuknox-hardening-agent/accuknox-hardening-agent.log
+StandardError=file:/opt/accuknox-hardening-agent/accuknox-hardening-agent-err.log
 {{- end }}
 Restart=always
 RestartSec=10

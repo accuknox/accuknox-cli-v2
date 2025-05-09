@@ -3,13 +3,15 @@ Description=KubeArmor
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 WorkingDirectory=/opt/kubearmor/
 ExecStart=/opt/kubearmor/kubearmor
 {{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/kubearmor/kubearmor.log
+StandardError=append:/opt/kubearmor/kubearmor-err.log
 {{- else }}
 StandardOutput=file:/opt/kubearmor/kubearmor.log
+StandardError=file:/opt/kubearmor/kubearmor-err.log
 {{- end }}
 Restart=always
 RestartSec=10

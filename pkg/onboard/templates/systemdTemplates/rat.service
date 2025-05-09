@@ -4,7 +4,7 @@ Wants=accuknox-rat.timer
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 ExecStart=/bin/bash -c 'for benchmark in $(echo "{{.Benchmark}}" | tr "," "\n"); do \
   /usr/local/bin/rat analyze \
     --profile {{.Profile}} \
