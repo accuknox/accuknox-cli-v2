@@ -4,13 +4,15 @@ After=kubearmor.service
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 WorkingDirectory=/opt/kubearmor-vm-adapter/
 ExecStart=/opt/kubearmor-vm-adapter/kubearmor-vm-adapter
 {{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter.log
+StandardError=append:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter-err.log
 {{- else }}
 StandardOutput=file:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter.log
+StandardError=file:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter-err.log
 {{- end }}
 Restart=always
 RestartSec=10

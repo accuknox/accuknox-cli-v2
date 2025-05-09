@@ -355,7 +355,19 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 				if err != nil {
 					return err
 				}
-				_, err = copyOrGenerateFile("", cm.LogrotateDir, obj.PackageName, cc.TemplateFuncs, cc.LogRotateTemplateString, obj)
+
+				logRotate := map[string]interface{}{
+					"AgentDir":    obj.AgentDir,
+					"PackageName": obj.PackageName,
+					"LogRotate":   obj.LogRotate,
+				}
+				_, err = copyOrGenerateFile("", cm.LogrotateDir, obj.PackageName, cc.TemplateFuncs, cc.LogRotateTemplateString, logRotate)
+				if err != nil {
+					fmt.Println(err.Error())
+					return err
+				}
+				logRotate["PackageName"] = obj.PackageName + "-err"
+				_, err = copyOrGenerateFile("", cm.LogrotateDir, obj.PackageName+"-err", cc.TemplateFuncs, cc.LogRotateTemplateString, logRotate)
 				if err != nil {
 					fmt.Println(err.Error())
 					return err

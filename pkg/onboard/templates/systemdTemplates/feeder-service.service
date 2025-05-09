@@ -4,13 +4,15 @@ After=kubearmor-vm-adapter.service kubearmor-relay.service spire-agent.service
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 WorkingDirectory=/opt/accuknox-feeder-service/
 EnvironmentFile=/opt/accuknox-feeder-service/conf/env
 {{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/accuknox-feeder-service/accuknox-feeder-service.log
+StandardError=append:/opt/accuknox-feeder-service/accuknox-feeder-service-err.log
 {{- else }}
 StandardOutput=file:/opt/accuknox-feeder-service/accuknox-feeder-service.log
+StandardError=file:/opt/accuknox-feeder-service/accuknox-feeder-service-err.log
 {{- end }}
 ExecStart=/opt/accuknox-feeder-service/accuknox-feeder-service
 Restart=always

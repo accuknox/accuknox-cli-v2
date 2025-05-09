@@ -8,13 +8,15 @@ After=kubearmor-relay.service
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 WorkingDirectory=/opt/accuknox-sumengine/
 ExecStart=/opt/accuknox-sumengine/sumengine --config conf/config.yaml --kmux-config kmux-config.yaml
 {{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/accuknox-sumengine/accuknox-sumengine.log
+StandardError=append:/opt/accuknox-sumengine/accuknox-sumengine-err.log
 {{- else }}
 StandardOutput=file:/opt/accuknox-sumengine/accuknox-sumengine.log
+StandardError=file:/opt/accuknox-sumengine/accuknox-sumengine-err.log
 {{- end }}
 Restart=always
 RestartSec=10

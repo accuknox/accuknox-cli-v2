@@ -4,13 +4,15 @@ After=kubearmor.service kubearmor-vm-adapter.service spire-agent.service
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 WorkingDirectory=/opt/accuknox-policy-enforcement-agent/
 ExecStart=/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent
 {{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent.log
+StandardError=append:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent-err.log
 {{- else }}
 StandardOutput=file:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent.log
+StandardError=file:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent-err.log
 {{- end }}
 Restart=always
 RestartSec=10

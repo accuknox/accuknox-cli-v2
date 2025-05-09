@@ -4,13 +4,15 @@ After=sumengine.service
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 WorkingDirectory=/opt/accuknox-discover/
 ExecStart=/opt/accuknox-discover/discover --config conf/config.yaml --kmux-config kmux-config.yaml
 {{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/accuknox-discover/accuknox-discover.log
+StandardError=append:/opt/accuknox-discover/accuknox-discover-err.log
 {{- else }}
 StandardOutput=file:/opt/accuknox-discover/accuknox-discover.log
+StandardError=file:/opt/accuknox-discover/accuknox-discover-err.log
 {{- end }}
 Restart=always
 RestartSec=10

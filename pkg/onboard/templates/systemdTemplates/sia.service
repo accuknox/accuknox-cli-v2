@@ -4,13 +4,15 @@ After=kubearmor-vm-adapter.service kubearmor.service
 
 [Service]
 User=root
-KillMode=process
+KillMode=control-group
 WorkingDirectory=/opt/accuknox-shared-informer-agent/
 ExecStart=/opt/accuknox-shared-informer-agent/shared-informer-agent
 {{- if .UseSystemdAppend }}
 StandardOutput=append:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent.log
+StandardError=append:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent-err.log
 {{- else }}
 StandardOutput=file:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent.log
+StandardError=file:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent-err.log
 {{- end }}
 Restart=always
 RestartSec=10
