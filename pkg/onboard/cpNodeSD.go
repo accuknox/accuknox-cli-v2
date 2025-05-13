@@ -10,6 +10,7 @@ import (
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"golang.org/x/mod/semver"
 )
 
 func (ic *InitConfig) InitializeControlPlaneSD() error {
@@ -143,6 +144,9 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	logger.Info2("\nEnabling services...")
 	for _, obj := range ic.SystemdServiceObjects {
 		if obj.AgentName == cm.SummaryEngine && !ic.DeploySumengine {
+			continue
+		}
+		if obj.AgentName == cm.HardeningAgent && semver.Compare(ic.TCArgs.ReleaseVersion, "v0.9.4") >= 0 {
 			continue
 		}
 		err = StartSystemdService(obj.ServiceName)

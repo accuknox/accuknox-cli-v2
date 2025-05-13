@@ -15,10 +15,10 @@ import (
 	"strings"
 
 	"github.com/Masterminds/sprig"
-	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/coreos/go-systemd/v22/dbus"
+	"golang.org/x/mod/semver"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/registry/remote"
@@ -335,6 +335,9 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 		if obj.AgentName == cm.SummaryEngine && !cc.DeploySumengine {
 			continue
 		}
+		if obj.AgentName == cm.HardeningAgent && semver.Compare(cc.AgentsVersion, "v0.9.4") >= 0 {
+			continue
+		}
 		if obj.ServiceTemplateString != "" {
 
 			if obj.AgentName == cm.RAT {
@@ -529,6 +532,10 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 
+		if obj.AgentName == cm.HardeningAgent && semver.Compare(cc.AgentsVersion, "v0.9.4") >= 0 {
+			continue
+		}
+
 		logger.Print("Downloading Agent - %s | Image - %s", obj.AgentName, obj.AgentImage)
 		packageMeta := splitLast(obj.AgentImage, ":")
 
@@ -669,7 +676,7 @@ func DeboardSystemd(nodeType NodeType) error {
 		Deletedir(cm.LogrotateDir + obj.PackageName)
 	}
 
-	knoxctlDir := filepath.Clean(filepath.Join(common.SystemdKnoxctlDir, common.KnoxctlConfigFilename))
+	knoxctlDir := filepath.Clean(filepath.Join(cm.SystemdKnoxctlDir, cm.KnoxctlConfigFilename))
 	err := os.Remove(knoxctlDir)
 	if err != nil {
 		logger.Warn("Failed to remove dir %s: %s", knoxctlDir, err.Error())
@@ -866,7 +873,7 @@ func DumpSystemdAgentInstallation(sysdumpDir string) {
 		}
 
 		if service.ServiceName != "" {
-			systemdServicePath := filepath.Join(common.SystemdDir, service.ServiceName)
+			systemdServicePath := filepath.Join(cm.SystemdDir, service.ServiceName)
 			sysdumpServicePath := filepath.Join(sysdumpDir, service.ServiceName)
 			if err := readAndDumpFile(systemdServicePath, sysdumpServicePath); err != nil && !os.IsNotExist(err) {
 				logger.Warn("Failed to copy files form %s to %s: %s", systemdServicePath, sysdumpServicePath, err.Error())

@@ -89,7 +89,9 @@ services:
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       - "--relay-server-addr={{.RelayServerURL}}"
+      {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
       - "--node-state-refresh={{.NodeStateRefreshTime}}"
+      {{- end }}
       {{- if .TlsEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"

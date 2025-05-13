@@ -1,7 +1,7 @@
 hardening:
   cron-job-time-interval: "1h00m00s"
   download-templates: false
-  enabled: false
+  enabled: true
   recommend-host-policy: true
   template-version: "0.2.6"
   topic: {{.PolicyV1Topic}}
