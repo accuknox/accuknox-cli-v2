@@ -170,11 +170,11 @@ var cpNodeCmd = &cobra.Command{
 		if enableVMScan {
 			err := vmConfig.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
 			if err != nil {
-				logger.Error("error initializing RAT config", vmMode)
+				logger.Error("error initializing RRA config", vmMode)
 			}
 			err = onboardConfig.InstallRAT()
 			if err != nil {
-				logger.Error("error installing RAT in %s mode /n", vmMode)
+				logger.Error("error installing RRA in %s mode /n", vmMode)
 			}
 		}
 

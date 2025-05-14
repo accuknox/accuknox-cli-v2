@@ -11,19 +11,19 @@ import (
 // deboardNodeCmd represents the deboardNode command
 var deboardRATScanner = &cobra.Command{
 	Use:   "scanner",
-	Short: "Deboard RAT scanner",
+	Short: "Deboard RRA scanner",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		err := deboard.UninstallRAT()
 		if err != nil {
 			if os.IsNotExist(err) {
-				logger.Info1("RAT Installation not found")
+				logger.Info1("RRA Installation not found")
 			} else {
-				logger.Error("error removing RAT installation:%s", err.Error())
+				logger.Error("error removing RRA installation:%s", err.Error())
 				return err
 			}
 		} else {
-			logger.PrintSuccess("RAT uninstalled successfully.")
+			logger.PrintSuccess("RRA uninstalled successfully.")
 		}
 		return nil
 	},
