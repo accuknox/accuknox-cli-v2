@@ -327,6 +327,7 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 	configArgs := map[string]interface{}{
 		"WorkerNode":       cc.WorkerNode,
 		"UseSystemdAppend": useSystemdAppend(),
+		"ReleaseVersion":   cc.AgentsVersion,
 	}
 	for _, obj := range cc.SystemdServiceObjects {
 		if cc.WorkerNode && !obj.InstallOnWorkerNode {

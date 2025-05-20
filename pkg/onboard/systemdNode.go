@@ -54,6 +54,8 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		}
 	}
 
+	jc.TCArgs.ReleaseVersion = jc.AgentsVersion
+
 	// config services
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
 		ReleaseVersion: jc.AgentsVersion,
