@@ -8,12 +8,38 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"runtime"
 )
 
-const (
-	binaryURL  = "https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.7.14/accuknox-aspm-scanner_linux_x86_64"
-	binaryName = "accuknox-aspm-scanner"
-)
+const binaryName = "accuknox-aspm-scanner"
+
+// getDownloadURL returns the appropriate binary URL based on OS and architecture
+func getDownloadURL() (string, error) {
+	baseURL := "https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.7.14"
+
+	switch runtime.GOOS {
+	case "linux":
+		switch runtime.GOARCH {
+		case "amd64":
+			return baseURL + "/accuknox-aspm-scanner_linux_x86_64", nil
+		case "arm64":
+			return baseURL + "/accuknox-aspm-scanner_linux_arm64", nil
+		}
+	case "windows":
+		switch runtime.GOARCH {
+		case "amd64":
+			return baseURL + "/accuknox-aspm-scanner_windows_x86_64.exe", nil
+		}
+		// case "darwin":
+		// 	switch runtime.GOARCH {
+		// 	case "amd64":
+		// 		return baseURL + "/accuknox-aspm-scanner_darwin_x86_64", nil
+		// 	case "arm64":
+		// 		return baseURL + "/accuknox-aspm-scanner_darwin_arm64", nil
+		// 	}
+	}
+	return "", fmt.Errorf("unsupported platform: %s/%s", runtime.GOOS, runtime.GOARCH)
+}
 
 // ExecuteASPM is the main function that ensures the binary exists and runs it
 func ExecuteASPM() error {
@@ -41,7 +67,11 @@ func getBinaryPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to determine current user: %w", err)
 	}
-	return filepath.Join(usr.HomeDir, ".local", "bin", binaryName), nil
+	binName := binaryName
+	if runtime.GOOS == "windows" {
+		binName += ".exe"
+	}
+	return filepath.Join(usr.HomeDir, ".local", "bin", binName), nil
 }
 
 // fileExists checks if a file exists at the given path
@@ -52,7 +82,12 @@ func fileExists(path string) bool {
 
 // installBinary downloads and installs the binary to the target path
 func installBinary(destPath string) error {
-	fmt.Println("ASPM Scanner not found. Downloading and installing...")
+
+	url, err := getDownloadURL()
+	fmt.Println("Downloading ASPM helper...", url)
+	if err != nil {
+		return err
+	}
 
 	// Create directory
 	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
@@ -60,7 +95,7 @@ func installBinary(destPath string) error {
 	}
 
 	// Download binary
-	resp, err := http.Get(binaryURL)
+	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
@@ -82,8 +117,10 @@ func installBinary(destPath string) error {
 	}
 
 	// Make executable
-	if err := os.Chmod(destPath, 0755); err != nil {
-		return fmt.Errorf("chmod failed: %w", err)
+	if runtime.GOOS != "windows" {
+		if err := os.Chmod(destPath, 0755); err != nil {
+			return fmt.Errorf("chmod failed: %w", err)
+		}
 	}
 
 	fmt.Println("Installation complete.")
@@ -92,7 +129,6 @@ func installBinary(destPath string) error {
 
 // runBinary executes the binary with all command-line args passed to this process
 func runBinary(binPath string) error {
-	// Find the index of "aspm" in os.Args
 	var args []string
 	for i, arg := range os.Args {
 		if arg == "aspm" && i+1 < len(os.Args) {
