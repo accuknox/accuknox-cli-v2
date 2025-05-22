@@ -31,12 +31,12 @@ type Option struct {
 // PrintVersion displays the current version and checks for updates
 func PrintVersion(c *k8s.Client, o Option) error {
 	fmt.Printf("knoxctl's version: %s (Built on %s)\n", GitSummary, BuildDate)
-	releaseVer, err := fetchReleaseVersion()
-	if err != nil {
-		return fmt.Errorf("error fetching latest version: %v", err)
-	}
 
 	if o.LatestRelease {
+		releaseVer, err := fetchReleaseVersion()
+		if err != nil {
+			return fmt.Errorf("error fetching latest version: %v", err)
+		}
 		fmt.Printf("knoxctl release version: [%v]\n", releaseVer)
 	}
 
