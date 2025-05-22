@@ -87,10 +87,7 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	logger.Info2("\nConfiguring services...")
 	for _, obj := range ic.SystemdServiceObjects {
-		// copy generic config files
-		if obj.AgentName == cm.SummaryEngine && !ic.DeploySumengine {
-			continue
-		}
+
 		if obj.ConfigFilePath != "" {
 			// copy template args
 			tcArgs := ic.TCArgs

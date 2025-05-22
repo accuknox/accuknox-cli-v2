@@ -114,7 +114,7 @@ func DetermineKAVersionLegacy() (string, error) {
 		return "", err
 	}
 
-	version := "unkown"
+	version := "unknown"
 	for _, obj := range legacyVersionObjects {
 		if obj.MD5 == string(md5SumString) {
 			version = obj.Version
