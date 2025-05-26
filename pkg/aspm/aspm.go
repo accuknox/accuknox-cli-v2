@@ -1,6 +1,7 @@
 package aspm
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,7 +16,25 @@ const binaryName = "accuknox-aspm-scanner"
 
 // getDownloadURL returns the appropriate binary URL based on OS and architecture
 func getDownloadURL() (string, error) {
-	baseURL := "https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.7.14"
+	// Fetch latest release tag
+	resp, err := http.Get("https://api.github.com/repos/accuknox/aspm-scanner-cli/releases/latest")
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch latest release: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("GitHub API returned status: %s", resp.Status)
+	}
+
+	var release struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return "", fmt.Errorf("failed to parse release response: %w", err)
+	}
+
+	baseURL := fmt.Sprintf("https://github.com/accuknox/aspm-scanner-cli/releases/download/%s", release.TagName)
 
 	switch runtime.GOOS {
 	case "linux":
