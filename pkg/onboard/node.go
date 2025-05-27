@@ -201,6 +201,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	jc.TCArgs.AccessKey = jc.AccessKey
+	jc.TCArgs.ReleaseVersion = jc.AgentsVersion
 
 	// configs specific to docker mode of installation
 
@@ -297,6 +298,11 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	if jc.SpireEnabled {
 		args = append(args, "--profile", "spire-agent")
 	}
+
+	if jc.Parallel > 0 {
+		args = append(args, "--parallel", fmt.Sprintf("%v", jc.Parallel))
+	}
+
 	args = append(args, "up", "-d")
 
 	// need these flags for diagnosis

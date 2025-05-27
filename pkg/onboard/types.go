@@ -153,6 +153,7 @@ type ClusterConfig struct {
 	LogRotate               string `json:"logrotate,omitempty"`
 
 	AccessKey AccessKey `json:"access_key"`
+	Parallel  int       `json:"parallel,omitempty"`
 }
 
 type AccessKey struct {

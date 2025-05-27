@@ -71,6 +71,8 @@ var (
 	spireHost string
 
 	logRotate string
+
+	parallel int
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -189,6 +191,8 @@ func init() {
 
 	onboardVMCmd.PersistentFlags().StringVar(&spireAgentImage, "spire-agent-image", "", "spire-agent image to use")
 	onboardVMCmd.PersistentFlags().StringVar(&waitForItImage, "wait-for-it-image", "", "wait-for-it image to use")
+
+	onboardVMCmd.PersistentFlags().IntVar(&parallel, "parallel", 0, "number of images to pull in parallel (0 for unlimited, 1 for sequential, >1 for limited parallelism)")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

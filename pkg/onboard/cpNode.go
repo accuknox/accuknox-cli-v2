@@ -226,7 +226,6 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		tcArgs := ic.TCArgs
 		tcArgs.KmuxConfigPath = agentObj.kmuxConfigPath
 		agentConfigPath := filepath.Join(configPath, agentObj.configDir)
-		fmt.Printf("agentObj.agentName: %v\n", agentObj.agentName)
 
 		// generate config file if not empty
 		if agentObj.configFilePath != "" {
@@ -334,11 +333,16 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 // runComposeCommand runs the Docker Compose command with the necessary arguments
 func (ic *InitConfig) runComposeCommand(composeFilePath string) error {
 	diagnosis := true
+
 	args := []string{
 		"-f", composeFilePath, "--profile", "spire-agent",
 		"--profile", "kubearmor", "--profile", "accuknox-agents",
-		"up", "-d",
 	}
+	if ic.Parallel > 0 {
+		args = append(args, "--parallel", fmt.Sprintf("%v", ic.Parallel))
+	}
+
+	args = append(args, "up", "-d")
 
 	if semver.Compare(ic.composeVersion, common.MinDockerComposeWithWaitSupported) >= 0 {
 		args = append(args, "--wait", "--wait-timeout", "60")
