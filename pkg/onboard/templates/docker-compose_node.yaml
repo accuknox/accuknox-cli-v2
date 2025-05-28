@@ -1,8 +1,64 @@
 volumes:
   kubearmor-init-vol:
     name: kubearmor-init-vol
+  {{- if .SpireEnabled }}
+  spire-vol:
+    name: spire-vol
+  {{- end }}
 
 services:
+
+  {{- if .SpireEnabled }}
+  spire-agent:
+    profiles:
+      - "spire-agent"
+    container_name: spire-agent
+    image: {{.SPIREAgentImage}}
+    pull_policy: "{{.ImagePullPolicy}}"
+    command:
+      - "-config"
+      - "/etc/spire/conf/agent.conf"
+      - "-expandEnv"
+    volumes:
+      # for SPIRE config
+      - "{{.ConfigPath}}:/etc"
+      # for SVID persistence
+      - "spire-vol:/opt/spire-agent/spire-data:rw"
+      # for SPIRE socket
+      - "/var/run/:/var/run/"
+      # for spire SVID persistence
+      # TODO: this is not consumed right now due to user perms
+      - "/var/lib/spire/agent:/var/lib/spire/agent"
+    labels:
+      app: spire-agent
+    networks:
+      accuknox-net:
+        aliases:
+          - spire-agent
+    restart: always
+    ports:
+      - "9091:9091"
+      - "9090:9090"
+    pid: "host"
+    privileged: true
+
+  wait-for-it:
+    container_name: wait-for-it
+    profiles:
+      - "accuknox-agents"
+    depends_on:
+      spire-agent:
+        condition: service_started
+    image: {{.WaitForItImage}}
+    pull_policy: "{{.ImagePullPolicy}}"
+    command: ["-t", "60", "spire-agent:9090"]
+    labels:
+      app: wait-for-it
+    networks:
+      accuknox-net:
+        aliases:
+          - wait-for-it
+  {{- end }}
   kubearmor-init:
     profiles:
       - "kubearmor-only"
@@ -81,6 +137,10 @@ services:
       - "kubearmor-only"
       - "kubearmor"
     depends_on:
+      {{- if .SpireEnabled }}
+      wait-for-it:
+        condition: service_completed_successfully
+      {{- end }}
       kubearmor:
         condition: service_started
     container_name: kubearmor-vm-adapter
@@ -91,6 +151,11 @@ services:
       - "--relay-server-addr={{.RelayServerURL}}"
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
       - "--node-state-refresh={{.NodeStateRefreshTime}}"
+      {{- end }}
+      {{- if .SpireEnabled }}
+      - "--spire"
+      - "--spire-agent=unix:///var/run/spire/agent.sock"
+      - "--spire-cert={{.SpireCert}}"
       {{- end }}
       {{- if .TlsEnabled }}
       - "--tls"
@@ -109,6 +174,10 @@ services:
       {{- end }}
     volumes:
       - "{{.ConfigPath}}:/opt"
+      {{- if .SpireEnabled }}
+      # for spire socket
+      - "/var/run:/var/run:ro"
+      {{- end }}
     labels:
       app: kubearmor-vm-adapter
     restart: always
@@ -118,6 +187,10 @@ services:
     profiles:
       - "accuknox-agents"
     depends_on:
+      {{- if .SpireEnabled }}
+      wait-for-it:
+        condition: service_completed_successfully
+      {{- end }}
       kubearmor-vm-adapter:
         condition: service_started
     container_name: summary-engine
@@ -128,6 +201,10 @@ services:
       app: sumengine
     volumes:
       - "{{.ConfigPath}}:/opt"
+      {{- if .SpireEnabled }}
+      # for spire socket
+      - "/var/run:/var/run:ro"
+      {{- end }}
     restart: always
     pid: "host"
     network_mode: "host"

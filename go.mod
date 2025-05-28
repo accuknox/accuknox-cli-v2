@@ -96,7 +96,7 @@ require (
 	github.com/ZachtimusPrime/Go-Splunk-HTTP/splunk/v2 v2.0.2 // indirect
 	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277 // indirect
 	github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277 // indirect
-	github.com/accuknox/kmux v0.0.0-20241121121946-b9c1e7e00191 // indirect
+	github.com/accuknox/kmux v0.0.0-20250404200149-ccfbf6716fbd // indirect
 	github.com/accuknox/knox-gateway v0.0.0-20230104041639-c52e1e7a6e18 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alibabacloud-go/alibabacloud-gateway-spi v0.0.4 // indirect

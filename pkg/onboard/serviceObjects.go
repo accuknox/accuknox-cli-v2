@@ -40,4 +40,7 @@ var (
 
 	//go:embed templates/systemdTemplates/logrotate
 	logRotateFile string
+
+	//go:embed templates/systemdTemplates/spire-agent.service
+	spireAgentFile string
 )

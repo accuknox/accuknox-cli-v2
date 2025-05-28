@@ -76,3 +76,9 @@ summary-engine:
     certificate: {{.SplunkConfigObject.Certificate}}
     skipTls: {{.SplunkConfigObject.SkipTls}}
     maxRetries: 3
+
+spire:
+  enabled: {{.SpireEnabled}}
+  socket-path: "unix:///var/run/spire/agent.sock"
+  cert: {{.SpireCert}}
+  sa-token-path: ""

@@ -55,3 +55,11 @@ var (
 		"xcitium": "https://accuknox-spire.s3.amazonaws.com/certs/xcitium/certificate.crt",
 	}
 )
+
+const (
+	SpireDev     = "spire.dev.accuknox.com"
+	SpireStage   = "spire.stage.accuknox.com"
+	SpireDemo    = "spire.demo.accuknox.com"
+	SpireProd    = "spire.accuknox.com"
+	SpireXcitium = "spire.xcitium.accuknox.com"
+)

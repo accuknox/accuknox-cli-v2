@@ -145,9 +145,25 @@ type ClusterConfig struct {
 	Tls                  TLS          `json:"tls,omitempty"`
 	Splunk               SplunkConfig `json:"splunk,omitempty"`
 	NodeStateRefreshTime int          `json:"node_state_refresh_time,omitempty"`
+
+	SpireEnabled bool `json:"spire_enabled,omitempty"`
+	SpireCert    bool `json:"spire_cert,omitempty"`
 	// logrotateString
 	LogRotateTemplateString string `json:"-"`
 	LogRotate               string `json:"logrotate,omitempty"`
+
+	AccessKey AccessKey `json:"access_key"`
+	Parallel  int       `json:"parallel,omitempty"`
+}
+
+type AccessKey struct {
+	Mode        string `hcl:"mode"`
+	Key         string `hcl:"key"`
+	Url         string `hcl:"url"`
+	ClusterName string `hcl:"cluster_name"`
+	NodeName    string `hcl:"node_name"`
+	Endpoint    string `hcl:"endpoint"`
+	Insecure    bool   `hcl:"insecure"`
 }
 
 type InitConfig struct {
@@ -173,6 +189,10 @@ type JoinConfig struct {
 	SIAAddr         string `json:"sia_addr,omitempty"`
 	PEAAddr         string `json:"pea_addr,omitempty"`
 	HardenAddr      string `json:"harden_addr,omitempty"`
+
+	JoinToken           string `json:"join_token,omitempty"`
+	SpireHost           string `json:"spire_host,omitempty"`
+	SpireTrustBundleURL string `json:"spire_trust_bundle_url,omitempty"`
 
 	// internal
 	TCArgs TemplateConfigArgs `json:"tc_args,omitempty"`
@@ -299,6 +319,11 @@ type TemplateConfigArgs struct {
 	SumEngineCronTime time.Duration `json:"sumengine_cron_time,omitempty"`
 
 	NodeStateRefreshTime int `json:"node_state_refresh_time,omitempty"`
+
+	SpireEnabled bool `json:"spire_enabled,omitempty"`
+	SpireCert    bool `json:"spire_cert,omitempty"`
+
+	AccessKey AccessKey `json:"access_key,omitempty"`
 }
 
 type KmuxConfigTemplateArgs struct {

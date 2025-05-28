@@ -1493,7 +1493,7 @@
     "kubearmor_tag": "v1.5.6",
     "kubearmor_relay_tag": "v0.0.4",
     "kubearmor_vm_adapter_tag": "v0.1.11",
-    "spire_agent_tag": "v1.9.4",
+    "spire_agent_tag": "v2.0.12",
     "sia_tag": "v0.8.2",
     "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.7.2",

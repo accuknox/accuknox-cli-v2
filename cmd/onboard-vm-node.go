@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +21,10 @@ var (
 	hardenAddr      string
 
 	deploySumegine bool
+
+	// spire config - to use spire and spire cert for tls
+	spireEnabled bool
+	spireCert    bool
 )
 
 // joinNodeCmd represents the join command
@@ -29,6 +34,11 @@ var joinNodeCmd = &cobra.Command{
 	Long:  "Join this worker node with the control plane node for onboarding onto SaaS",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
+
+		if spireEnabled && spireHost == "" {
+			logger.Error("spire is enabled, spire host must be specified")
+			return fmt.Errorf("spire is enabled, spire host must be specified")
+		}
 
 		// need at least either one of the below flags
 		if nodeAddr == "" {
@@ -87,7 +97,7 @@ var joinNodeCmd = &cobra.Command{
 			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
 			true, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
-			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, logRotate)
+			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel)
 		if err != nil {
 			errConfig := onboard.DumpConfig(vmConfigs, configDumpPath)
 			if errConfig != nil {
@@ -98,7 +108,28 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 
-		joinConfig := onboard.JoinClusterConfig(*vmConfigs, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr)
+		if accessKey != "" {
+
+			vmConfigs.AccessKey = onboard.AccessKey{
+				Key:         accessKey,
+				Url:         tokenURL,
+				Insecure:    insecure,
+				Mode:        "Node",
+				ClusterName: topicPrefix,
+				NodeName:    vmName,
+				Endpoint:    tokenEndpoint,
+			}
+
+			if strings.Contains(vmConfigs.SPIREAgentImage, "accuknox/spire-agent-systemd:v1.9.4") {
+				joinToken, err = onboard.GetJoinTokenFromAccessKey(accessKey, topicPrefix, vmName, "Node", tokenURL, insecure)
+				if err != nil {
+					logger.Error(err.Error())
+					return err
+				}
+			}
+		}
+
+		joinConfig := onboard.JoinClusterConfig(*vmConfigs, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr, spireHost, spireTrustBundle, joinToken)
 
 		defer func() {
 			err := onboard.DumpConfig(joinConfig, configDumpPath)
@@ -163,6 +194,18 @@ func init() {
 	joinNodeCmd.PersistentFlags().StringVar(&tls.CaCert, "ca-cert", "", "ca certificate in bas64 encoded format to validate tls connection")
 
 	joinNodeCmd.PersistentFlags().BoolVar(&deploySumegine, "deploy-summary-engine", false, "to deploy summary engine in worker node")
+
+	// spire config - to use spire and spire cert for tls
+	joinNodeCmd.PersistentFlags().BoolVar(&spireEnabled, "spire", false, "enable spire")
+
+	joinNodeCmd.PersistentFlags().BoolVar(&spireCert, "spire-cert", false, "spire cert in base64 encoded format")
+
+	// License Key configurations
+	joinNodeCmd.PersistentFlags().StringVar(&accessKey, "license-key", "", "license-key for onboarding")
+	joinNodeCmd.PersistentFlags().StringVar(&tokenURL, "license-key-url", "", "license-key-url for onboarding")
+	joinNodeCmd.PersistentFlags().StringVar(&tokenEndpoint, "license-key-endpoint", "/access-token/api/v1/process", "license-key-endpoint for onboarding")
+
+	joinNodeCmd.MarkFlagsRequiredTogether("license-key", "license-key-url")
 
 	onboardVMCmd.AddCommand(joinNodeCmd)
 }
