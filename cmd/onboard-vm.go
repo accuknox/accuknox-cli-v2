@@ -67,7 +67,12 @@ var (
 	sumEngineCronTime    string
 	nodeStateRefreshTime int
 
+	joinToken string
+	spireHost string
+
 	logRotate string
+
+	parallel int
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -179,6 +184,15 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&rmqConnectionName, "rmq-connection-name", "", "Rabbitmq connection name")
 
 	onboardVMCmd.PersistentFlags().IntVar(&nodeStateRefreshTime, "node-state-refresh-time", 10, "Refresh time for node state (default 10 minutes)")
+
+	onboardVMCmd.PersistentFlags().StringVar(&spireHost, "spire-host", "", "address of spire-host to connect for authenticating with accuknox SaaS")
+
+	onboardVMCmd.PersistentFlags().StringVar(&vmName, "vm-name", "", "vm name for onboarding")
+
+	onboardVMCmd.PersistentFlags().StringVar(&spireAgentImage, "spire-agent-image", "", "spire-agent image to use")
+	onboardVMCmd.PersistentFlags().StringVar(&waitForItImage, "wait-for-it-image", "", "wait-for-it image to use")
+
+	onboardVMCmd.PersistentFlags().IntVar(&parallel, "parallel", 0, "number of images to pull in parallel (0 for unlimited, 1 for sequential, >1 for limited parallelism)")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

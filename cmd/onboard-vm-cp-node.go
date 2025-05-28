@@ -15,8 +15,6 @@ import (
 
 var (
 	// essential flags
-	joinToken   string
-	spireHost   string
 	ppsHost     string
 	knoxGateway string
 
@@ -25,9 +23,10 @@ var (
 	enableLogs       bool
 
 	// access-key flags
-	accessKey string
-	vmName    string
-	tokenURL  string
+	accessKey     string
+	vmName        string
+	tokenURL      string
+	tokenEndpoint string
 
 	// cp-node only images
 	kubeArmorRelayServerImage string
@@ -67,14 +66,6 @@ var cpNodeCmd = &cobra.Command{
 			err error
 		)
 
-		if accessKey != "" {
-			joinToken, err = onboard.GetJoinTokenFromAccessKey(accessKey, vmName, tokenURL, insecure)
-			if err != nil {
-				logger.Error(err.Error())
-				return err
-			}
-		}
-
 		_, err = cc.ValidateEnv()
 
 		if vmMode == "" {
@@ -89,6 +80,11 @@ var cpNodeCmd = &cobra.Command{
 			// docker mode specified explicitly but requirements didn't match
 			logger.Error("failed to validate environment:\n%s", err.Error())
 			return err
+		}
+
+		if spireHost == "" {
+			logger.Error("SPIRE host is required")
+			return fmt.Errorf("SPIRE host is required")
 		}
 
 		var configDumpPath string
@@ -120,7 +116,7 @@ var cpNodeCmd = &cobra.Command{
 			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
 			false, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
-			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, logRotate)
+			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel)
 		if err != nil {
 			errConfig := onboard.DumpConfig(vmConfig, configDumpPath)
 			if errConfig != nil {
@@ -129,6 +125,26 @@ var cpNodeCmd = &cobra.Command{
 
 			logger.Error("failed to create cluster config: %s", err.Error())
 			return err
+		}
+
+		if accessKey != "" {
+
+			vmConfig.AccessKey = onboard.AccessKey{
+				Key:         accessKey,
+				Url:         tokenURL,
+				Insecure:    insecure,
+				Mode:        "vm",
+				ClusterName: vmName,
+				Endpoint:    tokenEndpoint,
+			}
+
+			if strings.Contains(vmConfig.SPIREAgentImage, "v1.9.4") {
+				joinToken, err = onboard.GetJoinTokenFromAccessKey(accessKey, clusterName, vmName, "vm", tokenURL, insecure)
+				if err != nil {
+					logger.Error(err.Error())
+					return err
+				}
+			}
 		}
 
 		onboardConfig := onboard.InitCPNodeConfig(*vmConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle, enableLogs)
@@ -192,8 +208,6 @@ func init() {
 	// configuration for connecting with accuKnox SaaS
 	cpNodeCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "agents release version to use")
 
-	cpNodeCmd.PersistentFlags().StringVar(&joinToken, "join-token", "", "join-token to use")
-	cpNodeCmd.PersistentFlags().StringVar(&spireHost, "spire-host", "", "address of spire-host to connect for authenticating with accuknox SaaS")
 	cpNodeCmd.PersistentFlags().StringVar(&ppsHost, "pps-host", "", "address of policy-provider-service to connect with for receiving policies")
 	cpNodeCmd.PersistentFlags().StringVar(&knoxGateway, "knox-gateway", "", "address of knox-gateway to connect with for pushing telemetry data")
 
@@ -211,8 +225,7 @@ func init() {
 	cpNodeCmd.PersistentFlags().StringVar(&siaVersionTag, "sia-version", "", "sia version to use")
 	cpNodeCmd.PersistentFlags().StringVar(&peaVersionTag, "pea-version", "", "pea version to use")
 	cpNodeCmd.PersistentFlags().StringVar(&feederVersionTag, "feeder-version", "", "feeder version to use")
-	cpNodeCmd.PersistentFlags().StringVar(&spireAgentImage, "spire-agent-image", "", "spire-agent image to use")
-	cpNodeCmd.PersistentFlags().StringVar(&waitForItImage, "wait-for-it-image", "", "wait-for-it image to use")
+
 	cpNodeCmd.PersistentFlags().StringVar(&discoverImage, "discover-image", "", "discover image to use")
 	cpNodeCmd.PersistentFlags().StringVar(&discoverVersionTag, "discover-version", "", "discover version to use")
 	cpNodeCmd.PersistentFlags().StringVar(&hardeningAgentImage, "hardening-agent-image", "", "hardening-agent image to use")
@@ -223,18 +236,13 @@ func init() {
 
 	// Access Key configurations
 	cpNodeCmd.PersistentFlags().StringVar(&accessKey, "access-key", "", "access-key for onboarding")
-	cpNodeCmd.PersistentFlags().StringVar(&vmName, "vm-name", "", "vm name for onboarding")
 	cpNodeCmd.PersistentFlags().StringVar(&tokenURL, "access-key-url", "", "access-key-url for onboarding")
+	cpNodeCmd.PersistentFlags().StringVar(&tokenEndpoint, "access-key-endpoint", "/access-token/api/v1/process", "access-key-endpoint for onboarding")
 
 	// dev2 config
 	cpNodeCmd.PersistentFlags().BoolVar(&enableHostPolicyDiscovery, "enable-host-policy-discovery", false, "to enable host policy auto-discovery")
 
-	err := cpNodeCmd.MarkPersistentFlagRequired("spire-host")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	err = cpNodeCmd.MarkPersistentFlagRequired("pps-host")
+	err := cpNodeCmd.MarkPersistentFlagRequired("pps-host")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -250,8 +258,7 @@ func init() {
 		os.Exit(1)
 	}
 
-	cpNodeCmd.MarkFlagsRequiredTogether("access-key", "vm-name", "access-key-url")
-	cpNodeCmd.MarkFlagsMutuallyExclusive("access-key", "join-token")
+	cpNodeCmd.MarkFlagsRequiredTogether("access-key", "access-key-url")
 
 	onboardVMCmd.AddCommand(cpNodeCmd)
 }

@@ -39,6 +39,8 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 		}
 	}
 
+	ic.TCArgs.AccessKey = ic.AccessKey
+
 	ic.populateCommonArgs()
 
 	if ic.TCArgs.SplunkConfigObject.Enabled {

@@ -21,7 +21,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, logRotate string) (*ClusterConfig, error) {
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -30,6 +30,10 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 			return nil, err
 		}
 	}
+
+	cc.Parallel = parallel
+	cc.SpireEnabled = spireEnabled
+	cc.SpireCert = spireCert
 
 	// check if a config path is given by user
 	if userConfigPath != "" {
@@ -415,4 +419,33 @@ func isOperationDisabled(sumengineViz, visibility, hostVisibility, operation str
 	}
 
 	return !exists
+}
+
+func getSpireDetails(addrs, tbAddr string) (string, string, string, error) {
+	spireHost, spirePort, err := parseURL(addrs)
+	if err != nil {
+		return "", "", "", err
+	}
+	if spirePort == "80" {
+		// default spire port
+		spirePort = "8081"
+	}
+
+	// currently unused as we use insecure bootstrap
+	var spireTrustBundleURL = tbAddr
+	if spireTrustBundleURL == "" {
+		switch {
+		case strings.Contains(addrs, SpireDev):
+			spireTrustBundleURL = spireTrustBundleURLMap["dev"]
+		case strings.Contains(addrs, SpireStage):
+			spireTrustBundleURL = spireTrustBundleURLMap["stage"]
+		case strings.Contains(addrs, SpireDemo):
+			spireTrustBundleURL = spireTrustBundleURLMap["demo"]
+		case strings.Contains(addrs, SpireProd):
+			spireTrustBundleURL = spireTrustBundleURLMap["prod"]
+		case strings.Contains(addrs, SpireXcitium):
+			spireTrustBundleURL = spireTrustBundleURLMap["xcitium"]
+		}
+	}
+	return spireHost, spirePort, spireTrustBundleURL, nil
 }

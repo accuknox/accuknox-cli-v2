@@ -41,30 +41,12 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 	if err != nil {
 		return err
 	}
-	spireHost, spirePort, err := parseURL(ic.SpireHost)
+
+	spireHost, spirePort, spireTrustBundleURL, err := getSpireDetails(ic.SpireHost, ic.SpireTrustBundleURL)
 	if err != nil {
 		return err
 	}
-	if spirePort == "80" {
-		// default spire port
-		spirePort = "8081"
-	}
 
-	// currently unused as we use insecure bootstrap
-	var spireTrustBundleURL = ic.SpireTrustBundleURL
-	if spireTrustBundleURL == "" {
-		if strings.Contains(ic.SpireHost, "spire.dev.accuknox.com") {
-			spireTrustBundleURL = spireTrustBundleURLMap["dev"]
-		} else if strings.Contains(ic.SpireHost, "spire.stage.accuknox.com") {
-			spireTrustBundleURL = spireTrustBundleURLMap["stage"]
-		} else if strings.Contains(ic.SpireHost, "spire.demo.accuknox.com") {
-			spireTrustBundleURL = spireTrustBundleURLMap["demo"]
-		} else if strings.Contains(ic.SpireHost, "spire.prod.accuknox.com") {
-			spireTrustBundleURL = spireTrustBundleURLMap["prod"]
-		} else if strings.Contains(ic.SpireHost, "spire.xcitium.accuknox.com") {
-			spireTrustBundleURL = spireTrustBundleURLMap["xcitium"]
-		}
-	}
 	ic.TCArgs = TemplateConfigArgs{
 		ReleaseVersion: ic.AgentsVersion,
 
@@ -141,6 +123,9 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		RATConfigObject:      ic.RATConfigObject,
 		SumEngineCronTime:    ic.SumEngineCronTime,
 		NodeStateRefreshTime: ic.NodeStateRefreshTime,
+
+		SpireCert:    ic.SpireCert,
+		SpireEnabled: ic.SpireEnabled,
 	}
 	return nil
 }
@@ -185,6 +170,8 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	ic.TCArgs.ImagePullPolicy = string(ic.ImagePullPolicy)
 
 	ic.TCArgs.ConfigPath = configPath
+
+	ic.TCArgs.AccessKey = ic.AccessKey
 
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
 		ReleaseVersion: ic.AgentsVersion,
@@ -235,6 +222,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	// Generate or copy config files
 	for _, agentObj := range agentMeta {
+
 		tcArgs := ic.TCArgs
 		tcArgs.KmuxConfigPath = agentObj.kmuxConfigPath
 		agentConfigPath := filepath.Join(configPath, agentObj.configDir)
@@ -345,11 +333,16 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 // runComposeCommand runs the Docker Compose command with the necessary arguments
 func (ic *InitConfig) runComposeCommand(composeFilePath string) error {
 	diagnosis := true
+
 	args := []string{
 		"-f", composeFilePath, "--profile", "spire-agent",
 		"--profile", "kubearmor", "--profile", "accuknox-agents",
-		"up", "-d",
 	}
+	if ic.Parallel > 0 {
+		args = append(args, "--parallel", fmt.Sprintf("%v", ic.Parallel))
+	}
+
+	args = append(args, "up", "-d")
 
 	if semver.Compare(ic.composeVersion, common.MinDockerComposeWithWaitSupported) >= 0 {
 		args = append(args, "--wait", "--wait-timeout", "60")
