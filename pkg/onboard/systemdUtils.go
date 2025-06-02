@@ -339,7 +339,7 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 		if cc.WorkerNode && !obj.InstallOnWorkerNode {
 			continue
 		}
-		if obj.AgentName == cm.SummaryEngine && !cc.DeploySumengine {
+		if obj.AgentName == cm.SummaryEngine && cc.WorkerNode && !cc.DeploySumengine {
 			continue
 		}
 		if obj.AgentName == cm.HardeningAgent && semver.Compare(cc.AgentsVersion, "v0.9.4") >= 0 {
@@ -535,7 +535,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			logger.Warn("Failed to stop existing systemd service %s: %s", obj.ServiceName, err.Error())
 		}
 
-		if obj.AgentName == cm.SummaryEngine && !cc.DeploySumengine {
+		if obj.AgentName == cm.SummaryEngine && cc.WorkerNode && !cc.DeploySumengine {
 			continue
 		}
 
