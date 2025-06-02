@@ -20,7 +20,7 @@ var (
 	peaAddr         string
 	hardenAddr      string
 
-	deploySumegine bool
+	deploySumEngine bool
 
 	// spire config - to use spire and spire cert for tls
 	spireEnabled bool
@@ -47,7 +47,7 @@ var joinNodeCmd = &cobra.Command{
 				return err
 			}
 
-			if deploySumegine && rmqAddress == "" {
+			if deploySumEngine && rmqAddress == "" {
 				logger.Error("cp-node-addr (control-plane address) or address of control plane RabbitMQ server must be specified")
 				return err
 			}
@@ -97,7 +97,7 @@ var joinNodeCmd = &cobra.Command{
 			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
 			true, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
-			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumegine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel)
+			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumEngine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel)
 		if err != nil {
 			errConfig := onboard.DumpConfig(vmConfigs, configDumpPath)
 			if errConfig != nil {
@@ -193,7 +193,7 @@ func init() {
 
 	joinNodeCmd.PersistentFlags().StringVar(&tls.CaCert, "ca-cert", "", "ca certificate in bas64 encoded format to validate tls connection")
 
-	joinNodeCmd.PersistentFlags().BoolVar(&deploySumegine, "deploy-summary-engine", false, "to deploy summary engine in worker node")
+	joinNodeCmd.PersistentFlags().BoolVar(&deploySumEngine, "deploy-summary-engine", false, "to deploy summary engine in worker node")
 
 	// spire config - to use spire and spire cert for tls
 	joinNodeCmd.PersistentFlags().BoolVar(&spireEnabled, "spire", false, "enable spire")
