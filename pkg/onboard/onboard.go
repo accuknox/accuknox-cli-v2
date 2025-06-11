@@ -449,3 +449,35 @@ func getSpireDetails(addrs, tbAddr string) (string, string, string, error) {
 	}
 	return spireHost, spirePort, spireTrustBundleURL, nil
 }
+
+func (cc *ClusterConfig) PopulateAccessKeyConfig(url, key, clusterName, vmName, endpoint, mode string, insecure bool) (string, error) {
+
+	cc.AccessKey = AccessKey{
+		Key:         key,
+		Url:         url,
+		Insecure:    insecure,
+		Mode:        mode,
+		ClusterName: vmName,
+		Endpoint:    endpoint,
+	}
+
+	var (
+		joinToken string
+		err       error
+	)
+
+	if strings.Contains(cc.SPIREAgentImage, "v1.9.4") {
+		joinToken, err = GetJoinTokenFromAccessKey(key, clusterName, vmName, mode, url, insecure)
+		if err != nil {
+			return "", err
+		}
+	}
+	if cc.Mode == VMMode_Docker {
+		if hostname, err := os.Hostname(); err == nil {
+			cc.AccessKey.NodeName = fmt.Sprintf("%v-%v", hostname, time.Now().Unix())
+		}
+	}
+
+	return joinToken, nil
+
+}

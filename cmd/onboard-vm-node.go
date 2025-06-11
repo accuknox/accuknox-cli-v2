@@ -109,23 +109,8 @@ var joinNodeCmd = &cobra.Command{
 		}
 
 		if accessKey != "" {
-
-			vmConfigs.AccessKey = onboard.AccessKey{
-				Key:         accessKey,
-				Url:         tokenURL,
-				Insecure:    insecure,
-				Mode:        "Node",
-				ClusterName: topicPrefix,
-				NodeName:    vmName,
-				Endpoint:    tokenEndpoint,
-			}
-
-			if strings.Contains(vmConfigs.SPIREAgentImage, "accuknox/spire-agent-systemd:v1.9.4") {
-				joinToken, err = onboard.GetJoinTokenFromAccessKey(accessKey, topicPrefix, vmName, "Node", tokenURL, insecure)
-				if err != nil {
-					logger.Error(err.Error())
-					return err
-				}
+			if joinToken, err = vmConfigs.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "Node", insecure); err != nil {
+				return err
 			}
 		}
 

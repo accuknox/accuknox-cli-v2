@@ -128,22 +128,8 @@ var cpNodeCmd = &cobra.Command{
 		}
 
 		if accessKey != "" {
-
-			vmConfig.AccessKey = onboard.AccessKey{
-				Key:         accessKey,
-				Url:         tokenURL,
-				Insecure:    insecure,
-				Mode:        "vm",
-				ClusterName: vmName,
-				Endpoint:    tokenEndpoint,
-			}
-
-			if strings.Contains(vmConfig.SPIREAgentImage, "v1.9.4") {
-				joinToken, err = onboard.GetJoinTokenFromAccessKey(accessKey, clusterName, vmName, "vm", tokenURL, insecure)
-				if err != nil {
-					logger.Error(err.Error())
-					return err
-				}
+			if joinToken, err = vmConfig.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "vm", insecure); err != nil {
+				return err
 			}
 		}
 

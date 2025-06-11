@@ -1494,7 +1494,7 @@
     "kubearmor_relay_tag": "v0.0.4",
     "kubearmor_vm_adapter_tag": "v0.1.12",
     "spire_agent_tag": "v2.0.12",
-    "sia_tag": "v0.8.2",
+    "sia_tag": "v0.8.3",
     "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
     "pea_tag": "v0.7.2",
     "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
