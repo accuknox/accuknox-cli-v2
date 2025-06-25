@@ -11,10 +11,6 @@ kmux-topic-prefix: persistent://accuknox/cluster-entity/
 kmux-topic: cluster-entity/shared-event
 {{- end }}
 
-kmux-vm-topic: vm-entity/shared-event
-kmux-vm-topic-prefix: ""
-kmux-vm-config: {{.KmuxConfigPath}}
-
 heartbeat:
   interval: 5m
 
