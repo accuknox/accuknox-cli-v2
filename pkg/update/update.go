@@ -100,7 +100,7 @@ func decompressAndExtractTarGz(src, destDir string) error {
 }
 
 func downloadFile(client *github.Client, ctx context.Context, assetID int64, destPath string) error {
-	reader, redURL, err := client.Repositories.DownloadReleaseAsset(ctx, "accuknox", "accuknox-cli-v2", assetID)
+	reader, redURL, err := client.Repositories.DownloadReleaseAsset(ctx, "accuknox", common.AccuknoxKnoxctlwebsite, assetID)
 	if err != nil {
 		fmt.Printf("error downloading asset: %v", err)
 		return err
@@ -130,7 +130,6 @@ func downloadFile(client *github.Client, ctx context.Context, assetID int64, des
 	} else if reader == nil {
 		return fmt.Errorf("error downloading asset: reader is nil")
 	}
-
 	cleanedDestPath := filepath.Clean(destPath)
 	out, err := os.Create(cleanedDestPath)
 	if err != nil {
@@ -142,9 +141,9 @@ func downloadFile(client *github.Client, ctx context.Context, assetID int64, des
 	return err
 }
 
-func doUpdate(pat string, doUpdate bool) error {
+func doUpdate(doUpdate bool) error {
 	ctx := context.Background()
-	client, err := common.SetupGitHubClient(pat, ctx)
+	client, err := common.SetupGitHubClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error setting up GitHub client: %v", err)
 	}
@@ -154,18 +153,18 @@ func doUpdate(pat string, doUpdate bool) error {
 		return fmt.Errorf("error getting latest release: %v", err)
 	}
 
-	shouldUpdate, err := version.ShouldUpdate(version.GitSummary, pat)
+	shouldUpdate, latestVersion, currentVersion, err := version.ShouldUpdate(version.GitSummary)
 	if err != nil {
 		return fmt.Errorf("error checking if update is needed: %v", err)
 	}
 
 	if !shouldUpdate {
-		fmt.Println("You are already using the latest version.")
+		fmt.Println("You are already using the latest version. ", latestVersion)
 		return nil
 	}
 
 	if !doUpdate {
-		fmt.Println("An updated is available for knoxctl. Do you want to update it? (y/n)")
+		fmt.Printf("An update is available for knoxctl: latest version %s, current version %s. Do you want to update? (y/n): ", latestVersion, currentVersion)
 		reader := bufio.NewReader(os.Stdin)
 		response, err := reader.ReadString('\n')
 		if err != nil {
@@ -209,7 +208,7 @@ func doUpdate(pat string, doUpdate bool) error {
 		return err
 	}
 
-	binaryFilePath := filepath.Join(tempDir, "accuknoxcli") // need to change this after a new release
+	binaryFilePath := filepath.Join(tempDir, "knoxctl") // need to change this after a new release
 	cleanedBinaryFilePath := filepath.Clean(binaryFilePath)
 
 	scriptPath := "./scripts/move.sh"
@@ -229,17 +228,8 @@ func doUpdate(pat string, doUpdate bool) error {
 }
 
 func SelfUpdate(c *k8s.Client, options *Option) error {
-	if options.GitPATPath == "" {
-		fmt.Println("please provide an absolute path to your GitHub Personal Access Token (PAT)")
-		return nil
-	}
 
-	gitKey, err := readGitKey(options.GitPATPath)
-	if err != nil {
-		return fmt.Errorf("error reading git PAT: %v", err)
-	}
-
-	return doUpdate(gitKey, options.DoUpdate)
+	return doUpdate(options.DoUpdate)
 }
 
 func readGitKey(path string) (string, error) {

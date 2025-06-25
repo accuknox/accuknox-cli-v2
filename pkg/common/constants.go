@@ -49,8 +49,9 @@ const (
 	OffloaderConfMap = "dev2-offloader"
 	SumEngineConfMap = "dev2-sumengine"
 
-	AccuknoxGithub  = "accuknox"
-	AccuknoxCLIRepo = "accuknox-cli-v2"
+	AccuknoxGithub         = "accuknox"
+	AccuknoxCLIRepo        = "accuknox-cli-v2"
+	AccuknoxKnoxctlwebsite = "knoxctl-website"
 
 	DefaultConfigPathDirName = ".accuknox-config"
 

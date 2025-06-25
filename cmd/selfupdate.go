@@ -25,6 +25,5 @@ var selfUpdateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(selfUpdateCmd)
-	selfUpdateCmd.Flags().StringVar(&options.GitPATPath, "git-pat", "", "Path to your personal access token")
 	selfUpdateCmd.Flags().BoolVarP(&options.DoUpdate, "yes", "y", false, "Force update to latest version")
 }
