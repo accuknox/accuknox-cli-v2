@@ -1,12 +1,12 @@
 [Unit]
-Description=accuknox-rat-service
-Wants=accuknox-rat.timer
+Description=accuknox-rra-service
+Wants=accuknox-rra.timer
 
 [Service]
 User=root
 KillMode=control-group
 ExecStart=/bin/bash -c 'for benchmark in $(echo "{{.Benchmark}}" | tr "," "\n"); do \
-  /usr/local/bin/rat analyze \
+  /usr/local/bin/rra analyze \
     --profile {{.Profile}} \
     --benchmark "$benchmark" \
     --auth-token {{.AuthToken}} \
@@ -15,7 +15,7 @@ ExecStart=/bin/bash -c 'for benchmark in $(echo "{{.Benchmark}}" | tr "," "\n");
     --cluster-name {{.ClusterName}} \
     {{- if .ClusterID }}{{"\n"}} --cluster-id {{.ClusterID}} \{{ end }} \
     --label {{.Label}} \
-    --json > /var/accuknox-rat_"$benchmark"_result.json 2>&1; \
+    --json > /var/accuknox-rra_"$benchmark"_result.json 2>&1; \
 done'
 [Install]
 WantedBy=multi-user.target

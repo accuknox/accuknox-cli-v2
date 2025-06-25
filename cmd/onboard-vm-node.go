@@ -149,11 +149,11 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 		if enableVMScan {
-			err := joinConfig.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
+			err := joinConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream)
 			if err != nil {
 				logger.Print("error creating RRA config in %s mode", vmMode)
 			} else {
-				err = joinConfig.InstallRAT()
+				err = joinConfig.InstallRRA()
 				if err != nil {
 					logger.Print("error installing RRA in %s mode", vmMode)
 				}

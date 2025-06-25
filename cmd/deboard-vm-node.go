@@ -52,7 +52,7 @@ var deboardNodeCmd = &cobra.Command{
 		}
 		if disableVMScan {
 			logger.Info1("Removing RRA installation if it exists")
-			err := deboard.UninstallRAT()
+			err := deboard.UninstallRRA()
 			if err != nil {
 				if os.IsNotExist(err) {
 					logger.Info1("RRA Installation not found")

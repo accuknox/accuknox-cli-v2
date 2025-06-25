@@ -32,12 +32,12 @@ var onboardVmScanCmd = &cobra.Command{
 		cc.EnableVMScan = true
 		// create RRA config
 		cc.Mode = vmMode
-		err = cc.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
+		err = cc.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream)
 		if err != nil {
 			logger.Error(" failed to initialize RRA config:%s", err.Error())
 			return err
 		}
-		err = cc.InstallRAT()
+		err = cc.InstallRRA()
 		if err != nil {
 			logger.Error("failed to install RRA: %s", err.Error())
 			return err
