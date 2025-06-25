@@ -347,15 +347,15 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 		}
 		if obj.ServiceTemplateString != "" {
 
-			if obj.AgentName == cm.RAT {
-				//place service file for RAT
+			if obj.AgentName == cm.RRA {
+				//place service file for RRA
 				cc.TemplateFuncs = sprig.GenericFuncMap()
-				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, cc.RATConfigObject)
+				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, cc.RRAConfigObject)
 				if err != nil {
 					return err
 				}
-				//place timer file for RAT
-				_, err = copyOrGenerateFile("", cm.SystemdDir, "accuknox-rat.timer", cc.TemplateFuncs, obj.TimerTemplateString, cc.RATConfigObject)
+				//place timer file for RRA
+				_, err = copyOrGenerateFile("", cm.SystemdDir, "accuknox-rra.timer", cc.TemplateFuncs, obj.TimerTemplateString, cc.RRAConfigObject)
 				if err != nil {
 					return err
 				}

@@ -2,7 +2,7 @@
 Description= Run accuknox risk assessment tool in specific intervals 
 
 [Timer]
-Unit=accuknox-rat.service
+Unit=accuknox-rra.service
 OnCalendar= {{.Schedule}}
 
 [Install]

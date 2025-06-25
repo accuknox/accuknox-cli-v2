@@ -525,14 +525,14 @@ func splitLast(fullString, seperator string) []string {
 	return []string{fullString[:colonIdx], fullString[colonIdx+1:]}
 }
 
-func CheckRATSystemdInstallation() (bool, error) {
-	// check RAT service and Timer file
-	files := []string{"accuknox-rat.service", "accuknox-rat.timer"}
+func CheckRRASystemdInstallation() (bool, error) {
+	// check RRA service and Timer file
+	files := []string{"accuknox-rra.service", "accuknox-rra.timer"}
 
 	for _, file := range files {
 		filePath := cm.SystemdPath + file
 		if _, err := os.Stat(filePath); err == nil {
-			// found service or timer file means we have RAT installation as systemd
+			// found service or timer file means we have RRA installation as systemd
 			return true, nil
 		} else if !os.IsNotExist(err) {
 			return false, fmt.Errorf("error checking service file %s: %v", filePath, err)

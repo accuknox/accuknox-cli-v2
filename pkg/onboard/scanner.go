@@ -9,8 +9,8 @@ import (
 	"github.com/fatih/color"
 )
 
-// Initialize RAT config
-func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile string, benchmark string, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection bool, ratImage, ratVersionTag, releaseVersion string, preserveUpstream bool) error {
+// Initialize RRA config
+func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile string, benchmark string, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection bool, rraImage, rraVersionTag, releaseVersion string, preserveUpstream bool) error {
 	var err error
 	var releaseInfo cm.ReleaseMetadata
 	if releaseVersion == "" {
@@ -22,58 +22,59 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 		// on needing to build knoxctl again and again
 		return fmt.Errorf("unknown image tag %s", releaseVersion)
 	}
-	cc.RATConfigObject.EnableVMScan = true
+	cc.RRAConfigObject.EnableVMScan = true
 	cc.AgentsVersion = releaseVersion
-	cc.RATConfigObject.AuthToken = authToken
-	cc.RATConfigObject.Url = url
-	cc.RATConfigObject.TenantID = tenantID
-	cc.RATConfigObject.ClusterID = clusterID
-	cc.RATConfigObject.ClusterName = clusterName
-	cc.RATConfigObject.Label = label
-	cc.RATConfigObject.Hostname, err = os.Hostname()
+	cc.RRAConfigObject.AuthToken = authToken
+	cc.RRAConfigObject.Url = url
+	cc.RRAConfigObject.TenantID = tenantID
+	cc.RRAConfigObject.ClusterID = clusterID
+	cc.RRAConfigObject.ClusterName = clusterName
+	cc.RRAConfigObject.Label = label
+	cc.RRAConfigObject.Hostname, err = os.Hostname()
 	if err != nil {
 		return err
 	}
 
 	if cc.Mode == VMMode_Systemd {
-		cc.RATConfigObject.Schedule, err = ConvertCronToSystemd(schedule)
+		cc.RRAConfigObject.Schedule, err = ConvertCronToSystemd(schedule)
 		if err != nil {
 			return err
 		}
 	} else {
-		cc.RATConfigObject.Schedule = schedule
+		cc.RRAConfigObject.Schedule = schedule
 	}
 
-	cc.RATConfigObject.Profile = profile
-	cc.RATConfigObject.Benchmark = benchmark
+	cc.RRAConfigObject.Profile = profile
+	cc.RRAConfigObject.Benchmark = benchmark
 
 	switch cc.Mode {
 	case VMMode_Docker:
-		cc.RATImage, err = getImage(registry, cm.DefaultDockerRegistry,
-			cm.DefaultAccuKnoxRepo, ratImage, releaseInfo.RatImage,
-			ratVersionTag, releaseInfo.RatTag, "", "", preserveUpstream)
+		cc.RRAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+			cm.DefaultAccuKnoxRepo, rraImage, releaseInfo.RraImage,
+			rraVersionTag, releaseInfo.RraTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
-		cc.RATConfigObject.RATImage = cc.RATImage
+		fmt.Println(cc.RRAImage)
+		cc.RRAConfigObject.RRAImage = cc.RRAImage
 
 	case VMMode_Systemd:
-		cc.RATImage, err = getImage(registry, cm.DefaultDockerRegistry,
-			cm.DefaultAccuKnoxRepo, ratImage, cm.AgentRepos[cm.RAT],
-			ratVersionTag, releaseInfo.RatTag, "v", cm.SystemdTagSuffix, preserveUpstream)
+		cc.RRAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+			cm.DefaultAccuKnoxRepo, rraImage, cm.AgentRepos[cm.RRA],
+			rraVersionTag, releaseInfo.RraTag, "v", cm.SystemdTagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 		cc.SystemdServiceObjects = append(cc.SystemdServiceObjects,
 
 			SystemdServiceObject{
-				AgentName:             cm.RAT,
-				PackageName:           cm.RAT,
-				ServiceName:           cm.RAT + ".service",
-				AgentDir:              cm.RATPath,
-				ServiceTemplateString: ratServiceFile,
-				TimerTemplateString:   ratTimerFile,
-				AgentImage:            cc.RATImage,
+				AgentName:             cm.RRA,
+				PackageName:           cm.RRA,
+				ServiceName:           cm.RRA + ".service",
+				AgentDir:              cm.RRAPath,
+				ServiceTemplateString: rraServiceFile,
+				TimerTemplateString:   rraTimerFile,
+				AgentImage:            cc.RRAImage,
 				InstallOnWorkerNode:   true,
 			},
 		)
@@ -95,7 +96,7 @@ func (cc *ClusterConfig) InitRATConfig(authToken, url, tenantID, clusterID, clus
 	return nil
 }
 
-func (cc *ClusterConfig) InstallRAT() error {
+func (cc *ClusterConfig) InstallRRA() error {
 
 	switch cc.Mode {
 	case VMMode_Docker:
@@ -111,7 +112,7 @@ func (cc *ClusterConfig) InstallRAT() error {
 		// initialize sprig for templating
 		sprigFuncs := sprig.GenericFuncMap()
 		//create compose file
-		composeFilePath, err := copyOrGenerateFile(cc.UserConfigPath, configPath, "docker-compose_rat.yaml", sprigFuncs, ratComposeFileTemplate, cc.RATConfigObject)
+		composeFilePath, err := copyOrGenerateFile(cc.UserConfigPath, configPath, "docker-compose_rra.yaml", sprigFuncs, rraComposeFileTemplate, cc.RRAConfigObject)
 		if err != nil {
 			return err
 		}
@@ -125,7 +126,7 @@ func (cc *ClusterConfig) InstallRAT() error {
 	case VMMode_Systemd:
 		var obj SystemdServiceObject
 		for _, agent := range cc.SystemdServiceObjects {
-			if agent.AgentName == cm.RAT {
+			if agent.AgentName == cm.RRA {
 				obj = agent
 			}
 		}
@@ -133,7 +134,7 @@ func (cc *ClusterConfig) InstallRAT() error {
 		packageMeta := splitLast(obj.AgentImage, ":")
 		err := cc.installAgent(obj.AgentName, packageMeta[0], packageMeta[1])
 		if err != nil {
-			fmt.Println(color.RedString("RAT Installation failed!! Cleaning up downloaded asset..."))
+			fmt.Println(color.RedString("RRA Installation failed!! Cleaning up downloaded asset..."))
 			Deletedir(cm.DownloadDir)
 			return err
 		}
@@ -141,7 +142,7 @@ func (cc *ClusterConfig) InstallRAT() error {
 		if err != nil {
 			return err
 		}
-		err = StartSystemdService("accuknox-rat.timer")
+		err = StartSystemdService("accuknox-rra.timer")
 		if err != nil {
 			return err
 		}

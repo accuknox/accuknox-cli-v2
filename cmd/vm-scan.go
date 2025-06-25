@@ -14,8 +14,8 @@ var save bool
 // vmPolicyCmd represents the vm command for policy enforcement
 var vmScanCmd = &cobra.Command{
 	Use:   "scan",
-	Short: "RAT scan for vms",
-	Long:  "RAT scan for vms",
+	Short: "RRA scan for vms",
+	Long:  "RRA scan for vms",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		var err error
@@ -46,7 +46,7 @@ var vmScanCmd = &cobra.Command{
 func init() {
 	vmCmd.AddCommand(vmScanCmd)
 
-	// flags for RAT
+	// flags for RRA
 	vmScanCmd.PersistentFlags().StringVar((*string)(&profile), "profile", "", "ubuntu,rhel")
 	vmScanCmd.PersistentFlags().StringVar((*string)(&benchmark), "benchmark", "", "security benchmark (stig,soc2)")
 	vmScanCmd.PersistentFlags().StringVar((*string)(&authToken), "auth-token", "", "authentication token")

@@ -15,6 +15,6 @@ var deboardVMCmd = &cobra.Command{
 
 func init() {
 	deboardCmd.PersistentFlags().StringVar((*string)(&vmMode), "vm-mode", "", "Mode of installation (systemd/docker)")
-	deboardCmd.PersistentFlags().BoolVar(&disableVMScan, "disbale-vmscan", true, "Remove rat installation")
+	deboardCmd.PersistentFlags().BoolVar(&disableVMScan, "disbale-vmscan", true, "Remove rra installation")
 	deboardCmd.AddCommand(deboardVMCmd)
 }

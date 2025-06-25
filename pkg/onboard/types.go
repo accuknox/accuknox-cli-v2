@@ -74,7 +74,7 @@ type ClusterConfig struct {
 	DiscoverImage             string `json:"discover_image,omitempty"`
 	SumEngineImage            string `json:"sumengine_image,omitempty"`
 	HardeningAgentImage       string `json:"hardening_agent_image,omitempty"`
-	RATImage                  string `json:"rat_image,omitempty"`
+	RRAImage                  string `json:"rra_image,omitempty"`
 
 	CPNodeAddr string `json:"cp_node_addr,omitempty"`
 
@@ -129,7 +129,7 @@ type ClusterConfig struct {
 
 	// Risk assessment scanning
 	EnableVMScan    bool      `json:"enable_vmscan,omitempty"`
-	RATConfigObject RATConfig `json:"-"`
+	RRAConfigObject RRAConfig `json:"-"`
 
 	PlainHTTP   bool         `json:"plain_http,omitempty"`
 	InsecureTLS bool         `json:"insecure_tls,omitempty"`
@@ -310,8 +310,8 @@ type TemplateConfigArgs struct {
 	PolicyV1Topic   string `json:"policyv1_topic,omitempty"`
 	SummaryV2Topic  string `json:"summaryv2_topic,omitempty"`
 
-	// rat configs
-	RATConfigObject RATConfig `json:"-"`
+	// rra configs
+	RRAConfigObject RRAConfig `json:"-"`
 
 	// splunk config
 	SplunkConfigObject SplunkConfig `json:"-"`
@@ -382,9 +382,9 @@ type SystemdServiceObject struct {
 	LogRotate string
 }
 
-type RATConfig struct {
+type RRAConfig struct {
 	Hostname     string
-	RATImage     string
+	RRAImage     string
 	EnableVMScan bool
 	AuthToken    string
 	Url          string

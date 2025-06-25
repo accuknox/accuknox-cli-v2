@@ -167,23 +167,23 @@ func removeInstalledObjects(installedContainers map[string]dockerTypes.Container
 	return nil
 }
 
-func UninstallRAT() error {
-	//check for RAT systemd installation
+func UninstallRRA() error {
+	//check for RRA systemd installation
 
-	exists, err := onboard.CheckRATSystemdInstallation()
+	exists, err := onboard.CheckRRASystemdInstallation()
 	if err != nil {
-		fmt.Println(color.RedString("error checking RAT systemd installation"))
+		fmt.Println(color.RedString("error checking RRA systemd installation"))
 	}
 	if exists {
-		fmt.Println(color.BlueString("RAT found running in systemd mode"))
-		ratFiles := []string{"accuknox-rat.service", "accuknox-rat.timer"}
-		for _, file := range ratFiles {
+		fmt.Println(color.BlueString("RRA found running in systemd mode"))
+		rraFiles := []string{"accuknox-rra.service", "accuknox-rra.timer"}
+		for _, file := range rraFiles {
 			err := onboard.StopSystemdService(file, false, true)
 			if err != nil {
 				logger.Error("error stopping %s: %s\n", file, err)
 				return err
 			}
-			onboard.Deletedir(cm.RATPath)
+			onboard.Deletedir(cm.RRAPath)
 		}
 		return err
 	}
@@ -193,22 +193,22 @@ func UninstallRAT() error {
 	if err != nil {
 		return os.ErrNotExist
 	}
-	//check for RAT docker installation
-	ratObj, err := getRATContainerObject()
+	//check for RRA docker installation
+	rraObj, err := getRRAContainerObject()
 	if err != nil {
 		logger.Warn("error:%s", err.Error())
 	}
-	if len(ratObj) > 0 {
-		fmt.Println(color.BlueString("RAT docker installation found"))
+	if len(rraObj) > 0 {
+		fmt.Println(color.BlueString("RRA docker installation found"))
 		configPath, err := cm.GetDefaultConfigPath()
 		if err != nil {
 			return err
 		}
-		composeFilePath := filepath.Join(configPath, "docker-compose_rat.yaml")
+		composeFilePath := filepath.Join(configPath, "docker-compose_rra.yaml")
 		_, err = os.Stat(composeFilePath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				err = removeInstalledObjects(ratObj, nil)
+				err = removeInstalledObjects(rraObj, nil)
 				if err != nil {
 					fmt.Println("error", err.Error())
 				}
@@ -230,7 +230,7 @@ func UninstallRAT() error {
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
-		// delete configdir if it is empty(for cases if only RAT is installed)
+		// delete configdir if it is empty(for cases if only RRA is installed)
 		err = os.Remove(configPath)
 		if err != nil {
 			if !os.IsNotExist(err) && !errors.Is(err, syscall.ENOTEMPTY) && !errors.Is(err, syscall.EEXIST) {
@@ -242,7 +242,7 @@ func UninstallRAT() error {
 	return os.ErrNotExist
 }
 
-func getRATContainerObject() (map[string]dockerTypes.Container, error) {
+func getRRAContainerObject() (map[string]dockerTypes.Container, error) {
 
 	installedContainers := make(map[string]dockerTypes.Container, 0)
 	dockerClient, err := onboard.CreateDockerClient()
@@ -257,7 +257,7 @@ func getRATContainerObject() (map[string]dockerTypes.Container, error) {
 	}
 	for _, container := range containerList {
 		containerName := strings.TrimPrefix(container.Names[0], "/")
-		if containerName == "accuknox-rat" {
+		if containerName == "accuknox-rra" {
 			installedContainers[containerName] = container
 			return installedContainers, nil
 		}

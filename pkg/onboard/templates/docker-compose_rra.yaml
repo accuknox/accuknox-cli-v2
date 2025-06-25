@@ -1,15 +1,15 @@
-name: accuknox-rat
+name: accuknox-rra
 services:
-  rat:
+  rra:
     profiles:
       - "accuknox-agents"
-    image: {{.RATImage}}
-    container_name: accuknox-rat
+    image: "{{.RRAImage}}"
+    container_name: accuknox-rra
     restart: always
     pid: "host" 
     network_mode: "host" 
     privileged: true
-    hostname: {{.Hostname}}
+    hostname: "{{.Hostname}}"
     volumes:
       - /tmp:/host/tmp
       - /:/host:ro
@@ -23,4 +23,4 @@ services:
       - CLUSTER_NAME={{.ClusterName}}
       - CLUSTER_ID={{.ClusterID}}
       - LABEL={{.Label}}
-    entrypoint: ["/rat/rat-cronjob.sh"]   
+    entrypoint: ["/rra/rra-cronjob.sh"]   

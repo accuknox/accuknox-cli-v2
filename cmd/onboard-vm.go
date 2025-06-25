@@ -16,13 +16,13 @@ var (
 
 	// for systemd mode
 	vmAdapterTag string
-	ratTag       string
+	rraTag       string
 
 	kubeArmorImage          string
 	kubeArmorInitImage      string
 	kubeArmorVMAdapterImage string
 	imagePullPolicy         string
-	ratImage                string
+	rraImage                string
 
 	preserveUpstream bool
 
@@ -44,7 +44,7 @@ var (
 	skipBTF           bool
 	systemMonitorPath string
 
-	//flags for RAT scan
+	//flags for RRA scan
 	enableVMScan bool
 	profile      string
 	benchmark    string
@@ -158,11 +158,13 @@ func init() {
 
 	onboardVMCmd.PersistentFlags().StringVar(&logRotate, "log-rotate", "50M", "log rotate file size. Acceptable format similar to journalctl(10K, 200M, 2G, etc). Default: 50M")
 
-	// flags for RAT
-	onboardVMCmd.PersistentFlags().BoolVarP(&enableVMScan, "enable-vmscan", "", false, " Set to true to install RAT along with other kubearmor and accuknox-agents ")
+	// flags for RRA
+	onboardVMCmd.PersistentFlags().StringVar(&rraTag, "rra-tag", "", "version tag for RRA( rapid risk assessment tool)")
+	onboardVMCmd.PersistentFlags().StringVar(&rraImage, "rra-image", "", "RRA(Rapid Risk assessment tool) image to use")
+	onboardVMCmd.PersistentFlags().BoolVarP(&enableVMScan, "enable-vmscan", "", false, " Set to true to install RRA along with other kubearmor and accuknox-agents ")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&profile), "profile", "", "ubuntu,rhel")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&benchmark), "benchmark", "", "security benchmark (stig,soc2)")
-	onboardVMCmd.PersistentFlags().StringVar((*string)(&schedule), "schedule", "", "schedule for RAT to run")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&schedule), "schedule", "", "schedule for RRA to run")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&authToken), "auth-token", "", "authentication token")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&tenantID), "tenant-id", "", "tenant id of the cluster")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterName), "cluster-name", "", "cluster name")

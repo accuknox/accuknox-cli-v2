@@ -9,8 +9,8 @@ import (
 // onboardVM scan represents the sub-command to onboard VM clusters
 var onboardVmScanCmd = &cobra.Command{
 	Use:   "scanner",
-	Short: "sub-command for onboarding RAT(risk assessment tool)",
-	Long:  "sub-command for onboarding RAT(risk assessment tool)",
+	Short: "sub-command for onboarding RRA(risk assessment tool)",
+	Long:  "sub-command for onboarding RRA(risk assessment tool)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// create cluster config
@@ -30,20 +30,20 @@ var onboardVmScanCmd = &cobra.Command{
 
 		}
 		cc.EnableVMScan = true
-		// create RAT config
+		// create RRA config
 		cc.Mode = vmMode
-		err = cc.InitRATConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, ratImage, ratTag, releaseVersion, preserveUpstream)
+		err = cc.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream)
 		if err != nil {
-			logger.Error(" failed to initialize RAT config:%s", err.Error())
+			logger.Error(" failed to initialize RRA config:%s", err.Error())
 			return err
 		}
-		err = cc.InstallRAT()
+		err = cc.InstallRRA()
 		if err != nil {
-			logger.Error("failed to install RAT: %s", err.Error())
+			logger.Error("failed to install RRA: %s", err.Error())
 			return err
 		}
 
-		logger.PrintSuccess("RAT installed successfully!!")
+		logger.PrintSuccess("RRA installed successfully!!")
 		return nil
 	},
 }
