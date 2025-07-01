@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"net"
 
 	"github.com/kubearmor/kubearmor-client/vm"
 	"github.com/spf13/cobra"
@@ -29,10 +28,7 @@ var vmPolicyAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Create http address
-		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
-
-		if err := vm.PolicyHandling("ADDED", args[0], policyOptions, httpAddress, false); err != nil {
+		if err := vm.PolicyHandling("ADDED", args[0], policyOptions); err != nil {
 			return err
 		}
 		return nil
@@ -51,9 +47,7 @@ var vmPolicyDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
-
-		if err := vm.PolicyHandling("DELETED", args[0], policyOptions, httpAddress, false); err != nil {
+		if err := vm.PolicyHandling("DELETED", args[0], policyOptions); err != nil {
 			return err
 		}
 		return nil

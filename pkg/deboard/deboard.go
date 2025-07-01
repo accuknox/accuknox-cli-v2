@@ -92,16 +92,16 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 }
 
 // returns installed containers and volumes
-func getInstalledObjects() (map[string]dockerTypes.Container, []string, error) {
+func getInstalledObjects() (map[string]dockerContainerTypes.Summary, []string, error) {
 	allContainers := onboard.GetKnownContainerMap()
-	installedContainers := make(map[string]dockerTypes.Container, 0)
+	installedContainers := make(map[string]dockerContainerTypes.Summary, 0)
 
 	dockerClient, err := onboard.CreateDockerClient()
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to create docker client. %s", err.Error())
 	}
 
-	containerList, err := dockerClient.ContainerList(context.Background(), dockerTypes.ContainerListOptions{
+	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
 		All: true,
 	})
 	if err != nil {
@@ -151,7 +151,7 @@ func removeInstalledObjects(installedContainers map[string]dockerTypes.Container
 		}
 
 		fmt.Printf("Removing container %s...\n", containerName)
-		err = dockerClient.ContainerRemove(context.Background(), container.ID, dockerTypes.ContainerRemoveOptions{})
+		err = dockerClient.ContainerRemove(context.Background(), container.ID, dockerContainerTypes.RemoveOptions{})
 		if err != nil {
 			fmt.Println(color.YellowString("Failed to remove container %s: %s", containerName, err.Error()))
 		}
@@ -249,7 +249,7 @@ func getRRAContainerObject() (map[string]dockerTypes.Container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create docker client. %s", err.Error())
 	}
-	containerList, err := dockerClient.ContainerList(context.Background(), dockerTypes.ContainerListOptions{
+	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
 		All: true,
 	})
 	if err != nil {

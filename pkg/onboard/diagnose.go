@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	dockerTypes "github.com/docker/docker/api/types"
+	dockerContainerTypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 )
 
@@ -134,7 +135,7 @@ func diagnose(nodeType NodeType) (string, error) {
 	}
 	defer dockerClient.Close()
 
-	containerList, err := dockerClient.ContainerList(context.Background(), dockerTypes.ContainerListOptions{
+	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
 		All: true,
 	})
 	if err != nil {

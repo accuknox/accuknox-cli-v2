@@ -16,7 +16,7 @@ var profilecmd = &cobra.Command{
 	Short: "Profiling of logs",
 	Long:  `Profiling of logs`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		profileclient.Start(profileOptions)
+		profileclient.Start()
 		return nil
 	},
 }
