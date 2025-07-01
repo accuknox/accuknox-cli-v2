@@ -4,34 +4,21 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"os"
 
 	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
 )
 
 // SetupGitHubClient sets up a GitHub client with the provided PAT, it uses oAuth2 to authenticate
-func SetupGitHubClient(pat string, ctx context.Context) (*github.Client, error) {
-	if pat == "" {
-		return nil, os.ErrInvalid
-	}
+func SetupGitHubClient(ctx context.Context) (*github.Client, error) {
 
-	if err := checkGithubHealth(); err != nil {
-		return nil, err
-	}
-
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: pat},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
+	client := github.NewClient(nil)
 
 	return client, nil
 }
 
 // GetLatestRelease returns the latest release from the GitHub API
 func GetLatestRelease(client *github.Client, ctx context.Context) (*github.RepositoryRelease, error) {
-	latestRelease, _, err := client.Repositories.GetLatestRelease(ctx, AccuknoxGithub, AccuknoxCLIRepo)
+	latestRelease, _, err := client.Repositories.GetLatestRelease(ctx, AccuknoxGithub, AccuknoxKnoxctlwebsite)
 	if err != nil {
 		return nil, err
 	}
