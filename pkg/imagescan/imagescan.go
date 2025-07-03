@@ -74,18 +74,18 @@ func discoverImages(logger *zap.SugaredLogger, hostName, runtime string) []kubes
 
 	// Fetching images present in all the provided runtimes
 	for _, r := range runtimes {
-		runtime, criPath, ok := kubesheildDiscovery.DiscoverNodeRuntime("", r, logger)
+		detectedRuntime, criPath, ok := kubesheildDiscovery.DiscoverNodeRuntime("", r, logger)
 		if !ok {
 			logger.Errorf("Unable to detect runtime")
 			continue
 		}
-		imageList := kubesheildDiscovery.ListRunningImages(runtime, criPath, kubesheildDiscovery.VM, logger)
+		imageList := kubesheildDiscovery.ListRunningImages(detectedRuntime, criPath, kubesheildDiscovery.VM, logger)
 		for i, img := range imageList {
 			images = append(images, kubesheildConfig.Image{
 				Name:    img,
-				Runtime: runtime,
+				Runtime: detectedRuntime,
 			})
-			logger.Infof("%d) Image: %s | Runtime: %s", i+1, img, runtime)
+			logger.Infof("%d) Image: %s | Runtime: %s", i+1, img, detectedRuntime)
 		}
 	}
 	return images
