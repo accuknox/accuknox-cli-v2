@@ -90,7 +90,9 @@ func ShouldUpdate(currentVersion string) (bool, string, string, error) {
 	if err != nil {
 		return false, "", currentVersion, fmt.Errorf("error checking latest version: %v", err)
 	}
-	return latestVersion != currentVersion, latestVersion, currentVersion, nil
+	doUpdate := strings.TrimLeft(latestVersion, "v") != strings.TrimLeft(currentVersion, "v")
+
+	return doUpdate, latestVersion, currentVersion, nil
 }
 
 func fetchReleaseVersion() (string, error) {
