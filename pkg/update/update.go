@@ -14,17 +14,13 @@ import (
 	selfupdate "github.com/creativeprojects/go-selfupdate"
 	"github.com/fatih/color"
 	"github.com/google/go-github/github"
-	"github.com/kubearmor/kubearmor-client/k8s"
 )
 
 const maxSize = 128 * 10e6 // 128 MB
 
-type Option struct {
-	DoUpdate bool
-}
+// SelfUpdate() checks if an update is available for the knoxctl CLI tool.
+func SelfUpdate() error {
 
-// doUpdate() checks if an update is available for the knoxctl CLI tool.
-func doUpdate(doUpdate bool) error {
 	ctx := context.Background()
 	client, err := common.SetupGitHubClient(ctx)
 	if err != nil {
@@ -36,27 +32,22 @@ func doUpdate(doUpdate bool) error {
 		return fmt.Errorf("error getting latest release: %v", err)
 	}
 
-	shouldUpdate, latestVersion, currentVersion, err := version.ShouldUpdate(version.GitSummary)
-	if err != nil {
-		return fmt.Errorf("error checking if update is needed: %v", err)
-	}
-
-	if !shouldUpdate {
-		fmt.Println("You are already using the latest version. ", latestVersion)
+	currentVersion := strings.TrimLeft(version.GitSummary, "v")
+	latestVersion := strings.TrimLeft(*release.TagName, "v")
+	if latestVersion == currentVersion {
+		fmt.Println("Knoxctl is already running the latest version. ", *release.TagName)
 		return nil
 	}
 
-	if !doUpdate {
-		fmt.Printf("An update is available for knoxctl: latest version %s, current version %s. Do you want to update? (y/n): ", latestVersion, currentVersion)
-		reader := bufio.NewReader(os.Stdin)
-		response, err := reader.ReadString('\n')
-		if err != nil {
-			return fmt.Errorf("error reading response: %v", err)
-		}
-		if strings.ToLower(strings.TrimSpace(response)) != "y" {
-			fmt.Println("Update cancelled.")
-			return nil
-		}
+	fmt.Printf("An update is available for knoxctl: latest version %s, current version %s. Do you want to update? (y/n): ", latestVersion, currentVersion)
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("error reading response: %v", err)
+	}
+	if strings.ToLower(strings.TrimSpace(response)) != "y" {
+		fmt.Println("Update cancelled.")
+		return nil
 	}
 
 	opSys := runtime.GOOS  // "linux" or "darwin"
@@ -89,9 +80,4 @@ func doUpdate(doUpdate bool) error {
 	}
 	fmt.Println("Update successful. [" + latestVersion + "]")
 	return nil
-}
-
-func SelfUpdate(c *k8s.Client, options *Option) error {
-
-	return doUpdate(options.DoUpdate)
 }

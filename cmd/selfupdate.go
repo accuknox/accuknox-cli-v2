@@ -8,15 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var options update.Option
-
 // selfUpdateCmd represents the get command
 var selfUpdateCmd = &cobra.Command{
 	Use:   "selfupdate",
 	Short: "update knoxctl",
 	Long:  `update knoxctl to sync with latest and greatest updates`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := update.SelfUpdate(client, &options); err != nil {
+		if err := update.SelfUpdate(); err != nil {
 			return err
 		}
 		return nil
@@ -25,5 +23,4 @@ var selfUpdateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(selfUpdateCmd)
-	selfUpdateCmd.Flags().BoolVarP(&options.DoUpdate, "yes", "y", false, "Force update to latest version")
 }

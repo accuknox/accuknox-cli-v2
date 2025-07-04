@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,22 +76,6 @@ func getKubeArmorVersion(c *k8s.Client) (string, error) {
 	}
 
 	return "", nil
-}
-
-func ShouldUpdate(currentVersion string) (bool, string, string, error) {
-
-	client, err := common.SetupGitHubClient(context.Background())
-	if err != nil {
-		return false, "", currentVersion, fmt.Errorf("error setting up GitHub client: %v", err)
-	}
-
-	latestVersion, err := common.GetLatestVersion(client, context.Background())
-	if err != nil {
-		return false, "", currentVersion, fmt.Errorf("error checking latest version: %v", err)
-	}
-	doUpdate := strings.TrimLeft(latestVersion, "v") != strings.TrimLeft(currentVersion, "v")
-
-	return doUpdate, latestVersion, currentVersion, nil
 }
 
 func fetchReleaseVersion() (string, error) {
