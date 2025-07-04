@@ -38,6 +38,9 @@ func DiscoverAndScan(conf kubesheildConfig.Config, hostName, runtime string) err
 
 	// removes duplicate images
 	conf.Images = lo.Uniq(conf.Images)
+	for i := range conf.Images {
+		zapLogger.Info("Discovered Image", zap.String("Name", conf.Images[i].Name), zap.String("Runtime", conf.Images[i].Runtime))
+	}
 	zapLogger.Info("Images Discovered Successfully", zap.Int("Total number of images:", len(conf.Images)))
 
 	if hostName == "" {
@@ -76,16 +79,15 @@ func discoverImages(logger *zap.SugaredLogger, hostName, runtime string) []kubes
 	for _, r := range runtimes {
 		detectedRuntime, criPath, ok := kubesheildDiscovery.DiscoverNodeRuntime("", r, logger)
 		if !ok {
-			logger.Errorf("Unable to detect runtime")
+			logger.Errorf("Unable to detect runtime for %s", r)
 			continue
 		}
 		imageList := kubesheildDiscovery.ListRunningImages(detectedRuntime, criPath, kubesheildDiscovery.VM, logger)
-		for i, img := range imageList {
+		for _, img := range imageList {
 			images = append(images, kubesheildConfig.Image{
 				Name:    img,
 				Runtime: detectedRuntime,
 			})
-			logger.Infof("%d) Image: %s | Runtime: %s", i+1, img, detectedRuntime)
 		}
 	}
 	return images

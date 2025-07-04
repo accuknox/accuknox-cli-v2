@@ -26,7 +26,7 @@ require (
 	github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d
 	github.com/accuknox/dev2/hardening v0.0.0-20231026051927-56fe5412ae0d
 	github.com/accuknox/dev2/sumengine v0.0.0-20250109055732-04767b7ac965
-	github.com/accuknox/kubeshield v0.1.2-0.20250630173609-68d2cc5c6a0c
+	github.com/accuknox/kubeshield v0.1.2-0.20250703151016-b34e540d8ed3
 	github.com/clarketm/json v1.17.1
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/docker/docker v28.3.0+incompatible
@@ -430,7 +430,7 @@ require (
 
 replace github.com/accuknox/rat => ./pkg/vm/RRA
 
-replace github.com/accuknox/kubeshield v0.1.2-0.20250630173609-68d2cc5c6a0c => github.com/accuknox/kubesheild v0.1.2-0.20250630173609-68d2cc5c6a0c
+replace github.com/accuknox/kubeshield v0.1.2-0.20250703151016-b34e540d8ed3 => github.com/accuknox/kubesheild v0.1.2-0.20250703151016-b34e540d8ed3
 
 replace sigs.k8s.io/controller-runtime v0.21.0 => sigs.k8s.io/controller-runtime v0.15.0
 
