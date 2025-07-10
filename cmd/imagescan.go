@@ -19,6 +19,9 @@ var imageScanCmd = &cobra.Command{
 and sends back the result to saas through artifact API
 		`,
 	Args: cobra.NoArgs,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return imagescan.IsTrivyInstalled()
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return imagescan.DiscoverAndScan(cfg, HOST_NAME, RUN_TIME)
 	},

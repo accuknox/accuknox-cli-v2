@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"syscall"
 
 	kubesheildDiscovery "github.com/accuknox/kubeshield/pkg/discovery"
@@ -91,4 +92,11 @@ func discoverImages(logger *zap.SugaredLogger, hostName, runtime string) []kubes
 		}
 	}
 	return images
+}
+
+func IsTrivyInstalled() error {
+	if _, err := exec.LookPath("trivy"); err != nil {
+		return fmt.Errorf("Trivy is not installed or not found in $PATH. Please install Trivy to enable image scanning")
+	}
+	return nil
 }
