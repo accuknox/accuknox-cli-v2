@@ -1,5 +1,69 @@
-name: accuknox-rra
+
+{{- if .SpireEnabled }}
+volumes:
+  spire-vol:
+    name: spire-vol
+networks:
+  accuknox-net:
+    name: accuknox-net
+    ipam:
+      config:
+        - subnet: {{.NetworkCIDR}}
+{{- end }}
+
 services:
+  {{- if .SpireEnabled }}
+  spire-agent:
+    profiles:
+      - "spire-agent"
+    container_name: spire-agent
+    image: {{.SPIREAgentImage}}
+    pull_policy: "{{.ImagePullPolicy}}"
+    command:
+      - "-config"
+      - "/etc/spire/conf/agent.conf"
+      - "-expandEnv"
+    volumes:
+      # for SPIRE config
+      - "{{.ConfigPath}}:/etc"
+      # for SVID persistence
+      - "spire-vol:{{.SpireSecretDir}}:rw"
+      # for SPIRE socket
+      - "/var/run/:/var/run/"
+      # for spire SVID persistence
+      # TODO: this is not consumed right now due to user perms
+      - "/var/lib/spire/agent:/var/lib/spire/agent"
+    labels:
+      app: spire-agent
+    networks:
+      accuknox-net:
+        aliases:
+          - spire-agent
+    restart: always
+    ports:
+      - "9091:9091"
+      - "9090:9090"
+    pid: "host"
+    privileged: true
+
+  wait-for-it:
+    container_name: wait-for-it
+    profiles:
+      - "accuknox-agents"
+    depends_on:
+      spire-agent:
+        condition: service_started
+    image: {{.WaitForItImage}}
+    pull_policy: "{{.ImagePullPolicy}}"
+    command: ["-t", "60", "spire-agent:9090"]
+    labels:
+      app: wait-for-it
+    networks:
+      accuknox-net:
+        aliases:
+          - wait-for-it
+  {{- end }}
+
   rra:
     profiles:
       - "accuknox-agents"
@@ -23,4 +87,9 @@ services:
       - CLUSTER_NAME={{.ClusterName}}
       - CLUSTER_ID={{.ClusterID}}
       - LABEL={{.Label}}
+      {{- if .SpireEnabled }}
+      - SPIRE={{.SpireEnabled}}
+      - SPIRE_SECRET_DIR={{.SpireSecretDir}}
+      - GATEWAY_SERVER={{.GatewayServer}}
+      {{- end }}
     entrypoint: ["/rra/rra-cronjob.sh"]   

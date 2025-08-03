@@ -13,8 +13,11 @@ ExecStart=/bin/bash -c 'for benchmark in $(echo "{{.Benchmark}}" | tr "," "\n");
     --url {{.Url}} \
     --tenant-id {{.TenantID}} \
     --cluster-name {{.ClusterName}} \
-    {{- if .ClusterID }}{{"\n"}} --cluster-id {{.ClusterID}} \{{ end }} \
+    {{- if .ClusterID }}{{"\n"}}    --cluster-id {{.ClusterID}} \ {{ end }}
     --label {{.Label}} \
+    {{- if .SpireEnabled }}{{"\n"}}    --spire-secret-dir {{.SpireSecretDir}} \{{ end }} 
+    {{- if .GatewayServer }}{{"\n"}}    --gateway-server {{.GatewayServer}} \{{ end }} 
+    {{- if .SpireEnabled }}{{"\n"}}    --spire {{.SpireEnabled}} \{{ end }} 
     --json > /var/accuknox-rra_"$benchmark"_result.json 2>&1; \
 done'
 [Install]

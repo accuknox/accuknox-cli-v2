@@ -69,6 +69,7 @@ var (
 
 	joinToken string
 	spireHost string
+	spireDir  = "/opt/spire-agent/spire-data"
 
 	logRotate string
 
@@ -126,7 +127,7 @@ func init() {
 	onboardVMCmd.MarkFlagsMutuallyExclusive("hostBlock", "host-block")
 
 	onboardVMCmd.PersistentFlags().BoolVarP(&alertThrottling, "alert-throttling", "", true, "to toggle alert-throttling")
-	onboardVMCmd.PersistentFlags().IntVarP(&maxAlertPerSec, "max-alerts-per-sec", "", 10, "specifes maximum alert rate past which throttling will be triggered")
+	onboardVMCmd.PersistentFlags().IntVarP(&maxAlertPerSec, "max-alerts-per-sec", "", 10, "specifies maximum alert rate past which throttling will be triggered")
 	onboardVMCmd.PersistentFlags().IntVarP(&throttleSec, "throttle-sec", "", 30, "duration (in seconds) for which subsequent alerts will be dropped once alert throttling comes into action")
 
 	onboardVMCmd.PersistentFlags().StringVar(&rmqAddress, "rmq-address", "", "RabbitMQ address")
@@ -195,6 +196,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&waitForItImage, "wait-for-it-image", "", "wait-for-it image to use")
 
 	onboardVMCmd.PersistentFlags().IntVar(&parallel, "parallel", 0, "number of images to pull in parallel (0 for unlimited, 1 for sequential, >1 for limited parallelism)")
+
+	onboardVMCmd.PersistentFlags().StringVar(&knoxGateway, "knox-gateway", "", "address of knox-gateway to connect with for pushing telemetry data")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

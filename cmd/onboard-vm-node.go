@@ -114,7 +114,7 @@ var joinNodeCmd = &cobra.Command{
 			}
 		}
 
-		joinConfig := onboard.JoinClusterConfig(*vmConfigs, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr, spireHost, spireTrustBundle, joinToken)
+		joinConfig := onboard.JoinClusterConfig(*vmConfigs, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr, spireHost, spireTrustBundle, joinToken, spireDir)
 
 		defer func() {
 			err := onboard.DumpConfig(joinConfig, configDumpPath)
@@ -149,7 +149,7 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 		if enableVMScan {
-			err := joinConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream)
+			err := joinConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream, true, spireAgentImage, spireHost, spireDir, knoxGateway)
 			if err != nil {
 				logger.Print("error creating RRA config in %s mode", vmMode)
 			} else {

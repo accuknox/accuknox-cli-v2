@@ -133,7 +133,7 @@ var cpNodeCmd = &cobra.Command{
 			}
 		}
 
-		onboardConfig := onboard.InitCPNodeConfig(*vmConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle, enableLogs)
+		onboardConfig := onboard.InitCPNodeConfig(*vmConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle, spireDir, enableLogs)
 
 		defer func() {
 			err := onboard.DumpConfig(onboardConfig, configDumpPath)
@@ -168,7 +168,7 @@ var cpNodeCmd = &cobra.Command{
 			return err
 		}
 		if enableVMScan {
-			err := vmConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream)
+			err := vmConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream, true, spireAgentImage, spireHost, spireDir, knoxGateway)
 			if err != nil {
 				logger.Error("error initializing RRA config", vmMode)
 			}
@@ -195,7 +195,6 @@ func init() {
 	cpNodeCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "agents release version to use")
 
 	cpNodeCmd.PersistentFlags().StringVar(&ppsHost, "pps-host", "", "address of policy-provider-service to connect with for receiving policies")
-	cpNodeCmd.PersistentFlags().StringVar(&knoxGateway, "knox-gateway", "", "address of knox-gateway to connect with for pushing telemetry data")
 
 	cpNodeCmd.PersistentFlags().StringVar(&spireTrustBundle, "spire-trust-bundle-addr", "", "address of spire trust bundle (CA cert for accuknox spire-server)")
 
@@ -229,11 +228,6 @@ func init() {
 	cpNodeCmd.PersistentFlags().BoolVar(&enableHostPolicyDiscovery, "enable-host-policy-discovery", false, "to enable host policy auto-discovery")
 
 	err := cpNodeCmd.MarkPersistentFlagRequired("pps-host")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	err = cpNodeCmd.MarkPersistentFlagRequired("knox-gateway")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

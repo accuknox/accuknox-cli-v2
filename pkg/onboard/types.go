@@ -154,6 +154,8 @@ type ClusterConfig struct {
 
 	AccessKey AccessKey `json:"access_key"`
 	Parallel  int       `json:"parallel,omitempty"`
+
+	AdditionalArgs map[string]any `json:"additional_args,omitempty"`
 }
 
 type AccessKey struct {
@@ -168,11 +170,12 @@ type AccessKey struct {
 
 type InitConfig struct {
 	// basic
-	ClusterConfig `json:"cluster_config,omitempty"`
-	JoinToken     string `json:"join_token,omitempty"`
-	SpireHost     string `json:"spire_host,omitempty"`
-	PPSHost       string `json:"pps_host,omitempty"`
-	KnoxGateway   string `json:"knox_gateway,omitempty"`
+	ClusterConfig  `json:"cluster_config,omitempty"`
+	JoinToken      string `json:"join_token,omitempty"`
+	SpireHost      string `json:"spire_host,omitempty"`
+	PPSHost        string `json:"pps_host,omitempty"`
+	KnoxGateway    string `json:"knox_gateway,omitempty"`
+	SpireSecretDir string `json:"spire_secret_dir,omitempty"`
 
 	// advanced
 	SpireTrustBundleURL string `json:"spire_trust_bundle_url,omitempty"`
@@ -193,6 +196,7 @@ type JoinConfig struct {
 	JoinToken           string `json:"join_token,omitempty"`
 	SpireHost           string `json:"spire_host,omitempty"`
 	SpireTrustBundleURL string `json:"spire_trust_bundle_url,omitempty"`
+	SpireSecretDir      string `json:"spire_secret_dir,omitempty"`
 
 	// internal
 	TCArgs TemplateConfigArgs `json:"tc_args,omitempty"`
@@ -269,6 +273,7 @@ type TemplateConfigArgs struct {
 	SpireHostAddr       string `json:"spire_host_addr,omitempty"`
 	SpireHostPort       string `json:"spire_host_port,omitempty"`
 	SpireTrustBundleURL string `json:"spire_trust_bundle_url,omitempty"`
+	SpireSecretDir      string `json:"spire_secret_dir,omitempty"`
 
 	// docker config
 	NetworkCIDR string `json:"network_cidr,omitempty"`
@@ -395,6 +400,10 @@ type RRAConfig struct {
 	Schedule     string
 	Benchmark    string
 	Profile      string
+
+	// Spire configs
+	SpireSecretDir string
+	GatewayServer  string
 }
 
 var (

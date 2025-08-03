@@ -1,7 +1,9 @@
 package onboard
 
 import (
+	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 
 	"github.com/Masterminds/sprig"
@@ -10,7 +12,7 @@ import (
 )
 
 // Initialize RRA config
-func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile string, benchmark string, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection bool, rraImage, rraVersionTag, releaseVersion string, preserveUpstream bool) error {
+func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile string, benchmark string, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection bool, rraImage, rraVersionTag, releaseVersion string, preserveUpstream, agentsDeployed bool, spireImage, spireHost, spireDir, knoxGateway string) error {
 	var err error
 	var releaseInfo cm.ReleaseMetadata
 	if releaseVersion == "" {
@@ -35,6 +37,19 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 		return err
 	}
 
+	if !agentsDeployed && spireHost != "" {
+		host, port, _, err := getSpireDetails(spireHost, "")
+		if err != nil {
+			return err
+		}
+		cc.AdditionalArgs["SpireHostAddr"] = host
+		cc.AdditionalArgs["SpireHostPort"] = port
+		cc.AdditionalArgs["SpireEnabled"] = true
+	}
+
+	cc.RRAConfigObject.SpireSecretDir = spireDir
+	cc.RRAConfigObject.GatewayServer = knoxGateway
+
 	if cc.Mode == VMMode_Systemd {
 		cc.RRAConfigObject.Schedule, err = ConvertCronToSystemd(schedule)
 		if err != nil {
@@ -55,16 +70,47 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 		if err != nil {
 			return err
 		}
+
+		if !agentsDeployed {
+			cc.SPIREAgentImage, err = getImage(registry, cm.DefaultDockerRegistry,
+				cm.DefaultAccuKnoxRepo, spireImage, cm.DefaultSPIREAgentImage,
+				"latest", releaseInfo.SPIREAgentImageTag, "", "", preserveUpstream)
+			if err != nil {
+				return err
+			}
+
+			cc.WaitForItImage, err = getImage(registry, cm.DefaultDockerRegistry,
+				cm.DefaultAccuKnoxRepo, "", cm.DefaultWaitForItImage,
+				"latest", "", "", "", preserveUpstream)
+			if err != nil {
+				return err
+			}
+			cc.AdditionalArgs["SPIREAgentImage"] = cc.SPIREAgentImage
+			cc.AdditionalArgs["WaitForItImage"] = cc.WaitForItImage
+			cc.AdditionalArgs["ImagePullPolicy"] = "always"
+		}
+
 		fmt.Println(cc.RRAImage)
 		cc.RRAConfigObject.RRAImage = cc.RRAImage
 
 	case VMMode_Systemd:
+		cc.LogRotateTemplateString = logRotateFile
 		cc.RRAImage, err = getImage(registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, rraImage, cm.AgentRepos[cm.RRA],
 			rraVersionTag, releaseInfo.RraTag, "v", cm.SystemdTagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
+
+		if !agentsDeployed {
+			cc.SPIREAgentImage, err = getImage(registry, cm.DefaultDockerRegistry,
+				cm.DefaultAccuKnoxRepo, spireImage, cm.AgentRepos[cm.SpireAgent],
+				"", releaseInfo.SPIREAgentImageTag, "v", cm.SystemdTagSuffix, preserveUpstream)
+			if err != nil {
+				return err
+			}
+		}
+
 		cc.SystemdServiceObjects = append(cc.SystemdServiceObjects,
 
 			SystemdServiceObject{
@@ -78,6 +124,24 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 				InstallOnWorkerNode:   true,
 			},
 		)
+
+		if !agentsDeployed {
+
+			cc.AdditionalArgs["PartOfVMScan"] = true
+
+			cc.SystemdServiceObjects = append(cc.SystemdServiceObjects, SystemdServiceObject{
+				AgentName:             cm.SpireAgent,
+				PackageName:           cm.SpireAgent,
+				ServiceName:           cm.SpireAgent + ".service",
+				AgentDir:              cm.SpireConfigPath,
+				ServiceTemplateString: spireAgentFile,
+				ConfigFilePath:        "conf/agent/agent.conf",
+				ConfigTemplateString:  spireAgentConfig,
+				AgentImage:            cc.SPIREAgentImage,
+				LogRotate:             cc.LogRotate,
+			})
+		}
+
 		loginOptions := LoginOptions{
 			Insecure:           insecureRegistryConnection,
 			PlainHTTP:          httpRegistryConnection,
@@ -98,6 +162,18 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 
 func (cc *ClusterConfig) InstallRRA() error {
 
+	var configObject map[string]any
+	configBytes, _ := json.Marshal(cc.RRAConfigObject)
+	if err := json.Unmarshal(configBytes, &configObject); err != nil {
+		return err
+	}
+
+	if cc.AdditionalArgs != nil {
+		maps.Copy(configObject, cc.AdditionalArgs)
+	}
+
+	cc.AdditionalArgs = configObject
+
 	switch cc.Mode {
 	case VMMode_Docker:
 		var err error
@@ -112,11 +188,18 @@ func (cc *ClusterConfig) InstallRRA() error {
 		// initialize sprig for templating
 		sprigFuncs := sprig.GenericFuncMap()
 		//create compose file
-		composeFilePath, err := copyOrGenerateFile(cc.UserConfigPath, configPath, "docker-compose_rra.yaml", sprigFuncs, rraComposeFileTemplate, cc.RRAConfigObject)
+		composeFilePath, err := copyOrGenerateFile(cc.UserConfigPath, configPath, "docker-compose_rra.yaml", sprigFuncs, rraComposeFileTemplate, configObject)
 		if err != nil {
 			return err
 		}
-		args := []string{"-f", composeFilePath, "--profile", "accuknox-agents", "up", "-d"}
+		args := []string{"-f", composeFilePath, "--profile", "accuknox-agents"}
+
+		if cc.AdditionalArgs != nil && cc.AdditionalArgs["SpireEnabled"] == true {
+			args = append(args, "--profile", "spire-agent")
+		}
+
+		args = append(args, "up", "-d")
+
 		// run compose command
 		_, err = ExecComposeCommand(true, cc.DryRun, cc.composeCmd, args...)
 		if err != nil {
@@ -124,27 +207,36 @@ func (cc *ClusterConfig) InstallRRA() error {
 		}
 
 	case VMMode_Systemd:
-		var obj SystemdServiceObject
+		serviceFiles := []string{"accuknox-rra.timer"}
 		for _, agent := range cc.SystemdServiceObjects {
-			if agent.AgentName == cm.RRA {
-				obj = agent
+			fmt.Print(color.CyanString("Downloading Agent - %s | Image - %s\n", agent.AgentName, agent.AgentImage))
+			packageMeta := splitLast(agent.AgentImage, ":")
+			err := cc.installAgent(agent.AgentName, packageMeta[0], packageMeta[1])
+			if err != nil {
+				fmt.Println(color.RedString("RRA Installation failed!! Cleaning up downloaded asset..."))
+				Deletedir(cm.DownloadDir)
+				return err
+			}
+			if agent.AgentName == cm.SpireAgent {
+				serviceFiles = append(serviceFiles, agent.ServiceName)
+
+				if agent.ConfigFilePath != "" {
+					_, err = copyOrGenerateFile(cc.UserConfigPath, agent.AgentDir, agent.ConfigFilePath, sprig.GenericFuncMap(), agent.ConfigTemplateString, configObject)
+					if err != nil {
+						return err
+					}
+				}
 			}
 		}
-		fmt.Print(color.CyanString("Downloading Agent - %s | Image - %s\n", obj.AgentName, obj.AgentImage))
-		packageMeta := splitLast(obj.AgentImage, ":")
-		err := cc.installAgent(obj.AgentName, packageMeta[0], packageMeta[1])
-		if err != nil {
-			fmt.Println(color.RedString("RRA Installation failed!! Cleaning up downloaded asset..."))
-			Deletedir(cm.DownloadDir)
-			return err
-		}
-		err = cc.placeServiceFiles()
+		err := cc.placeServiceFiles()
 		if err != nil {
 			return err
 		}
-		err = StartSystemdService("accuknox-rra.timer")
-		if err != nil {
-			return err
+		for _, service := range serviceFiles {
+			err := StartSystemdService(service)
+			if err != nil {
+				return err
+			}
 		}
 		fmt.Println(color.BlueString("\nCleaning up downloaded assets..."))
 		Deletedir(cm.DownloadDir)

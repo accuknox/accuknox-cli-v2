@@ -23,7 +23,7 @@ type agentConfigMeta struct {
 	kmuxConfigFileName       string
 }
 
-func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle string, enableLogs bool) *InitConfig {
+func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle, secretDir string, enableLogs bool) *InitConfig {
 	return &InitConfig{
 		ClusterConfig: cc,
 		JoinToken:     joinToken,
@@ -33,6 +33,7 @@ func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGatew
 
 		SpireTrustBundleURL: spireTrustBundle,
 		EnableLogs:          enableLogs,
+		SpireSecretDir:      secretDir,
 	}
 }
 
@@ -124,8 +125,9 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		SumEngineCronTime:    ic.SumEngineCronTime,
 		NodeStateRefreshTime: ic.NodeStateRefreshTime,
 
-		SpireCert:    ic.SpireCert,
-		SpireEnabled: ic.SpireEnabled,
+		SpireCert:      ic.SpireCert,
+		SpireEnabled:   ic.SpireEnabled,
+		SpireSecretDir: ic.SpireSecretDir,
 	}
 	return nil
 }

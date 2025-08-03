@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"maps"
 	"os"
 	"os/exec"
 	"path"
@@ -330,11 +331,16 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 
 // placeServiceFiles copies service files
 func (cc *ClusterConfig) placeServiceFiles() error {
-	configArgs := map[string]interface{}{
+	configArgs := map[string]any{
 		"WorkerNode":       cc.WorkerNode,
 		"UseSystemdAppend": useSystemdAppend(),
 		"ReleaseVersion":   cc.AgentsVersion,
 	}
+
+	if cc.AdditionalArgs != nil {
+		maps.Copy(configArgs, cc.AdditionalArgs)
+	}
+
 	for _, obj := range cc.SystemdServiceObjects {
 		if cc.WorkerNode && !obj.InstallOnWorkerNode {
 			continue
@@ -345,17 +351,18 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 		if obj.AgentName == cm.HardeningAgent && semver.Compare(cc.AgentsVersion, "v0.9.4") >= 0 {
 			continue
 		}
+
 		if obj.ServiceTemplateString != "" {
 
 			if obj.AgentName == cm.RRA {
 				//place service file for RRA
 				cc.TemplateFuncs = sprig.GenericFuncMap()
-				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, cc.RRAConfigObject)
+				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, configArgs)
 				if err != nil {
 					return err
 				}
 				//place timer file for RRA
-				_, err = copyOrGenerateFile("", cm.SystemdDir, "accuknox-rra.timer", cc.TemplateFuncs, obj.TimerTemplateString, cc.RRAConfigObject)
+				_, err = copyOrGenerateFile("", cm.SystemdDir, "accuknox-rra.timer", cc.TemplateFuncs, obj.TimerTemplateString, configArgs)
 				if err != nil {
 					return err
 				}
@@ -366,21 +373,23 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 					return err
 				}
 
-				logRotate := map[string]interface{}{
-					"AgentDir":    obj.AgentDir,
-					"PackageName": obj.PackageName,
-					"LogRotate":   obj.LogRotate,
-				}
-				_, err = copyOrGenerateFile("", cm.LogrotateDir, obj.PackageName, cc.TemplateFuncs, cc.LogRotateTemplateString, logRotate)
-				if err != nil {
-					fmt.Println(err.Error())
-					return err
-				}
-				logRotate["PackageName"] = obj.PackageName + "-err"
-				_, err = copyOrGenerateFile("", cm.LogrotateDir, obj.PackageName+"-err", cc.TemplateFuncs, cc.LogRotateTemplateString, logRotate)
-				if err != nil {
-					fmt.Println(err.Error())
-					return err
+				if cc.LogRotateTemplateString != "" {
+					logRotate := map[string]interface{}{
+						"AgentDir":    obj.AgentDir,
+						"PackageName": obj.PackageName,
+						"LogRotate":   obj.LogRotate,
+					}
+					_, err = copyOrGenerateFile("", cm.LogrotateDir, obj.PackageName, cc.TemplateFuncs, cc.LogRotateTemplateString, logRotate)
+					if err != nil {
+						fmt.Println(err.Error())
+						return err
+					}
+					logRotate["PackageName"] = obj.PackageName + "-err"
+					_, err = copyOrGenerateFile("", cm.LogrotateDir, obj.PackageName+"-err", cc.TemplateFuncs, cc.LogRotateTemplateString, logRotate)
+					if err != nil {
+						fmt.Println(err.Error())
+						return err
+					}
 				}
 			}
 		}
@@ -389,7 +398,7 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 	return nil
 }
 
-// downloadAgent downloads agents as OCI artifiacts
+// downloadAgent downloads agents as OCI artifacts
 func (cc *ClusterConfig) downloadAgent(agentName, agentRepo, agentTag string) (string, error) {
 	fs, err := file.New(cm.DownloadDir)
 	if err != nil {
@@ -505,7 +514,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 	// Verify BTF installation
 	btfPresent, err := verifyBTF()
 	if (cc.SkipBTFCheck && cc.SystemMonitorPath != "") || cc.SystemMonitorPath != "" {
-		// skip explicitly specified with system monitor OR system montior specified
+		// skip explicitly specified with system monitor OR system monitor specified
 		logger.Warn("Skipping BTF check. Using system monitor at: %s", cc.SystemMonitorPath)
 	} else if cc.SkipBTFCheck {
 		// we don't care about system monitor or BTF
@@ -638,8 +647,8 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 			logger.Info1("Disabled %s", serviceName)
 		}
 
-		svcfilePath := cm.SystemdDir + serviceName
-		if err := os.Remove(svcfilePath); err != nil {
+		svcFilePath := cm.SystemdDir + serviceName
+		if err := os.Remove(svcFilePath); err != nil {
 			if !os.IsNotExist(err) {
 				logger.Error("Failed to delete %s file: %v", serviceName, err)
 				return err
@@ -723,7 +732,7 @@ func InstallAgent(agentName, agentRepo, agentTag string) error {
 	return nil
 }
 
-// downloadAgent downloads agents as OCI artifiacts
+// downloadAgent downloads agents as OCI artifacts
 func DownloadAgent(agentName, agentRepo, agentTag string) (string, error) {
 	fs, err := file.New(cm.DownloadDir)
 	if err != nil {
