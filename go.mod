@@ -3,7 +3,7 @@ module github.com/accuknox/accuknox-cli-v2
 go 1.24.4
 
 replace (
-	github.com/accuknox/kubeshield v0.1.2-0.20250821135254-563c73e8f612 => github.com/accuknox/kubesheild v0.1.2-0.20250821135254-563c73e8f612
+	github.com/accuknox/kubeshield v0.1.2-0.20250828053718-5dc36a011db3 => github.com/accuknox/kubesheild v0.1.2-0.20250828053718-5dc36a011db3
 	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.6
 	github.com/google/gnostic-models v0.7.0 => github.com/google/gnostic-models v0.6.9
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
@@ -26,7 +26,7 @@ require (
 	github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d
 	github.com/accuknox/dev2/hardening v0.0.0-20250720150630-0e643f247e04
 	github.com/accuknox/dev2/sumengine v0.0.0-20250109055732-04767b7ac965
-	github.com/accuknox/kubeshield v0.1.2-0.20250821135254-563c73e8f612
+	github.com/accuknox/kubeshield v0.1.2-0.20250828053718-5dc36a011db3
 	github.com/clarketm/json v1.17.1
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/creativeprojects/go-selfupdate v1.5.0
