@@ -19,6 +19,8 @@ type AccuKnoxConfig struct {
 
 var Cfg AccuKnoxConfig
 
+const DEFAULT_CONFIG_FILE_NAME = "knoxctl.cfg"
+
 func LoadConfig(configFile string) error {
 	viper.AutomaticEnv()
 	cfgFile := os.Getenv("ACCUKNOX_CFG")
@@ -53,4 +55,12 @@ func SetConfig(cwpp, cspm, token, tenant_id string) {
 	if tenant_id != "" {
 		Cfg.TENANT_ID = tenant_id
 	}
+}
+
+func GetDefaultConfigFile() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return DEFAULT_CONFIG_FILE_NAME
+	}
+	return fmt.Sprintf("%s/%s", home, DEFAULT_CONFIG_FILE_NAME)
 }

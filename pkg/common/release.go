@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"golang.org/x/mod/semver"
 )
@@ -39,11 +40,15 @@ var (
 )
 
 func init() {
-	err := json.Unmarshal(releaseInfoFile, &ReleaseInfo)
+	err := unmarshal(releaseInfoFile)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func unmarshal(content []byte) error {
+	return json.Unmarshal(content, &ReleaseInfo)
 }
 
 // returns the latest release according to version tag and not according to
@@ -59,4 +64,26 @@ func GetLatestReleaseInfo() (string, ReleaseMetadata) {
 	}
 
 	return latestRelease, ReleaseInfo[latestRelease]
+}
+
+func GetOrWriteReleaseInfo(path string) (string, error) {
+
+	cleanFilePath := filepath.Clean(path)
+	filePath := filepath.Join(cleanFilePath, "release.json")
+	if _, err := os.Stat(filePath); err == nil {
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return "", err
+		}
+		if err := unmarshal(data); err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("Release file found at %s", filePath), nil
+	}
+
+	if err := os.MkdirAll(cleanFilePath, os.ModeDir|os.ModePerm); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("Release file written to %s", filePath), os.WriteFile(filePath, releaseInfoFile, 0o644) // #nosec G306
 }

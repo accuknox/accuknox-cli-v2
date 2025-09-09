@@ -244,7 +244,7 @@ services:
         condition: service_started
       discover:
         condition: service_started
-      {{- if and (not .TlsEnabled) (semverCompare "<0.9.4" (trimPrefix "v" .ReleaseVersion)) }}
+      {{- if and (not .TlsEnabled) ( .EnableHardeningAgent ) }}
       hardening-agent:
         condition: service_started
       {{- end }}
@@ -372,7 +372,7 @@ services:
       accuknox-net:
         aliases:
           - sumengine
-  {{- if trimPrefix "v" .ReleaseVersion | semverCompare "<0.9.4" }}
+  {{- if .EnableHardeningAgent }}
   hardening-agent:
     profiles:
       - "accuknox-agents"

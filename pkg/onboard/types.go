@@ -120,6 +120,8 @@ type ClusterConfig struct {
 	// host policy discovery
 	EnableHostPolicyDiscovery bool `json:"enable_host_policy_discovery,omitempty"`
 
+	EnableHardeningAgent bool `json:"enable_hardening_agent,omitempty"`
+
 	SkipBTFCheck      bool   `json:"skip_btf_check,omitempty"`
 	SystemMonitorPath string `json:"system_monitor_path,omitempty"`
 
@@ -291,6 +293,8 @@ type TemplateConfigArgs struct {
 	SecureContainers bool `json:"secure_containers,omitempty"`
 	// host policy discovery
 	EnableHostPolicyDiscovery bool `json:"enable_host_policy_discovery,omitempty"`
+
+	EnableHardeningAgent bool `json:"enable_hardening_agent,omitempty"`
 
 	//summary engine configuration
 	ProcessOperation bool `json:"process_operation,omitempty"`
