@@ -67,11 +67,9 @@ func GetLatestReleaseInfo() (string, ReleaseMetadata) {
 }
 
 func GetOrWriteReleaseInfo(path string) (string, error) {
-
-	cleanFilePath := filepath.Clean(path)
-	filePath := filepath.Join(cleanFilePath, "release.json")
+	filePath := filepath.Join(filepath.Clean(path), "release.json")
 	if _, err := os.Stat(filePath); err == nil {
-		data, err := os.ReadFile(filePath)
+		data, err := os.ReadFile(filepath.Clean(filePath))
 		if err != nil {
 			return "", err
 		}
@@ -81,7 +79,7 @@ func GetOrWriteReleaseInfo(path string) (string, error) {
 		return fmt.Sprintf("Release file found at %s", filePath), nil
 	}
 
-	if err := os.MkdirAll(cleanFilePath, os.ModeDir|os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Clean(path), os.ModeDir|os.ModePerm); err != nil {
 		return "", err
 	}
 
