@@ -71,8 +71,7 @@ func DiscoverAndScan(conf kubesheildScanner.ScanConfig, hostName, runtime string
 	}
 
 	zapLogger.Info("Images Scanned Successfully",
-		zap.Int("Total Scanned Images", len(conf.Images)),
-		zap.String("Tool used for scanning", conf.ScanTool))
+		zap.Int("Total Scanned Images", len(conf.Images)))
 
 	return nil
 }
@@ -80,8 +79,8 @@ func DiscoverAndScan(conf kubesheildScanner.ScanConfig, hostName, runtime string
 // Lists the running containers for the provided runtime, if the runtime is empty it will use the default supported runtimes
 func discoverImages(hostName, runtime string, onlyRunningContainers, imageOnly bool, logger *zap.SugaredLogger) []v1beta1.Image {
 	var (
-		runtimes = []string{"docker", "containerd", "cri-o", "nri"}
-		images   []v1beta1.Image
+		runtimes   = []string{"docker", "containerd", "cri-o", "nri"}
+		imagesList = []v1beta1.Image{}
 	)
 
 	if runtime != "" {
@@ -90,30 +89,49 @@ func discoverImages(hostName, runtime string, onlyRunningContainers, imageOnly b
 
 	// Fetching images present in all the provided runtimes
 	for _, r := range runtimes {
-		detectedRuntime, criPath, ok := kubesheildDiscovery.DiscoverNodeRuntime("", r, logger)
+		detectedRuntime, criPath, ok := DiscoverRuntime("", r)
 		if !ok {
-			logger.Errorf("Unable to detect runtime for %s", r)
+			logger.Debugf("Unable to detect runtime for %s", r)
 			continue
 		}
 
 		// If imageOnly flag is enabled, we only discover images; not containers
 		if imageOnly {
-			imageList, err := kubesheildDiscovery.ListImages(detectedRuntime, criPath, kubesheildDiscovery.VM)
-			if err != nil {
-				logger.Errorf("error while listing the images for runtime %s: %v", r, err)
-				continue
-			}
-			images = append(images, imageList...)
+			// fetch images based on the runtime
+			imagesList = append(imagesList, getImages(detectedRuntime, criPath, logger)...)
 			continue
 		}
 
 		// By default we fetch running containers, unless onlyRunningContainers is set to false
-		containerList, err := kubesheildDiscovery.ListContainers(detectedRuntime, criPath, kubesheildDiscovery.VM, onlyRunningContainers)
+		imagesList = append(imagesList, getContainers(detectedRuntime, criPath, onlyRunningContainers, logger)...)
+	}
+	return imagesList
+}
+
+// fetches the images based on all the provided runtime and cripath
+func getImages(runtime string, criPath []string, logger *zap.SugaredLogger) []v1beta1.Image {
+	var images = []v1beta1.Image{}
+	for _, path := range criPath {
+		imageList, err := kubesheildDiscovery.ListImages(runtime, path, kubesheildDiscovery.VM)
 		if err != nil {
-			logger.Errorf("error while listing the container images for runtime %s: %v", r, err)
+			logger.Errorf("error while listing the images for runtime %s: %v\n", runtime, err)
 			continue
 		}
-		images = append(images, containerList...)
+		images = append(images, imageList...)
 	}
 	return images
+}
+
+// fetches the containers based on all the provided runtime and cripath
+func getContainers(runtime string, criPath []string, onlyRunningContainers bool, logger *zap.SugaredLogger) []v1beta1.Image {
+	var conatainers = []v1beta1.Image{}
+	for _, path := range criPath {
+		containerList, err := kubesheildDiscovery.ListContainers(runtime, path, kubesheildDiscovery.VM, onlyRunningContainers)
+		if err != nil {
+			logger.Errorf("error while listing the container images for runtime %s: %v", runtime, err)
+			continue
+		}
+		conatainers = append(conatainers, containerList...)
+	}
+	return conatainers
 }

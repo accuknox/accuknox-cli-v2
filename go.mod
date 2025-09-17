@@ -55,9 +55,9 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	go.uber.org/zap v1.27.0
-	golang.org/x/mod v0.26.0
+	golang.org/x/mod v0.27.0
 	golang.org/x/net v0.42.0
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.17.0
 	golang.org/x/term v0.33.0
 	google.golang.org/grpc v1.73.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -131,6 +131,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.9.2 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
+	github.com/cilium/cilium v1.17.4 // indirect
 	github.com/containerd/cgroups/v3 v3.0.5 // indirect
 	github.com/containerd/containerd v1.7.28 // indirect
 	github.com/containerd/containerd/api v1.9.0 // indirect
@@ -245,7 +246,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
-	github.com/miekg/dns v1.1.62 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -338,7 +338,7 @@ require (
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
