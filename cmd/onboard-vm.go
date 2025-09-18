@@ -74,6 +74,8 @@ var (
 	logRotate string
 
 	parallel int
+
+	releaseFile string
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -198,6 +200,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().IntVar(&parallel, "parallel", 0, "number of images to pull in parallel (0 for unlimited, 1 for sequential, >1 for limited parallelism)")
 
 	onboardVMCmd.PersistentFlags().StringVar(&knoxGateway, "knox-gateway", "", "address of knox-gateway to connect with for pushing telemetry data")
+
+	onboardVMCmd.PersistentFlags().StringVar(&releaseFile, "release-file", "", "release file containing release versions of accuknox agents")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

@@ -21,7 +21,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool) (*ClusterConfig, error) {
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -125,23 +125,25 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		}
 	}
 
-	if msg, err := cm.GetOrWriteReleaseInfo(path); err != nil {
+	if msg, err := cm.GetOrWriteReleaseInfo(releaseFile, path); err != nil {
 		return nil, err
 	} else {
 		logger.Info1("%v", msg)
 	}
 
-	var releaseInfo cm.ReleaseMetadata
-	if releaseInfoTemp, ok := cm.ReleaseInfo[releaseVersion]; ok {
-		releaseInfo = releaseInfoTemp
-	} else {
-		msg := ""
+	releaseInfo, ok := cm.ReleaseInfo[releaseVersion]
+	if !ok && releaseVersion != "" {
+		releaseVersion, releaseInfo = cm.GetReleaseFromBackup(path, releaseVersion)
+		if releaseVersion != "" {
+			logger.Warn("Release %v not found, using release %v from backup", releaseVersion, releaseVersion)
+		}
+	}
+	if releaseVersion == "" {
+		msg := "Release version not found"
 		if !ok && releaseVersion != "" {
 			msg = fmt.Sprintf("Release %v not found", releaseVersion)
-		} else {
-			msg = "Release version not found"
 		}
-		releaseVersion, releaseInfo = cm.GetLatestReleaseInfo()
+		releaseVersion, releaseInfo = cm.GetLatestReleaseInfoFromEmbedded()
 		if releaseVersion == "" {
 			return nil, fmt.Errorf("Release version not found")
 		}
