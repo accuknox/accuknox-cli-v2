@@ -548,7 +548,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 
-		if obj.AgentName == cm.HardeningAgent && !cc.EnableHardeningAgent {
+		if obj.AgentName == cm.HardeningAgent && semver.Compare(cc.AgentsVersion, "v0.9.4") >= 0 {
 			continue
 		}
 

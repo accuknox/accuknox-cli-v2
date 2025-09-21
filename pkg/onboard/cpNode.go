@@ -9,7 +9,6 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
-	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"golang.org/x/mod/semver"
 )
@@ -210,8 +209,6 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		}
 	}
 
-	ic.TCArgs.EnableHardeningAgent = ic.EnableHardeningAgent
-
 	// initialize sprig for templating
 	sprigFuncs := sprig.GenericFuncMap()
 
@@ -227,10 +224,6 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	// Generate or copy config files
 	for _, agentObj := range agentMeta {
-
-		if agentObj.agentName == strings.TrimPrefix(cm.HardeningAgent, "accuknox-") && !ic.EnableHardeningAgent {
-			continue
-		}
 
 		tcArgs := ic.TCArgs
 		tcArgs.KmuxConfigPath = agentObj.kmuxConfigPath
