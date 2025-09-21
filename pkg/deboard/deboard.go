@@ -66,10 +66,18 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 
 			switch nodeType {
 			case onboard.NodeType_ControlPlane:
+				// Stop and remove kubearmor profile
 				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
-					"-f", composeFilePath, "--profile", "spire-agent",
-					"--profile", "kubearmor", "--profile", "accuknox-agents", "down",
-					"--volumes")
+					"-f", composeFilePath, "--profile", "kubearmor", "down", "--volumes")
+
+				// Stop and remove agents profile
+				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
+					"-f", composeFilePath, "--profile", "accuknox-agents", "down", "--volumes")
+
+				// Stop and remove spire profile
+				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
+					"-f", composeFilePath, "--profile", "spire-agent", "down", "--volumes")
+
 			case onboard.NodeType_WorkerNode:
 				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
 					"-f", composeFilePath, "--profile", "kubearmor", "--profile", "accuknox-agents", "--profile", "spire-agent", "down",
@@ -258,6 +266,29 @@ func getRRAContainerObject() (map[string]dockerTypes.Container, error) {
 	for _, container := range containerList {
 		containerName := strings.TrimPrefix(container.Names[0], "/")
 		if containerName == "accuknox-rra" {
+			installedContainers[containerName] = container
+			return installedContainers, nil
+		}
+	}
+	return nil, nil
+}
+
+func getVMAContainerObject() (map[string]dockerTypes.Container, error) {
+
+	installedContainers := make(map[string]dockerTypes.Container, 0)
+	dockerClient, err := onboard.CreateDockerClient()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create docker client. %s", err.Error())
+	}
+	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
+		All: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to list containers. %s", err.Error())
+	}
+	for _, container := range containerList {
+		containerName := strings.TrimPrefix(container.Names[0], "/")
+		if containerName == "kubearmor-vm-adapter" {
 			installedContainers[containerName] = container
 			return installedContainers, nil
 		}

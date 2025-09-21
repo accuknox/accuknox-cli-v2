@@ -62,7 +62,7 @@ endif
 
 .PHONY: gosec
 gosec: prebuild
-ifeq (, $(shell ls ~/.bin/gosec))
+ifeq (, $(shell which gosec))
 	@{ \
 	set -e ;\
 	curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b  ~/.bin ;\

@@ -52,7 +52,6 @@ var (
 	hardeningAgentVersionTag string
 
 	enableHostPolicyDiscovery bool
-	enableHardeningAgent      bool
 )
 
 // cpNodeCmd represents the init command
@@ -117,7 +116,7 @@ var cpNodeCmd = &cobra.Command{
 			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
 			false, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
-			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumEngine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel, enableHardeningAgent, releaseFile)
+			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumEngine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel)
 		if err != nil {
 			errConfig := onboard.DumpConfig(vmConfig, configDumpPath)
 			if errConfig != nil {
@@ -228,9 +227,12 @@ func init() {
 	// dev2 config
 	cpNodeCmd.PersistentFlags().BoolVar(&enableHostPolicyDiscovery, "enable-host-policy-discovery", false, "to enable host policy auto-discovery")
 
-	cpNodeCmd.PersistentFlags().BoolVar(&enableHardeningAgent, "enable-hardening-agent", false, "to enable hardening agent")
-
 	err := cpNodeCmd.MarkPersistentFlagRequired("pps-host")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	err = cpNodeCmd.MarkPersistentFlagRequired("version")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
