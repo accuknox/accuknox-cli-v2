@@ -66,24 +66,18 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 
 			switch nodeType {
 			case onboard.NodeType_ControlPlane:
-
-				// Remove VMA and then delete/down all other containers
-				vmaObj, err := getVMAContainerObject()
-				if err != nil {
-					logger.Warn("error:%s", err.Error())
-				}
-				if len(vmaObj) > 0 {
-					fmt.Println(color.BlueString("VMA docker installation found"))
-					err = removeInstalledObjects(vmaObj, nil)
-					if err != nil {
-						fmt.Println("error", err.Error())
-					}
-				}
-
+				// Stop and remove kubearmor profile
 				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
-					"-f", composeFilePath, "--profile", "spire-agent",
-					"--profile", "kubearmor", "--profile", "accuknox-agents", "down",
-					"--volumes")
+					"-f", composeFilePath, "--profile", "kubearmor", "down", "--volumes")
+
+				// Stop and remove agents profile
+				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
+					"-f", composeFilePath, "--profile", "accuknox-agents", "down", "--volumes")
+
+				// Stop and remove spire profile
+				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
+					"-f", composeFilePath, "--profile", "spire-agent", "down", "--volumes")
+
 			case onboard.NodeType_WorkerNode:
 				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
 					"-f", composeFilePath, "--profile", "kubearmor", "--profile", "accuknox-agents", "--profile", "spire-agent", "down",
