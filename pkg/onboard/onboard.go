@@ -21,7 +21,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int) (*ClusterConfig, error) {
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -34,6 +34,8 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	cc.Parallel = parallel
 	cc.SpireEnabled = spireEnabled
 	cc.SpireCert = spireCert
+
+	cc.EnableHardeningAgent = hardeningService
 
 	// check if a config path is given by user
 	if userConfigPath != "" {
@@ -105,16 +107,49 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	cc.MaxAlertsPerSec = maxAlertPerSec
 	cc.ThrottleSec = throttleSec
 
-	var releaseInfo cm.ReleaseMetadata
-	if releaseVersion == "" {
-		_, releaseInfo = cm.GetLatestReleaseInfo()
-	} else if releaseInfoTemp, ok := cm.ReleaseInfo[releaseVersion]; ok {
-		releaseInfo = releaseInfoTemp
-	} else {
-		// TODO: publish release JSON as OCI artifact to remove dependency
-		// on needing to build knoxctl again and again
-		return nil, fmt.Errorf("Unknown image tag %s", releaseVersion)
+	var (
+		err  error
+		path = ""
+	)
+
+	if cc.UserConfigPath != "" {
+		path = cc.UserConfigPath
 	}
+
+	if vmMode == VMMode_Systemd {
+		path = "/opt"
+	} else {
+		path, err = cm.GetDefaultConfigPath()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if msg, err := cm.GetOrWriteReleaseInfo(releaseFile, path); err != nil {
+		return nil, err
+	} else {
+		logger.Info1("%v", msg)
+	}
+
+	releaseInfo, ok := cm.ReleaseInfo[releaseVersion]
+	if !ok && releaseVersion != "" {
+		releaseVersion, releaseInfo = cm.GetReleaseFromBackup(path, releaseVersion)
+		if releaseVersion != "" {
+			logger.Warn("Release %v not found, using release %v from backup", releaseVersion, releaseVersion)
+		}
+	}
+	if releaseVersion == "" {
+		msg := "Release version not found"
+		if !ok && releaseVersion != "" {
+			msg = fmt.Sprintf("Release %v not found", releaseVersion)
+		}
+		releaseVersion, releaseInfo = cm.GetLatestReleaseInfoFromEmbedded()
+		if releaseVersion == "" {
+			return nil, fmt.Errorf("Release version not found")
+		}
+		logger.Warn("%v", fmt.Sprintf("%v, using latest release %v", msg, releaseVersion))
+	}
+
 	cc.AgentsVersion = releaseVersion
 
 	cc.ProcessOperation = isOperationDisabled(sumengineViz, cc.Visibility, cc.HostVisibility, "process")
@@ -161,7 +196,6 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	cc.EnableHostPolicyDiscovery = enableHostPolicyDiscovery
 
 	// mode specific config
-	var err error
 	switch cc.Mode {
 	case VMMode_Docker:
 		cc.KubeArmorImage, err = getImage(registry, cm.DefaultDockerRegistry,
