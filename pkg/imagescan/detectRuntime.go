@@ -7,14 +7,8 @@ import (
 )
 
 func DiscoverRuntime(pathPrefix string, k8sRuntime string) (string, []string, bool) {
-
-	var detected = false
 	runtime, criPath := detectRuntimeViaMap(pathPrefix, k8sRuntime)
-
-	if runtime != "" && len(criPath) > 0 {
-		detected = true
-		return runtime, criPath, detected
-	}
+	detected := runtime != "" && len(criPath) > 0
 	return runtime, criPath, detected
 }
 
