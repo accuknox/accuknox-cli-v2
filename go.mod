@@ -8,7 +8,6 @@ replace (
 	github.com/google/gnostic-models v0.7.0 => github.com/google/gnostic-models v0.6.9
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 	github.com/secure-systems-lab/go-securesystemslib => github.com/secure-systems-lab/go-securesystemslib v0.4.0
-	golang.org/x/sys => golang.org/x/sys v0.33.0
 	// only until https://github.com/kubernetes-sigs/controller-runtime/pull/2223 makes it into a release
 	k8s.io/api => k8s.io/api v0.27.7
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.27.7
@@ -132,7 +131,6 @@ require (
 	github.com/charmbracelet/x/ansi v0.9.2 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
-	github.com/cilium/cilium v1.17.4 // indirect
 	github.com/containerd/cgroups/v3 v3.0.5 // indirect
 	github.com/containerd/containerd v1.7.28 // indirect
 	github.com/containerd/containerd/api v1.9.0 // indirect
@@ -247,6 +245,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/miekg/dns v1.1.62 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
