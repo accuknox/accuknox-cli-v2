@@ -2,6 +2,8 @@ package onboard
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +21,7 @@ import (
 	se_splunk "github.com/accuknox/dev2/sumengine/pkg/sumengine/kubearmor"
 	"github.com/docker/docker/client"
 	"github.com/golang-jwt/jwt"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/mod/semver"
 )
 
@@ -548,4 +551,65 @@ func validateSplunkCredential(splunkConfig SplunkConfig) error {
 
 func getLastOldVersion(agentName string) string {
 	return cm.LastOldAgentVersion[agentName]
+}
+
+func getRMQUserPass(credentials string) (string, string, error) {
+
+	if credentials == "" {
+		return "", "", nil
+	}
+
+	rmqUserPass := strings.Split(Decode(credentials), ":")
+	if len(rmqUserPass) != 2 {
+		return "", "", fmt.Errorf("invalid RMQ credentials")
+	}
+	return rmqUserPass[0], rmqUserPass[1], nil
+}
+
+func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath string) error {
+	if rmqUsername == "" {
+		rmqUsername = "guest"
+	}
+	if rmqPassword == "" {
+		rmqPassword = "guest"
+	}
+
+	connectionString := fmt.Sprintf("amqp://%s:%s@%s", rmqUsername, rmqPassword, rmqAddress)
+	if caCert != "" || caPath != "" {
+		connectionString = strings.Replace(connectionString, "amqp://", "amqps://", 1)
+	}
+
+	config := amqp.Config{
+		Properties: amqp.Table{
+			"connection_name": "test_connection",
+		},
+	}
+
+	if caCert != "" || caPath != "" {
+
+		if caPath != "" {
+			ca, err := os.ReadFile(caPath)
+			if err != nil {
+				return err
+			}
+			caCert = string(ca)
+		}
+
+		decoded := Decode(caCert)
+		caCertPool := x509.NewCertPool()
+		if ok := caCertPool.AppendCertsFromPEM([]byte(decoded)); !ok {
+			return fmt.Errorf("failed to add server CA certificates to client pool")
+		}
+		config.TLSClientConfig = &tls.Config{
+			RootCAs: caCertPool,
+		}
+	}
+
+	conn, err := amqp.DialConfig(connectionString, config)
+	if err != nil {
+		return fmt.Errorf("\nfailed to connect to RabbitMQ at %s: %w. \nPlease verify flags --rmq-address, --auth, and --ca-path", rmqAddress, err)
+	}
+	defer conn.Close()
+
+	return nil
 }

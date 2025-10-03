@@ -351,6 +351,18 @@ func getPortList() []portInfo {
 
 // getFirewallStatus runs 'ufw status verbose' once and parses its entire output.
 func getFirewallStatus() (*FirewallStatus, error) {
+
+	status := &FirewallStatus{
+		DefaultIncomingPolicy: "allow",
+		DefaultOutgoingPolicy: "allow",
+		AllowedRules:          make(map[string]bool),
+	}
+
+	path, _ := exec.LookPath("ufw")
+	if path == "" {
+		return status, nil
+	}
+
 	cmd := exec.Command("sudo", "ufw", "status", "verbose")
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -358,11 +370,7 @@ func getFirewallStatus() (*FirewallStatus, error) {
 		return nil, fmt.Errorf("failed to run 'ufw status': %w", err)
 	}
 
-	status := &FirewallStatus{
-		DefaultIncomingPolicy: "deny",
-		DefaultOutgoingPolicy: "allow",
-		AllowedRules:          make(map[string]bool),
-	}
+	status.DefaultIncomingPolicy = "deny"
 
 	reDefault := regexp.MustCompile(`Default:\s+(\w+)\s+\(incoming\),\s+(\w+)\s+\(outgoing\)`)
 	scanner := bufio.NewScanner(&out)
@@ -379,7 +387,7 @@ func getFirewallStatus() (*FirewallStatus, error) {
 		if len(fields) >= 3 && fields[1] == "ALLOW" {
 			ports := strings.Split(fields[0], "/")[0]
 			direction := strings.ToLower(fields[2])
-			port_sep := strings.Split(ports, ",") // seperate to handle cases like 80,443/tcp
+			port_sep := strings.Split(ports, ",") // separate to handle cases like 80,443/tcp
 			for _, port := range port_sep {
 				key := fmt.Sprintf("%s:%s", direction, port)
 				status.AllowedRules[key] = true
@@ -477,7 +485,7 @@ func checkDomainStatuses(rawURLs []string) map[string]string {
 	wg.Wait()
 	return results
 }
-func checkNodeconnectivity(o *Options) (map[string]string, error) {
+func checkNodeConnectivity(o *Options) (map[string]string, error) {
 
 	return pingAddress(o.CPNodeAddr)
 }
@@ -512,7 +520,10 @@ func pingAddress(nodeAddr string) (map[string]string, error) {
 	// packet loss = connection failure.
 	return mp, nil
 }
-func printNodeData(nodeData NodeInfo) {
+func printNodeData(nodeData NodeInfo, print bool) {
+	if !print {
+		return
+	}
 
 	var data [][]string
 	fmt.Println(boldWhite("Node Info:"))
@@ -537,7 +548,10 @@ func printNodeData(nodeData NodeInfo) {
 
 }
 
-func printData(data map[string]string, heading1, heading2, title string) {
+func printData(data map[string]string, heading1, heading2, title string, print bool) {
+	if !print {
+		return
+	}
 	fmt.Println("\n" + boldWhite(title))
 	printMapAsTable([]string{heading1, heading2}, data)
 

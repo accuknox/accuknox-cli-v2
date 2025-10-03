@@ -36,5 +36,7 @@ func init() {
 	vmCmd.PersistentFlags().StringVar(&options.PPSURL, "pps-url", "https://pps.accuknox.com:443", "address of control plane")                        // pps url
 	vmCmd.PersistentFlags().StringVar(&options.KnoxGwURL, "knox-gw-url", "http://knox-gw.accuknox.com:3000", "address of control plane")             // knox-gw-url
 
+	vmCmd.PersistentFlags().BoolVar(&options.Print, "print-output", true, "print output")
+
 	vmCmd.AddCommand(vmInspectCmd)
 }

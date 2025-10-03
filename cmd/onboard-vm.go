@@ -76,6 +76,8 @@ var (
 	parallel int
 
 	releaseFile string
+
+	printInspectOutput bool
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -88,7 +90,6 @@ var onboardVMCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-
 		return nil
 	},
 }
@@ -202,6 +203,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&knoxGateway, "knox-gateway", "", "address of knox-gateway to connect with for pushing telemetry data")
 
 	onboardVMCmd.PersistentFlags().StringVar(&releaseFile, "release-file", "", "release file containing release versions of accuknox agents")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&printInspectOutput, "print-inspect", true, "print output of inspect command")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

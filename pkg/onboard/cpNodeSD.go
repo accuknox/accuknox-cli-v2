@@ -32,10 +32,11 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	ic.TCArgs.NodeStateRefreshTime = ic.NodeStateRefreshTime
 
+	var err error
 	if ic.Tls.Enabled {
 		ic.TCArgs.TlsEnabled = ic.Tls.Enabled
 		ic.TCArgs.TlsCertFile = fmt.Sprintf("%s%s%s/%s", ic.UserConfigPath, "/opt", cm.DefaultCACertDir, cm.DefaultEncodedFileName)
-		if err := ic.handleTLS(); err != nil {
+		if err = ic.handleTLS(); err != nil {
 			return err
 		}
 	}
@@ -45,27 +46,12 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	ic.populateCommonArgs()
 
 	if ic.TCArgs.SplunkConfigObject.Enabled {
-		if err := validateSplunkCredential(ic.TCArgs.SplunkConfigObject); err != nil {
+		if err = validateSplunkCredential(ic.TCArgs.SplunkConfigObject); err != nil {
 			return err
 		}
 	}
 
-	// initialize sprig for templating
-	ic.TemplateFuncs = sprig.GenericFuncMap()
-
-	// download and extract systemd packages
-	logger.Info2(("Downloading agents..."))
-	err := ic.SystemdInstall()
-	if err != nil {
-		logger.Error("Installation failed!! Cleaning up downloaded assets...")
-		// ignoring G104 - can't send nil in installation failed case
-		Deletedir(cm.DownloadDir)
-		DeboardSystemd(NodeType_ControlPlane) // #nosec G104
-		return err
-	}
-
 	// copy config files according to custom configuration specified by the user
-
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
 		ReleaseVersion: ic.AgentsVersion,
 		StreamName:     "knox-gateway",
@@ -79,13 +65,40 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	if ic.RMQServer != "" {
 		ic.TCArgs.RMQAddr = ic.RMQServer
-		kmuxConfigArgs.RMQServer = ic.RMQServer
+		kmuxConfigArgs.RMQServer = ic.TCArgs.RMQAddr
 	} else if ic.CPNodeAddr != "" {
 		ic.TCArgs.RMQAddr = ic.CPNodeAddr + ":5672"
-		kmuxConfigArgs.RMQServer = ic.CPNodeAddr + ":5672"
+		kmuxConfigArgs.RMQServer = ic.TCArgs.RMQAddr
 	} else {
 		ic.TCArgs.RMQAddr = "0.0.0.0:5672"
-		kmuxConfigArgs.RMQServer = "0.0.0.0:5672"
+		kmuxConfigArgs.RMQServer = ic.TCArgs.RMQAddr
+	}
+
+	ic.TCArgs.RMQUsername,
+		ic.TCArgs.RMQPassword,
+		err = getRMQUserPass(ic.Tls.RMQCredentials)
+	if err != nil {
+		return err
+	}
+
+	if ic.TCArgs.RMQAddr != "" {
+		if err = testRMQConnection(ic.TCArgs.RMQAddr, ic.TCArgs.RMQUsername, ic.TCArgs.RMQPassword, ic.Tls.CaCert, ic.Tls.CaPath); err != nil {
+			return err
+		}
+	}
+
+	// initialize sprig for templating
+	ic.TemplateFuncs = sprig.GenericFuncMap()
+
+	// download and extract systemd packages
+	logger.Info2(("Downloading agents..."))
+	err = ic.SystemdInstall()
+	if err != nil {
+		logger.Error("Installation failed!! Cleaning up downloaded assets...")
+		// ignoring G104 - can't send nil in installation failed case
+		Deletedir(cm.DownloadDir)
+		DeboardSystemd(NodeType_ControlPlane) // #nosec G104
+		return err
 	}
 
 	logger.Info2("\nConfiguring services...")

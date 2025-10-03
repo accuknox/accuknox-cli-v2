@@ -47,6 +47,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/nothinux/certify v1.8.0
 	github.com/olekukonko/tablewriter v0.0.5
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/rivo/tview v0.0.0-20231115183240-7c9e464bac02
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/lo v1.51.0
@@ -288,7 +289,6 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.64.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
-	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect

@@ -10,6 +10,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
+	"github.com/accuknox/accuknox-cli-v2/pkg/vm"
 	"github.com/spf13/cobra"
 )
 
@@ -60,6 +61,16 @@ var cpNodeCmd = &cobra.Command{
 	Use:   "cp-node",
 	Short: "Initialize a control plane node for onboarding onto SaaS",
 	Long:  "Initialize a control plane node for onboarding onto SaaS",
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		inspectionOptions := options
+		inspectionOptions.Print = printInspectOutput
+
+		if err := vm.InspectVM(&inspectionOptions); err != nil {
+			return err
+		}
+
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// validate environment for pre-requisites
 		var (

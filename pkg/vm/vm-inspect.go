@@ -13,6 +13,7 @@ type Options struct {
 	PPSURL          string
 	KnoxGwURL       string
 	CPNodeAddr      string
+	Print           bool
 }
 
 func InspectVM(o *Options) error {
@@ -58,23 +59,23 @@ func InspectVM(o *Options) error {
 		kaCompatible.VmMode = vmMode
 	}
 
-	printNodeData(*kaCompatible)
-	printData(portsAvailability, "PORTS", "STATUS", "Ports Availability")
+	printNodeData(*kaCompatible, o.Print)
+	printData(portsAvailability, "PORTS", "STATUS", "Ports Availability", o.Print)
 	if len(installedAgents) > 0 {
-		printData(installedAgents, "AGENTS", "STATUS", "Accuknox Agents")
+		printData(installedAgents, "AGENTS", "STATUS", "Accuknox Agents", o.Print)
 	} else {
 		// if there are no agents installed , check connectivity.
 		if o.CPNodeAddr == "" {
 			// treat it as control plane node
 			output := checkSAASconnectivity(o)
-			printData(output, "URL", "STATUS", "Accuknox Connectivity")
+			printData(output, "URL", "STATUS", "Accuknox Connectivity", o.Print)
 		} else {
-			// it's a worker-node and check connectivity to contol plane node'
-			output, err := checkNodeconnectivity(o)
+			// it's a worker-node and check connectivity to control plane node'
+			output, err := checkNodeConnectivity(o)
 			if err != nil {
-				logger.Error("Error checking controlplane connectivity", err.Error())
+				logger.Error("Error checking control-plane connectivity", err.Error())
 			}
-			printData(output, "Node Address", "STATUS", "Control Plane Connectivity")
+			printData(output, "Node Address", "STATUS", "Control Plane Connectivity", o.Print)
 		}
 	}
 

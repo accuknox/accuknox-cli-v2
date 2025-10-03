@@ -215,13 +215,11 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	jc.TCArgs.SumEngineImage = jc.SumEngineImage
 	jc.TCArgs.TlsEnabled = jc.Tls.Enabled
 
-	if jc.Tls.RMQCredentials != "" {
-		rmqData := strings.Split(Decode(jc.Tls.RMQCredentials), ":")
-		if len(rmqData) != 2 {
-			return fmt.Errorf("invalid RMQ credentials")
-		}
-		jc.TCArgs.RMQUsername = rmqData[0]
-		jc.TCArgs.RMQPassword = rmqData[1]
+	jc.TCArgs.RMQUsername,
+		jc.TCArgs.RMQPassword,
+		err = getRMQUserPass(jc.Tls.RMQCredentials)
+	if err != nil {
+		return err
 	}
 
 	// initialize sprig for templating

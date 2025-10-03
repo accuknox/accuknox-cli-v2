@@ -1,9 +1,7 @@
 package onboard
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
@@ -31,14 +29,11 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 
 	jc.TCArgs.AccessKey = jc.AccessKey
 
-	if jc.Tls.RMQCredentials != "" {
-
-		rmqData := strings.Split(Decode(jc.Tls.RMQCredentials), ":")
-		if len(rmqData) != 2 {
-			return fmt.Errorf("invalid RMQ credentials")
-		}
-		jc.TCArgs.RMQUsername = rmqData[0]
-		jc.TCArgs.RMQPassword = rmqData[1]
+	jc.TCArgs.RMQUsername,
+		jc.TCArgs.RMQPassword,
+		err = getRMQUserPass(jc.Tls.RMQCredentials)
+	if err != nil {
+		return err
 	}
 
 	if jc.Tls.Enabled {
