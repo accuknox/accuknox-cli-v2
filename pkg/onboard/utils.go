@@ -588,7 +588,7 @@ func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath stri
 	if caCert != "" || caPath != "" {
 
 		if caPath != "" {
-			ca, err := os.ReadFile(caPath)
+			ca, err := os.ReadFile(filepath.Clean(caPath))
 			if err != nil {
 				return err
 			}
@@ -601,7 +601,8 @@ func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath stri
 			return fmt.Errorf("failed to add server CA certificates to client pool")
 		}
 		config.TLSClientConfig = &tls.Config{
-			RootCAs: caCertPool,
+			RootCAs:    caCertPool,
+			MinVersion: tls.VersionTLS12,
 		}
 	}
 

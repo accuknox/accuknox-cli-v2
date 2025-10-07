@@ -204,7 +204,7 @@ func init() {
 
 	onboardVMCmd.PersistentFlags().StringVar(&releaseFile, "release-file", "", "release file containing release versions of accuknox agents")
 
-	onboardVMCmd.PersistentFlags().BoolVar(&printInspectOutput, "print-inspect", true, "print output of inspect command")
+	onboardVMCmd.PersistentFlags().BoolVar(&printInspectOutput, "print-inspect", false, "print output of inspect command")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }
