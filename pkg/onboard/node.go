@@ -10,7 +10,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr, spireHost, spireTrustBundleURL, joinToken string) *JoinConfig {
+func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr, peaAddr, hardenAddr, spireHost, spireTrustBundleURL, joinToken, secretDir string) *JoinConfig {
 	return &JoinConfig{
 		ClusterConfig:       cc,
 		KubeArmorAddr:       kubeArmorAddr,
@@ -21,6 +21,7 @@ func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr
 		SpireHost:           spireHost,
 		SpireTrustBundleURL: spireTrustBundleURL,
 		JoinToken:           joinToken,
+		SpireSecretDir:      secretDir,
 	}
 }
 func (jc *JoinConfig) CreateBaseNodeConfig() error {
@@ -103,7 +104,8 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	}
 
 	jc.TCArgs = TemplateConfigArgs{
-		Hostname: hostname,
+		Hostname:       hostname,
+		SpireSecretDir: jc.SpireSecretDir,
 
 		// for vm-adapter
 		KubeArmorAddr: kubeArmorAddr,

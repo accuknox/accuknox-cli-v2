@@ -4,25 +4,21 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"syscall"
 
+	"github.com/accuknox/kubeshield/api/v1beta1"
 	kubesheildDiscovery "github.com/accuknox/kubeshield/pkg/discovery"
-	kubesheildConfig "github.com/accuknox/kubeshield/pkg/scanner/config"
+	httpclient "github.com/accuknox/kubeshield/pkg/scanner/httpClient"
 	kubesheildScanner "github.com/accuknox/kubeshield/pkg/scanner/scan"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
 // Discovers the running container images and scans the images using the specified tool
-func DiscoverAndScan(conf kubesheildConfig.Config, hostName, runtime string) error {
+func DiscoverAndScan(conf kubesheildScanner.ScanConfig, hostName, runtime string, onlyRunningContainers, onlyImages bool) error {
 	zapLogger, err := zap.NewProduction()
 	if err != nil {
 		return fmt.Errorf("failed to initialize logger")
-	}
-
-	if zapLogger != nil {
-		conf.Log = zapLogger.Sugar()
 	}
 
 	defer func() {
@@ -32,16 +28,30 @@ func DiscoverAndScan(conf kubesheildConfig.Config, hostName, runtime string) err
 		}
 	}()
 
-	conf.Images = discoverImages(zapLogger.Sugar(), hostName, runtime)
+	// Install trivy if it is not exists
+	if !IsTrivyInstalled() {
+		if err := installTrivy(); err != nil {
+			return fmt.Errorf("error while installing container image scanner: %v", err)
+		}
+		zapLogger.Info("Dowloaded container image scanner successfully")
+		// Remove trivy binary, if it is installed by knoxctl
+		defer cleanupInstalledBinaryPath()
+	}
+
+	conf.Images = discoverImages(hostName, runtime, onlyRunningContainers, onlyImages, zapLogger.Sugar())
 	if len(conf.Images) == 0 {
 		return fmt.Errorf("no images found for scanning")
 	}
 
 	// removes duplicate images
-	conf.Images = lo.Uniq(conf.Images)
+	conf.Images = lo.UniqBy(conf.Images, func(img v1beta1.Image) string {
+		return img.Name
+	})
+
 	for i := range conf.Images {
-		zapLogger.Info("Discovered Image", zap.String("Name", conf.Images[i].Name), zap.String("Runtime", conf.Images[i].Runtime))
+		zapLogger.Sugar().Infof("Image Name: %s | Runtime: %s", conf.Images[i].Name, conf.Images[i].Runtime)
 	}
+
 	zapLogger.Info("Images Discovered Successfully", zap.Int("Total number of images:", len(conf.Images)))
 
 	if hostName == "" {
@@ -49,9 +59,11 @@ func DiscoverAndScan(conf kubesheildConfig.Config, hostName, runtime string) err
 	}
 
 	// Additional fields added along with the scan results while calling artifact API
-	conf.ScanConfig.AdditionalData = map[string]any{"host_name": hostName}
+	conf.ArtifactConfig.AdditionalData = map[string]any{"host_name": hostName}
+	conf.ScanTool = "trivy" // Default scanning tool
 
 	imageScanner := kubesheildScanner.New(conf)
+	imageScanner.ScannerHttpClient = httpclient.New()
 
 	// Scans the provided images and sends the result back to saas through the artifact API
 	if err := imageScanner.Scan(); err != nil {
@@ -59,17 +71,16 @@ func DiscoverAndScan(conf kubesheildConfig.Config, hostName, runtime string) err
 	}
 
 	zapLogger.Info("Images Scanned Successfully",
-		zap.Int("Total Scanned Images", len(conf.Images)),
-		zap.String("Tool used for scanning", conf.ScanConfig.ScanTool))
+		zap.Int("Total Scanned Images", len(conf.Images)))
 
 	return nil
 }
 
 // Lists the running containers for the provided runtime, if the runtime is empty it will use the default supported runtimes
-func discoverImages(logger *zap.SugaredLogger, hostName, runtime string) []kubesheildConfig.Image {
+func discoverImages(hostName, runtime string, onlyRunningContainers, imageOnly bool, logger *zap.SugaredLogger) []v1beta1.Image {
 	var (
-		runtimes = []string{"docker", "containerd", "cri-o", "nri"}
-		images   []kubesheildConfig.Image
+		runtimes   = []string{"docker", "containerd", "cri-o", "nri"}
+		imagesList = []v1beta1.Image{}
 	)
 
 	if runtime != "" {
@@ -78,25 +89,49 @@ func discoverImages(logger *zap.SugaredLogger, hostName, runtime string) []kubes
 
 	// Fetching images present in all the provided runtimes
 	for _, r := range runtimes {
-		detectedRuntime, criPath, ok := kubesheildDiscovery.DiscoverNodeRuntime("", r, logger)
+		detectedRuntime, criPath, ok := DiscoverRuntime("", r)
 		if !ok {
-			logger.Errorf("Unable to detect runtime for %s", r)
+			logger.Debugf("Unable to detect runtime for %s", r)
 			continue
 		}
-		imageList := kubesheildDiscovery.ListRunningImages(detectedRuntime, criPath, kubesheildDiscovery.VM, logger)
-		for _, img := range imageList {
-			images = append(images, kubesheildConfig.Image{
-				Name:    img,
-				Runtime: detectedRuntime,
-			})
+
+		// If imageOnly flag is enabled, we only discover images; not containers
+		if imageOnly {
+			// fetch images based on the runtime
+			imagesList = append(imagesList, getImages(detectedRuntime, criPath, logger)...)
+			continue
 		}
+
+		// By default we fetch running containers, unless onlyRunningContainers is set to false
+		imagesList = append(imagesList, getContainers(detectedRuntime, criPath, onlyRunningContainers, logger)...)
+	}
+	return imagesList
+}
+
+// fetches the images based on all the provided runtime and cripath
+func getImages(runtime string, criPath []string, logger *zap.SugaredLogger) []v1beta1.Image {
+	var images = []v1beta1.Image{}
+	for _, path := range criPath {
+		imageList, err := kubesheildDiscovery.ListImages(runtime, path, kubesheildDiscovery.VM)
+		if err != nil {
+			logger.Errorf("error while listing the images for runtime %s: %v\n", runtime, err)
+			continue
+		}
+		images = append(images, imageList...)
 	}
 	return images
 }
 
-func IsTrivyInstalled() error {
-	if _, err := exec.LookPath("trivy"); err != nil {
-		return fmt.Errorf("Trivy is not installed or not found in $PATH. Please install Trivy to enable image scanning")
+// fetches the containers based on all the provided runtime and cripath
+func getContainers(runtime string, criPath []string, onlyRunningContainers bool, logger *zap.SugaredLogger) []v1beta1.Image {
+	var conatainers = []v1beta1.Image{}
+	for _, path := range criPath {
+		containerList, err := kubesheildDiscovery.ListContainers(runtime, path, kubesheildDiscovery.VM, onlyRunningContainers)
+		if err != nil {
+			logger.Errorf("error while listing the container images for runtime %s: %v", runtime, err)
+			continue
+		}
+		conatainers = append(conatainers, containerList...)
 	}
-	return nil
+	return conatainers
 }

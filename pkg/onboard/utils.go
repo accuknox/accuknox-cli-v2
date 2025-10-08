@@ -353,7 +353,8 @@ func (cc *ClusterConfig) ValidateEnv() (string, error) {
 }
 
 func CreateDockerClient() (*client.Client, error) {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
+
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
 	}
@@ -514,8 +515,8 @@ func ReadLine(reader io.Reader) ([]byte, error) {
 }
 
 // splitLast splits at the last index of separator
-func splitLast(fullString, seperator string) []string {
-	colonIdx := strings.LastIndex(fullString, seperator)
+func splitLast(fullString, separator string) []string {
+	colonIdx := strings.LastIndex(fullString, separator)
 
 	// bound check
 	if colonIdx <= 0 || colonIdx == (len(fullString)-1) {

@@ -18,7 +18,7 @@ builds:
       pre:
         - make prebuild GOOS={{ .Os }} GOARCH={{ .Arch }}
       post:
-        - rm pkg/vm/rra
+        - rm -rf pkg/vm/rra
 
 signs:
   - cmd: cosign

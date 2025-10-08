@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"golang.org/x/mod/semver"
 )
@@ -39,11 +40,18 @@ var (
 )
 
 func init() {
-	err := json.Unmarshal(releaseInfoFile, &ReleaseInfo)
+	releaseInfo, err := unmarshal(releaseInfoFile)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	ReleaseInfo = releaseInfo
+}
+
+func unmarshal(content []byte) (map[string]ReleaseMetadata, error) {
+	releaseInfo := make(map[string]ReleaseMetadata, 0)
+	err := json.Unmarshal(content, &releaseInfo)
+	return releaseInfo, err
 }
 
 // returns the latest release according to version tag and not according to
@@ -57,6 +65,89 @@ func GetLatestReleaseInfo() (string, ReleaseMetadata) {
 			latestRelease = v
 		}
 	}
-
 	return latestRelease, ReleaseInfo[latestRelease]
+}
+
+func GetLatestReleaseInfoFromEmbedded() (string, ReleaseMetadata) {
+	releaseInfo, err := unmarshal(releaseInfoFile)
+	if err != nil {
+		return "", ReleaseMetadata{}
+	}
+	latestRelease := "v0.0.0"
+	for v := range releaseInfo {
+		if semver.Compare(v, latestRelease) > 0 {
+			latestRelease = v
+		}
+	}
+	return latestRelease, releaseInfo[latestRelease]
+}
+
+func GetReleaseFromBackup(path, version string) (string, ReleaseMetadata) {
+
+	FileName := filepath.Join(filepath.Clean(path), "release.json.bak")
+
+	data, err := os.ReadFile(filepath.Clean(FileName))
+	if err != nil {
+		return "", ReleaseMetadata{}
+	}
+	releaseInfo, err := unmarshal(data)
+	if err != nil {
+		return "", ReleaseMetadata{}
+	}
+	return version, releaseInfo[version]
+
+}
+
+func GetOrWriteReleaseInfo(releaseFile, path string) (string, error) {
+
+	defaultFileName := filepath.Join(filepath.Clean(path), "release.json")
+
+	fileContent := releaseInfoFile
+
+	if err := createDir(defaultFileName); err != nil {
+		return "", err
+	}
+
+	if releaseFile != "" {
+		data, err := os.ReadFile(filepath.Clean(releaseFile))
+		if err != nil {
+			return "", err
+		}
+		releaseInfo, err := unmarshal(data)
+		if err != nil {
+			return "", err
+		}
+		ReleaseInfo = releaseInfo
+		fileContent = data
+		bakFile := defaultFileName + ".bak"
+		if _, err := os.Stat(defaultFileName); err == nil {
+			if err := os.Rename(defaultFileName, bakFile); err != nil {
+				return "", err
+			}
+		}
+
+	} else {
+		if _, err := os.Stat(defaultFileName); err == nil {
+			data, err := os.ReadFile(filepath.Clean(defaultFileName))
+			if err != nil {
+				return "", err
+			}
+			releaseInfo, err := unmarshal(data)
+			if err != nil {
+				return "", err
+			}
+			ReleaseInfo = releaseInfo
+			return fmt.Sprintf("Release file found at %s", defaultFileName), nil
+		}
+	}
+
+	return fmt.Sprintf("Release file written to %s", defaultFileName), os.WriteFile(defaultFileName, fileContent, 0o644) // #nosec G306
+}
+
+func createDir(path string) error {
+	dir := filepath.Dir(path)
+	if dir == "." {
+		return nil
+	}
+	return os.MkdirAll(dir, os.ModeDir|os.ModePerm)
 }

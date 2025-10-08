@@ -47,7 +47,7 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 
 		if verifyInstallation {
 			fmt.Println(color.YellowString("Docker compose file not found at %s. Checking installation of each agent...", composeFilePath))
-			installedContainers, installedVolumes, err := getInstalledObjects()
+			installedContainers, installedVolumes, err := GetInstalledObjects()
 			if err != nil {
 				return "", err
 			}
@@ -66,6 +66,20 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 
 			switch nodeType {
 			case onboard.NodeType_ControlPlane:
+
+				// Remove VMA and then delete/down all other containers
+				vmaObj, err := getVMAContainerObject()
+				if err != nil {
+					logger.Warn("error:%s", err.Error())
+				}
+				if len(vmaObj) > 0 {
+					fmt.Println(color.BlueString("VMA docker installation found"))
+					err = removeInstalledObjects(vmaObj, nil)
+					if err != nil {
+						fmt.Println("error", err.Error())
+					}
+				}
+
 				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
 					"-f", composeFilePath, "--profile", "spire-agent",
 					"--profile", "kubearmor", "--profile", "accuknox-agents", "down",
@@ -92,7 +106,7 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 }
 
 // returns installed containers and volumes
-func getInstalledObjects() (map[string]dockerContainerTypes.Summary, []string, error) {
+func GetInstalledObjects() (map[string]dockerContainerTypes.Summary, []string, error) {
 	allContainers := onboard.GetKnownContainerMap()
 	installedContainers := make(map[string]dockerContainerTypes.Summary, 0)
 
@@ -258,6 +272,29 @@ func getRRAContainerObject() (map[string]dockerTypes.Container, error) {
 	for _, container := range containerList {
 		containerName := strings.TrimPrefix(container.Names[0], "/")
 		if containerName == "accuknox-rra" {
+			installedContainers[containerName] = container
+			return installedContainers, nil
+		}
+	}
+	return nil, nil
+}
+
+func getVMAContainerObject() (map[string]dockerTypes.Container, error) {
+
+	installedContainers := make(map[string]dockerTypes.Container, 0)
+	dockerClient, err := onboard.CreateDockerClient()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create docker client. %s", err.Error())
+	}
+	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
+		All: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to list containers. %s", err.Error())
+	}
+	for _, container := range containerList {
+		containerName := strings.TrimPrefix(container.Names[0], "/")
+		if containerName == "kubearmor-vm-adapter" {
 			installedContainers[containerName] = container
 			return installedContainers, nil
 		}

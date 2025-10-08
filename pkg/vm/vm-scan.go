@@ -54,8 +54,12 @@ func ExecCommand(commandArgs []string, path, benchmark string, save bool) error 
 	filePath := ""
 
 	if save {
-		filePath = filepath.Join(path, fmt.Sprintf(fileName, rra, benchmark))
-		file, err := os.Create(filePath)
+		root, err := os.OpenRoot(path)
+		if err != nil {
+			return fmt.Errorf("failed to open the provided path: %v", err)
+		}
+		defer root.Close()
+		file, err := root.Create(fmt.Sprintf(fileName, rra, benchmark))
 		if err != nil {
 			return fmt.Errorf("failed to create output file: %v", err)
 		}

@@ -15,7 +15,7 @@ jobs:
     steps:
 
       - name: Checkout Source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -32,8 +32,8 @@ jobs:
       - name: Setup GH Token
         env:
           GOPRIVATE: github.com/accuknox/*
-          USER: ${{ secrets.AK_USER }}
-          TOKEN: ${{ secrets.AK_PAT_REPO_SCOPE }}
+          USER: accuknox-user
+          TOKEN: ${{ secrets.GH_ORG_TOKEN }}
         run: |
           git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
           go env -w GOPRIVATE=github.com/accuknox
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: AccuKnox Runtime Monitoring
         uses: accuknox/report-action@v0.3.2
@@ -63,8 +63,8 @@ jobs:
       - name: Setup GH Token
         env:
           GOPRIVATE: github.com/accuknox/*
-          USER: ${{ secrets.AK_USER }}
-          TOKEN: ${{ secrets.AK_PAT_REPO_SCOPE }}
+          USER: accuknox-user
+          TOKEN: ${{ secrets.GH_ORG_TOKEN }}
         run: |
           git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
           go env -w GOPRIVATE=github.com/accuknox

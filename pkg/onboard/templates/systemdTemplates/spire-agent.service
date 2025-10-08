@@ -1,5 +1,8 @@
 [Unit]
 Description=Spire Agent
+{{- if .PartOfVMScan }} 
+PartOf=rra.service
+{{- end }}
 
 [Service]
 User=root

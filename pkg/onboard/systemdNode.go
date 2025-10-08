@@ -25,6 +25,8 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		return err
 	}
 
+	jc.TCArgs.SpireSecretDir = jc.SpireSecretDir
+
 	jc.TCArgs.TlsEnabled = jc.Tls.Enabled
 
 	jc.TCArgs.AccessKey = jc.AccessKey
