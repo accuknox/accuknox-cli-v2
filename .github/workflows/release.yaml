@@ -49,7 +49,7 @@ jobs:
           # binary.
           args: release --parallelism 1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_ORG_TOKEN }}
 
       - name: Fetch Tag Name
         id: get_tag
