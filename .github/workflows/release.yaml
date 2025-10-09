@@ -35,8 +35,8 @@ jobs:
       - name: Setup access for private go modules
         env:
           GOPRIVATE: github.com/accuknox/*
-          USER: ${{ secrets.AK_USER }}
-          TOKEN: ${{ secrets.AK_PAT_REPO_SCOPE }}
+          USER: accuknox-user
+          TOKEN: ${{ secrets.GH_ORG_TOKEN }}
         run: |
           git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
 
