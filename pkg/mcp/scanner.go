@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,59 +20,195 @@ const MCPProtocolVersion = "2025-06-18"
 
 // Scanner handles MCP server scanning operations
 type Scanner struct {
-	options    *ScanOptions
-	httpClient *http.Client
-	requestID  int
-	sessionID  string
+	options      *ScanOptions
+	transport    Transport
+	oauthHandler *OAuthHandler
+	httpClient   *http.Client
+	requestID    int
+	scanResults  *ScanResult
 }
 
 // New creates a new MCP scanner with the given options
 func New(options *ScanOptions) *Scanner {
+	// Set defaults
+	if options.Timeout == 0 {
+		options.Timeout = 30
+	}
+	if options.ScanAPI == "" {
+		options.ScanAPI = "http://34.46.3.177:8000/mcp_query"
+	}
+	if options.OutputFormat == "" {
+		options.OutputFormat = "text"
+	}
+	if options.LogLevel == "" {
+		// Default to 'warn' for cleaner output
+		options.LogLevel = "warn"
+
+		// Legacy flags override default
+		if options.Debug {
+			options.LogLevel = "debug"
+		} else if options.Verbose {
+			options.LogLevel = "info"
+		}
+	}
+
+	// Configure global log level
+	configureLogLevel(options.LogLevel)
+
 	return &Scanner{
 		options: options,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: time.Duration(options.Timeout) * time.Second,
 		},
 		requestID: 1,
+		scanResults: &ScanResult{
+			Timestamp: time.Now().Format(time.RFC3339),
+		},
+	}
+}
+
+// configureLogLevel sets the global zerolog level
+func configureLogLevel(level string) {
+	// Configure pretty console output
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
+	// Set log level based on flag
+	switch strings.ToLower(level) {
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "warn", "warning":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case "fatal":
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	case "panic":
+		zerolog.SetGlobalLevel(zerolog.PanicLevel)
+	case "disabled", "off", "none":
+		zerolog.SetGlobalLevel(zerolog.Disabled)
+	default:
+		// Default to warn for cleaner output
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
 	}
 }
 
 // Scan connects to the MCP server and retrieves tools, prompts, and resources
 func (s *Scanner) Scan() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.options.Timeout)*time.Second)
 	defer cancel()
 
-	// log.Info().Str("url", s.options.HTTPUrl).Msg("Connecting to MCP server")
-
-	// Parse and validate the URL
-	parsedURL, err := url.Parse(s.options.HTTPUrl)
-	if err != nil {
-		return fmt.Errorf("invalid HTTP URL: %w", err)
+	// Step 1: Setup transport
+	if err := s.setupTransport(ctx); err != nil {
+		return fmt.Errorf("failed to setup transport: %w", err)
 	}
+	defer s.transport.Close()
 
-	// Initialize MCP connection
-	if err := s.initialize(ctx, parsedURL.String()); err != nil {
+	// Step 2: Initialize MCP connection
+	if err := s.initialize(ctx); err != nil {
 		return fmt.Errorf("failed to initialize MCP connection: %w", err)
 	}
 
-	// log.Info().Msg("Successfully connected to MCP server")
+	// Step 3: Scan components based on options
+	s.scanComponents(ctx)
 
-	// List all data concurrently (continue on errors to get partial results)
-	tools := s.listTools(ctx, parsedURL.String())
-	prompts := s.listPrompts(ctx, parsedURL.String())
-	resources := s.listResources(ctx, parsedURL.String())
+	// Step 4: Calculate summary
+	s.calculateSummary()
 
-	// Display results
-	s.displayResults(tools, prompts, resources)
+	// Step 5: Display results
+	s.displayResultsFormatted()
 
 	return nil
 }
 
+// setupTransport creates and configures the appropriate transport
+func (s *Scanner) setupTransport(ctx context.Context) error {
+	timeout := time.Duration(s.options.Timeout) * time.Second
+
+	// Determine transport type
+	if s.options.SSEUrl != "" {
+		// SSE transport (used by Atlassian)
+		log.Info().Str("url", s.options.SSEUrl).Msg("Using SSE transport")
+		sseTransport := NewSSETransport(s.options.SSEUrl, timeout)
+		s.transport = sseTransport
+		s.scanResults.MCPServerURL = s.options.SSEUrl
+
+		// Handle OAuth if required
+		if s.options.UseOAuth || s.options.OAuthToken != "" {
+			if s.options.OAuthToken != "" {
+				// Use provided token
+				sseTransport.SetOAuthToken(s.options.OAuthToken)
+			} else {
+				// Perform OAuth flow
+				s.oauthHandler = NewOAuthHandler(&OAuthConfig{
+					MCPServerURL: s.options.SSEUrl,
+					Timeout:      timeout,
+				})
+
+				if err := s.oauthHandler.Authorize(ctx); err != nil {
+					return fmt.Errorf("OAuth authorization failed: %w", err)
+				}
+
+				token, err := s.oauthHandler.GetAccessToken(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to get access token: %w", err)
+				}
+
+				sseTransport.SetOAuthToken(token)
+			}
+		}
+
+	} else if s.options.HTTPUrl != "" {
+		// Regular HTTP/Streamable HTTP transport
+		httpTransport := NewHTTPTransport(s.options.HTTPUrl, timeout)
+		s.transport = httpTransport
+		s.scanResults.MCPServerURL = s.options.HTTPUrl
+
+		// Handle OAuth if required
+		if s.options.UseOAuth || s.options.OAuthToken != "" {
+			if s.options.OAuthToken != "" {
+				// Use provided token
+				httpTransport.SetOAuthToken(s.options.OAuthToken)
+			} else {
+				// Perform OAuth flow
+				s.oauthHandler = NewOAuthHandler(&OAuthConfig{
+					MCPServerURL: s.options.HTTPUrl,
+					Timeout:      timeout,
+				})
+
+				if err := s.oauthHandler.Authorize(ctx); err != nil {
+					return fmt.Errorf("OAuth authorization failed: %w", err)
+				}
+
+				token, err := s.oauthHandler.GetAccessToken(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to get access token: %w", err)
+				}
+
+				httpTransport.SetOAuthToken(token)
+			}
+		}
+
+	} else if s.options.STDIOCmd != "" {
+		// STDIO transport
+		stdioTransport := NewSTDIOTransport(s.options.STDIOCmd, s.options.STDIOArgs...)
+		s.transport = stdioTransport
+		s.scanResults.MCPServerURL = fmt.Sprintf("stdio://%s", s.options.STDIOCmd)
+
+	} else {
+		return fmt.Errorf("no transport specified (provide --http-url, --sse-url, or --stdio)")
+	}
+
+	// Connect the transport
+	return s.transport.Connect(ctx)
+}
+
 // initialize performs MCP protocol initialization
-func (s *Scanner) initialize(ctx context.Context, serverURL string) error {
+func (s *Scanner) initialize(ctx context.Context) error {
 	initParams := InitializeParams{
 		ProtocolVersion: MCPProtocolVersion,
-		Capabilities:    ClientCapabilities{}, // Minimal capabilities
+		Capabilities:    ClientCapabilities{},
 		ClientInfo: Implementation{
 			Name:    "knoxctl-mcp-scanner",
 			Version: "1.0.0",
@@ -85,8 +222,8 @@ func (s *Scanner) initialize(ctx context.Context, serverURL string) error {
 		Params:  initParams,
 	}
 
-	var response JSONRPCResponse
-	if err := s.sendRequest(ctx, serverURL, request, &response); err != nil {
+	response, err := s.transport.SendRequest(ctx, request)
+	if err != nil {
 		return fmt.Errorf("initialize request failed: %w", err)
 	}
 
@@ -100,26 +237,69 @@ func (s *Scanner) initialize(ctx context.Context, serverURL string) error {
 		Method:  "notifications/initialized",
 	}
 
-	// Send notification (don't fail on errors)
-	if err := s.sendNotification(ctx, serverURL, notification); err != nil {
+	if err := s.transport.SendNotification(ctx, notification); err != nil {
 		log.Warn().Err(err).Msg("Failed to send initialized notification")
 	}
 
 	return nil
 }
 
-// listTools retrieves all available tools from the MCP server
-func (s *Scanner) listTools(ctx context.Context, serverURL string) []ToolInfo {
-	// log.Info().Msg("Listing available tools...")
+// scanComponents scans the requested MCP components
+func (s *Scanner) scanComponents(ctx context.Context) {
+	// Scan tools (unless explicitly excluded)
+	if !s.options.ScanPromptsOnly && !s.options.ScanResourcesOnly {
+		tools := s.listTools(ctx)
+		for _, tool := range tools {
+			analysis := s.analyzeForInjection(tool.Name, tool.Description, "tool")
+			s.scanResults.Tools = append(s.scanResults.Tools, ItemScanResult{
+				Name:        tool.Name,
+				Description: tool.Description,
+				Type:        "tool",
+				Analysis:    analysis,
+			})
+		}
+	}
 
+	// Scan prompts (unless explicitly excluded)
+	if !s.options.ScanToolsOnly && !s.options.ScanResourcesOnly {
+		prompts := s.listPrompts(ctx)
+		for _, prompt := range prompts {
+			analysis := s.analyzeForInjection(prompt.Name, prompt.Description, "prompt")
+			s.scanResults.Prompts = append(s.scanResults.Prompts, ItemScanResult{
+				Name:        prompt.Name,
+				Description: prompt.Description,
+				Type:        "prompt",
+				Analysis:    analysis,
+			})
+		}
+	}
+
+	// Scan resources (unless explicitly excluded)
+	if !s.options.ScanToolsOnly && !s.options.ScanPromptsOnly {
+		resources := s.listResources(ctx)
+		for _, resource := range resources {
+			analysis := s.analyzeForInjection(resource.Name, resource.Description, "resource")
+			s.scanResults.Resources = append(s.scanResults.Resources, ItemScanResult{
+				Name:        resource.Name,
+				Description: resource.Description,
+				Type:        "resource",
+				URI:         resource.URI,
+				Analysis:    analysis,
+			})
+		}
+	}
+}
+
+// listTools retrieves all available tools from the MCP server
+func (s *Scanner) listTools(ctx context.Context) []ToolInfo {
 	request := JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      s.nextRequestID(),
 		Method:  "tools/list",
 	}
 
-	var response JSONRPCResponse
-	if err := s.sendRequest(ctx, serverURL, request, &response); err != nil {
+	response, err := s.transport.SendRequest(ctx, request)
+	if err != nil {
 		log.Warn().Err(err).Msg("Failed to list tools")
 		return []ToolInfo{}
 	}
@@ -129,7 +309,6 @@ func (s *Scanner) listTools(ctx context.Context, serverURL string) []ToolInfo {
 		return []ToolInfo{}
 	}
 
-	// Parse the result
 	resultBytes, err := json.Marshal(response.Result)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to marshal tools result")
@@ -150,22 +329,19 @@ func (s *Scanner) listTools(ctx context.Context, serverURL string) []ToolInfo {
 		})
 	}
 
-	// log.Info().Int("count", len(tools)).Msg("Retrieved tools")
 	return tools
 }
 
 // listPrompts retrieves all available prompts from the MCP server
-func (s *Scanner) listPrompts(ctx context.Context, serverURL string) []PromptInfo {
-	// log.Info().Msg("Listing available prompts...")
-
+func (s *Scanner) listPrompts(ctx context.Context) []PromptInfo {
 	request := JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      s.nextRequestID(),
 		Method:  "prompts/list",
 	}
 
-	var response JSONRPCResponse
-	if err := s.sendRequest(ctx, serverURL, request, &response); err != nil {
+	response, err := s.transport.SendRequest(ctx, request)
+	if err != nil {
 		log.Warn().Err(err).Msg("Failed to list prompts")
 		return []PromptInfo{}
 	}
@@ -175,7 +351,6 @@ func (s *Scanner) listPrompts(ctx context.Context, serverURL string) []PromptInf
 		return []PromptInfo{}
 	}
 
-	// Parse the result
 	resultBytes, err := json.Marshal(response.Result)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to marshal prompts result")
@@ -196,22 +371,19 @@ func (s *Scanner) listPrompts(ctx context.Context, serverURL string) []PromptInf
 		})
 	}
 
-	// log.Info().Int("count", len(prompts)).Msg("Retrieved prompts")
 	return prompts
 }
 
 // listResources retrieves all available resources from the MCP server
-func (s *Scanner) listResources(ctx context.Context, serverURL string) []ResourceInfo {
-	// log.Info().Msg("Listing available resources...")
-
+func (s *Scanner) listResources(ctx context.Context) []ResourceInfo {
 	request := JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      s.nextRequestID(),
 		Method:  "resources/list",
 	}
 
-	var response JSONRPCResponse
-	if err := s.sendRequest(ctx, serverURL, request, &response); err != nil {
+	response, err := s.transport.SendRequest(ctx, request)
+	if err != nil {
 		log.Warn().Err(err).Msg("Failed to list resources")
 		return []ResourceInfo{}
 	}
@@ -221,7 +393,6 @@ func (s *Scanner) listResources(ctx context.Context, serverURL string) []Resourc
 		return []ResourceInfo{}
 	}
 
-	// Parse the result
 	resultBytes, err := json.Marshal(response.Result)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to marshal resources result")
@@ -243,103 +414,7 @@ func (s *Scanner) listResources(ctx context.Context, serverURL string) []Resourc
 		})
 	}
 
-	// 	log.Info().Int("count", len(resources)).Msg("Retrieved resources")
 	return resources
-}
-
-// sendRequest sends a JSON-RPC request and expects a response
-func (s *Scanner) sendRequest(ctx context.Context, serverURL string, request JSONRPCRequest, response *JSONRPCResponse) error {
-	requestBody, err := json.Marshal(request)
-	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	// log.Debug().Str("method", request.Method).Bytes("body", requestBody).Msg("Sending MCP request")
-
-	req, err := http.NewRequestWithContext(ctx, "POST", serverURL, bytes.NewBuffer(requestBody))
-	if err != nil {
-		return fmt.Errorf("failed to create HTTP request: %w", err)
-	}
-
-	// Set required headers per MCP spec
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json, text/event-stream")
-
-	// Include session ID if we have one
-	if s.sessionID != "" {
-		req.Header.Set("Mcp-Session-Id", s.sessionID)
-		// log.Debug().Str("sessionID", s.sessionID).Msg("Including session ID in request")
-	}
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("HTTP request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("HTTP request failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	// Capture session ID from response headers
-	if sessionID := resp.Header.Get("Mcp-Session-Id"); sessionID != "" {
-		s.sessionID = sessionID
-		// log.Debug().Str("sessionID", sessionID).Msg("Captured session ID")
-	}
-
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	// log.Debug().Str("method", request.Method).Bytes("response", responseBody).Msg("Received MCP response")
-
-	// Handle Server-Sent Events format
-	responseStr := string(responseBody)
-	if strings.HasPrefix(responseStr, "event:") {
-		jsonData, err := s.parseSSEResponse(responseStr)
-		if err != nil {
-			return fmt.Errorf("failed to parse SSE response: %w", err)
-		}
-		responseBody = []byte(jsonData)
-	}
-
-	return json.Unmarshal(responseBody, response)
-}
-
-// sendNotification sends a JSON-RPC notification (no response expected)
-func (s *Scanner) sendNotification(ctx context.Context, serverURL string, notification JSONRPCRequest) error {
-	requestBody, err := json.Marshal(notification)
-	if err != nil {
-		return fmt.Errorf("failed to marshal notification: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", serverURL, bytes.NewBuffer(requestBody))
-	if err != nil {
-		return fmt.Errorf("failed to create HTTP request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json, text/event-stream")
-
-	if s.sessionID != "" {
-		req.Header.Set("Mcp-Session-Id", s.sessionID)
-	}
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("HTTP request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Log any errors but don't fail
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
-		log.Warn().Int("status", resp.StatusCode).Bytes("body", body).Msg("Notification returned error status")
-	}
-
-	return nil
 }
 
 // nextRequestID returns the next request ID
@@ -349,79 +424,129 @@ func (s *Scanner) nextRequestID() int {
 	return id
 }
 
-// parseSSEResponse extracts JSON data from Server-Sent Events format
-func (s *Scanner) parseSSEResponse(sseData string) (string, error) {
-	lines := strings.Split(sseData, "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "data: ") {
-			return strings.TrimPrefix(line, "data: "), nil
+// calculateSummary calculates the scan summary
+func (s *Scanner) calculateSummary() {
+	summary := &s.scanResults.Summary
+	summary.TotalScanned = len(s.scanResults.Tools) + len(s.scanResults.Prompts) + len(s.scanResults.Resources)
+
+	// Analyze all items
+	allItems := []ItemScanResult{}
+	allItems = append(allItems, s.scanResults.Tools...)
+	allItems = append(allItems, s.scanResults.Prompts...)
+	allItems = append(allItems, s.scanResults.Resources...)
+
+	for _, item := range allItems {
+		itemHasVuln := false
+
+		// Check prompt injection
+		if pi, ok := item.Analysis["prompt_injection"].(map[string]interface{}); ok {
+			if detected, _ := pi["detected"].(bool); detected {
+				summary.PromptInjections++
+				itemHasVuln = true
+			}
+		}
+
+		// Check malicious code
+		if code, ok := item.Analysis["code"].(map[string]interface{}); ok {
+			if detected, _ := code["detected"].(bool); detected {
+				summary.MaliciousCode++
+				itemHasVuln = true
+			}
+		}
+
+		// Check secrets
+		if secrets, ok := item.Analysis["secrets"].(map[string]interface{}); ok {
+			if detected, _ := secrets["detected"].(bool); detected {
+				summary.SecretsExposed++
+				itemHasVuln = true
+			}
+		}
+
+		if itemHasVuln {
+			summary.VulnerabilitiesFound++
 		}
 	}
-	return "", fmt.Errorf("no data field found in SSE response")
 }
 
-// displayResults prints the retrieved data in a clean format with injection detection
-func (s *Scanner) displayResults(tools []ToolInfo, prompts []PromptInfo, resources []ResourceInfo) {
-	fmt.Println("=== MCP SERVER SCAN RESULTS WITH INJECTION DETECTION ===")
+// displayResultsFormatted displays results in the requested format
+func (s *Scanner) displayResultsFormatted() {
+	if s.options.OutputFormat == "json" {
+		s.displayJSON()
+	} else {
+		s.displayText()
+	}
+}
 
-	// Analyze tools for injection
-	if len(tools) > 0 {
+// displayJSON outputs results in JSON format
+func (s *Scanner) displayJSON() {
+	output, err := json.MarshalIndent(s.scanResults, "", "  ")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to encode JSON output")
+		return
+	}
+	fmt.Println(string(output))
+}
+
+// displayText outputs results in human-readable text format
+func (s *Scanner) displayText() {
+	fmt.Println("=== MCP SERVER SCAN RESULTS ===")
+	fmt.Printf("\nServer: %s\n", s.scanResults.MCPServerURL)
+	fmt.Printf("Timestamp: %s\n", s.scanResults.Timestamp)
+
+	if len(s.scanResults.Tools) > 0 {
 		fmt.Println("\n📋 TOOLS:")
-		for i, tool := range tools {
-			fmt.Printf("\n%d. %s\n", i+1, tool.Name)
-			fmt.Printf("   Description: %s\n", tool.Description)
-
-			// Analyze for injection
-			analysis := s.analyzeForInjection(tool.Name, tool.Description, "tool")
-			s.displayAnalysisResult(analysis)
+		for i, item := range s.scanResults.Tools {
+			fmt.Printf("\n%d. %s\n", i+1, item.Name)
+			fmt.Printf("   Description: %s\n", item.Description)
+			displayAnalysisResult(item.Analysis)
 		}
 	}
 
-	// Analyze prompts for injection
-	if len(prompts) > 0 {
+	if len(s.scanResults.Prompts) > 0 {
 		fmt.Println("\n💬 PROMPTS:")
-		for i, prompt := range prompts {
-			fmt.Printf("\n%d. %s\n", i+1, prompt.Name)
-			fmt.Printf("   Description: %s\n", prompt.Description)
-
-			// Analyze for injection
-			analysis := s.analyzeForInjection(prompt.Name, prompt.Description, "prompt")
-			s.displayAnalysisResult(analysis)
+		for i, item := range s.scanResults.Prompts {
+			fmt.Printf("\n%d. %s\n", i+1, item.Name)
+			fmt.Printf("   Description: %s\n", item.Description)
+			displayAnalysisResult(item.Analysis)
 		}
 	}
 
-	// Analyze resources for injection
-	if len(resources) > 0 {
+	if len(s.scanResults.Resources) > 0 {
 		fmt.Println("\n📁 RESOURCES:")
-		for i, resource := range resources {
-			fmt.Printf("\n%d. %s\n", i+1, resource.Name)
-			fmt.Printf("   URI: %s\n", resource.URI)
-			fmt.Printf("   Description: %s\n", resource.Description)
-
-			// Analyze for injection
-			analysis := s.analyzeForInjection(resource.Name, resource.Description, "resource")
-			s.displayAnalysisResult(analysis)
+		for i, item := range s.scanResults.Resources {
+			fmt.Printf("\n%d. %s\n", i+1, item.Name)
+			fmt.Printf("   URI: %s\n", item.URI)
+			fmt.Printf("   Description: %s\n", item.Description)
+			displayAnalysisResult(item.Analysis)
 		}
 	}
 
-	if len(tools) == 0 && len(prompts) == 0 && len(resources) == 0 {
+	if s.scanResults.Summary.TotalScanned == 0 {
 		fmt.Println("\n❌ No tools, prompts, or resources found.")
+	}
+
+	// Display summary
+	fmt.Println("\n=== SUMMARY ===")
+	fmt.Printf("Total scanned: %d items\n", s.scanResults.Summary.TotalScanned)
+	fmt.Printf("Vulnerabilities found: %d\n", s.scanResults.Summary.VulnerabilitiesFound)
+	fmt.Printf("  - Prompt injections: %d\n", s.scanResults.Summary.PromptInjections)
+	fmt.Printf("  - Secrets exposed: %d\n", s.scanResults.Summary.SecretsExposed)
+	fmt.Printf("  - Malicious code: %d\n", s.scanResults.Summary.MaliciousCode)
+
+	if s.scanResults.Summary.VulnerabilitiesFound > 0 {
+		fmt.Println("\nRecommendation: Review and sanitize flagged items before deployment.")
 	}
 
 	fmt.Println("\n=== END SCAN ===")
 }
 
-// analyzeForInjection sends tool metadata to Python server for analysis
+// analyzeForInjection sends metadata to hosted scanning API for analysis
 func (s *Scanner) analyzeForInjection(name, description, itemType string) map[string]interface{} {
-	// Prepare request data
+	// Request format: {"prompt": "description text"}
 	requestData := map[string]interface{}{
-		"name":        name,
-		"description": description,
-		"type":        itemType,
+		"prompt": description,
 	}
 
-	// Use json.Encoder with SetEscapeHTML(false) to preserve original characters
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
 	encoder.SetEscapeHTML(false)
@@ -430,74 +555,130 @@ func (s *Scanner) analyzeForInjection(name, description, itemType string) map[st
 		return map[string]interface{}{"error": "Failed to marshal request"}
 	}
 
-	// Remove the trailing newline that encoder.Encode adds
 	jsonData := bytes.TrimSpace(buf.Bytes())
 
-	log.Info().Msgf("Request data: %v", requestData)
-	log.Info().Msgf("Sending request to Python server: %s", string(jsonData))
+	if s.options.Debug {
+		log.Debug().Msgf("Sending to scan API: %s", string(jsonData))
+	}
 
-	// Make HTTP request to Python server
-	resp, err := s.httpClient.Post("http://localhost:5001/analyze", "application/json", bytes.NewBuffer(jsonData))
+	// Create request with Authorization header
+	req, err := http.NewRequest("POST", s.options.ScanAPI, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return map[string]interface{}{"error": fmt.Sprintf("Failed to create request: %v", err)}
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add bearer token if provided
+	if s.options.ScanAPIToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.options.ScanAPIToken))
+	}
+
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return map[string]interface{}{"error": fmt.Sprintf("HTTP request failed: %v", err)}
 	}
 	defer resp.Body.Close()
 
-	// Read response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return map[string]interface{}{"error": "Failed to read response"}
 	}
 
-	log.Info().Msgf("Received response from Python server: %s", string(body))
-
-	// Parse response
-	var result map[string]interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return map[string]interface{}{"error": "Failed to parse response"}
+	if s.options.Debug {
+		log.Debug().Msgf("Received from scan API: %s", string(body))
 	}
 
-	log.Info().Msgf("Parsed response from Python server: %v", result)
+	// Parse the API response
+	// Response format: {"response":{"Code":[text,bool,float],"PromptInjection":[...],"Secrets":[...]},"status":"success"}
+	// Note: true = passed (safe), false = violating (vulnerable)
+	var apiResponse struct {
+		Response struct {
+			Code            []interface{} `json:"Code"`
+			PromptInjection []interface{} `json:"PromptInjection"`
+			Secrets         []interface{} `json:"Secrets"`
+		} `json:"response"`
+		Status string `json:"status"`
+	}
+
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		return map[string]interface{}{"error": fmt.Sprintf("Failed to parse response: %v", err)}
+	}
+
+	// Extract results (true = safe, false = vulnerable)
+	promptInjectionPassed := true
+	codePassed := true
+	secretsPassed := true
+
+	if len(apiResponse.Response.PromptInjection) > 1 {
+		if val, ok := apiResponse.Response.PromptInjection[1].(bool); ok {
+			promptInjectionPassed = val
+		}
+	}
+	if len(apiResponse.Response.Code) > 1 {
+		if val, ok := apiResponse.Response.Code[1].(bool); ok {
+			codePassed = val
+		}
+	}
+	if len(apiResponse.Response.Secrets) > 1 {
+		if val, ok := apiResponse.Response.Secrets[1].(bool); ok {
+			secretsPassed = val
+		}
+	}
+
+	// Transform to our expected format
+	// is_injection: true if NOT passed (false = vulnerability)
+	isInjection := !promptInjectionPassed
+	isCode := !codePassed
+	isSecrets := !secretsPassed
+
+	// Build result in expected format - keep separate detections
+	result := map[string]interface{}{
+		"prompt_injection": map[string]interface{}{
+			"detected": isInjection,
+		},
+		"code": map[string]interface{}{
+			"detected": isCode,
+		},
+		"secrets": map[string]interface{}{
+			"detected": isSecrets,
+		},
+	}
+
 	return result
 }
 
-// displayAnalysisResult displays injection *and* ban-code analysis results
-func (s *Scanner) displayAnalysisResult(analysis map[string]interface{}) {
+// displayAnalysisResult displays analysis results for a single item
+func displayAnalysisResult(analysis map[string]interface{}) {
 	if errorMsg, exists := analysis["error"]; exists {
 		fmt.Printf("     ⚠️  Analysis Error: %v\n", errorMsg)
 		return
 	}
 
-	detection, ok := analysis["detection"].(map[string]interface{})
-	if !ok {
-		fmt.Printf("     ⚠️  Invalid detection result\n")
-		return
-	}
-
-	// ---- Prompt-Injection verdict ----
-	if isInjection, _ := detection["is_injection"].(bool); isInjection {
-		conf, _ := detection["confidence"].(float64)
-		risk, _ := detection["risk_level"].(string)
-		riskEmoji := map[string]string{"HIGH": "🚨", "MEDIUM": "⚠️"}[risk]
-		if riskEmoji == "" {
-			riskEmoji = "🚨"
-		}
-		fmt.Printf("     %s INJECTION DETECTED (Confidence: %.2f) - %s RISK\n", riskEmoji, conf, risk)
-	} else {
-		conf, _ := detection["confidence"].(float64)
-		fmt.Printf("     ✅ NO INJECTION DETECTED (Confidence: %.2f)\n", conf)
-	}
-
-	// ---- Ban-Code / secrets verdict ----
-	if bc, ok := analysis["code_detection"].(map[string]interface{}); ok {
-		if isCode, _ := bc["is_code"].(bool); isCode {
-			conf, _ := bc["confidence"].(float64)
-			reason, _ := bc["reason"].(string)
-			pattern, _ := bc["pattern"].(string)
-			fmt.Printf("     🔑 BANNED CODE/SECRET DETECTED (Confidence: %.2f) - %s %s\n", conf, reason, pattern)
+	// Prompt Injection detection
+	if pi, ok := analysis["prompt_injection"].(map[string]interface{}); ok {
+		if detected, _ := pi["detected"].(bool); detected {
+			fmt.Printf("     🚨 PROMPT INJECTION DETECTED\n")
 		} else {
-			conf, _ := bc["confidence"].(float64)
-			fmt.Printf("     ✅ No banned code detected (Confidence: %.2f)\n", conf)
+			fmt.Printf("     ✅ No prompt injection detected\n")
+		}
+	}
+
+	// Malicious Code detection
+	if code, ok := analysis["code"].(map[string]interface{}); ok {
+		if detected, _ := code["detected"].(bool); detected {
+			fmt.Printf("     ⚠️  MALICIOUS CODE DETECTED\n")
+		} else {
+			fmt.Printf("     ✅ No malicious code detected\n")
+		}
+	}
+
+	// Secrets detection
+	if secrets, ok := analysis["secrets"].(map[string]interface{}); ok {
+		if detected, _ := secrets["detected"].(bool); detected {
+			fmt.Printf("     🔑 SECRETS DETECTED\n")
+		} else {
+			fmt.Printf("     ✅ No secrets detected\n")
 		}
 	}
 }
