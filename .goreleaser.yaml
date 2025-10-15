@@ -26,10 +26,10 @@ signs:
     certificate: '${artifact}.cert'
     args:
       - sign-blob
+      - '${artifact}'
       - '--output-certificate=${certificate}'
       - '--output-signature=${signature}'
       - '--bundle'
-      - '${artifact}'
       - --yes
     artifacts: all
     output: true
