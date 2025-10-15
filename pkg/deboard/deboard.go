@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -15,6 +16,7 @@ import (
 	dockerTypes "github.com/docker/docker/api/types"
 	dockerContainerTypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
+	"github.com/docker/docker/client"
 	"github.com/fatih/color"
 )
 
@@ -52,7 +54,7 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 				return "", err
 			}
 
-			err = removeInstalledObjects(installedContainers, installedVolumes)
+			err = removeInstalledObjects(installedContainers, installedVolumes, nil)
 			if err != nil {
 				return "", err
 			}
@@ -66,20 +68,18 @@ func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (str
 
 			switch nodeType {
 			case onboard.NodeType_ControlPlane:
-
-				// Remove VMA and then delete/down all other containers
-				vmaObj, err := getVMAContainerObject()
+				containerOrder := []string{"kubearmor", "kubearmor-vm-adapter"}
+				// Remove kubearmor, VMA and then delete/down all other containers
+				containers, err := getContainerObjects(containerOrder)
 				if err != nil {
 					logger.Warn("error:%s", err.Error())
 				}
-				if len(vmaObj) > 0 {
-					fmt.Println(color.BlueString("VMA docker installation found"))
-					err = removeInstalledObjects(vmaObj, nil)
+				if len(containers) > 0 {
+					err = removeInstalledObjects(containers, nil, containerOrder)
 					if err != nil {
 						fmt.Println("error", err.Error())
 					}
 				}
-
 				_, err = onboard.ExecComposeCommand(true, dryRun, composeCmd,
 					"-f", composeFilePath, "--profile", "spire-agent",
 					"--profile", "kubearmor", "--profile", "accuknox-agents", "down",
@@ -149,28 +149,22 @@ func GetInstalledObjects() (map[string]dockerContainerTypes.Summary, []string, e
 	return installedContainers, installedVolumes, nil
 }
 
-func removeInstalledObjects(installedContainers map[string]dockerTypes.Container, installedVolumes []string) error {
+func removeInstalledObjects(installedContainers map[string]dockerTypes.Container, installedVolumes, orderedContainerNames []string) error {
 	dockerClient, err := onboard.CreateDockerClient()
 	if err != nil {
 		return fmt.Errorf("Failed to create docker client. %s", err.Error())
 	}
 
-	for _, container := range installedContainers {
-		containerName := strings.TrimPrefix(container.Names[0], "/")
-		fmt.Printf("Stopping container %s...\n", containerName)
-
-		err := dockerClient.ContainerStop(context.Background(), container.ID, dockerContainerTypes.StopOptions{})
-		if err != nil {
-			fmt.Println(color.YellowString("Failed to stop container %s: %s", containerName, err.Error()))
-		}
-
-		fmt.Printf("Removing container %s...\n", containerName)
-		err = dockerClient.ContainerRemove(context.Background(), container.ID, dockerContainerTypes.RemoveOptions{})
-		if err != nil {
-			fmt.Println(color.YellowString("Failed to remove container %s: %s", containerName, err.Error()))
+	for _, name := range orderedContainerNames {
+		if container, ok := installedContainers[name]; ok {
+			removeContainer(dockerClient, container.Names[0], container.ID)
+			delete(installedContainers, name)
 		}
 	}
 
+	for _, container := range installedContainers {
+		removeContainer(dockerClient, container.Names[0], container.ID)
+	}
 	for _, volume := range installedVolumes {
 		fmt.Printf("Removing volume %s...\n", volume)
 		if err := dockerClient.VolumeRemove(context.Background(), volume, true); err != nil {
@@ -179,6 +173,21 @@ func removeInstalledObjects(installedContainers map[string]dockerTypes.Container
 	}
 
 	return nil
+}
+
+func removeContainer(dockerClient *client.Client, containerName string, containerID string) {
+	containerName = strings.TrimPrefix(containerName, "/")
+	fmt.Printf("Stopping container %s...\n", containerName)
+	err := dockerClient.ContainerStop(context.Background(), containerID, dockerContainerTypes.StopOptions{})
+	if err != nil {
+		fmt.Println(color.YellowString("Failed to stop container %s: %s", containerName, err.Error()))
+	}
+
+	fmt.Printf("Removing container %s...\n", containerName)
+	err = dockerClient.ContainerRemove(context.Background(), containerID, dockerContainerTypes.RemoveOptions{})
+	if err != nil {
+		fmt.Println(color.YellowString("Failed to remove container %s: %s", containerName, err.Error()))
+	}
 }
 
 func UninstallRRA() error {
@@ -208,7 +217,7 @@ func UninstallRRA() error {
 		return os.ErrNotExist
 	}
 	//check for RRA docker installation
-	rraObj, err := getRRAContainerObject()
+	rraObj, err := getContainerObjects([]string{"accuknox-rra"})
 	if err != nil {
 		logger.Warn("error:%s", err.Error())
 	}
@@ -222,7 +231,7 @@ func UninstallRRA() error {
 		_, err = os.Stat(composeFilePath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				err = removeInstalledObjects(rraObj, nil)
+				err = removeInstalledObjects(rraObj, nil, nil)
 				if err != nil {
 					fmt.Println("error", err.Error())
 				}
@@ -256,8 +265,7 @@ func UninstallRRA() error {
 	return os.ErrNotExist
 }
 
-func getRRAContainerObject() (map[string]dockerTypes.Container, error) {
-
+func getContainerObjects(containerNames []string) (map[string]dockerTypes.Container, error) {
 	installedContainers := make(map[string]dockerTypes.Container, 0)
 	dockerClient, err := onboard.CreateDockerClient()
 	if err != nil {
@@ -269,35 +277,13 @@ func getRRAContainerObject() (map[string]dockerTypes.Container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to list containers. %s", err.Error())
 	}
+
 	for _, container := range containerList {
 		containerName := strings.TrimPrefix(container.Names[0], "/")
-		if containerName == "accuknox-rra" {
+		if slices.Contains(containerNames, containerName) {
 			installedContainers[containerName] = container
-			return installedContainers, nil
 		}
 	}
-	return nil, nil
-}
 
-func getVMAContainerObject() (map[string]dockerTypes.Container, error) {
-
-	installedContainers := make(map[string]dockerTypes.Container, 0)
-	dockerClient, err := onboard.CreateDockerClient()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create docker client. %s", err.Error())
-	}
-	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
-		All: true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("Failed to list containers. %s", err.Error())
-	}
-	for _, container := range containerList {
-		containerName := strings.TrimPrefix(container.Names[0], "/")
-		if containerName == "kubearmor-vm-adapter" {
-			installedContainers[containerName] = container
-			return installedContainers, nil
-		}
-	}
-	return nil, nil
+	return installedContainers, nil
 }
