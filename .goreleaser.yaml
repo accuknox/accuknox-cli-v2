@@ -22,11 +22,10 @@ builds:
 
 signs:
   - cmd: cosign
-    certificate: '${artifact}.cert'
     args:
       - sign-blob
-      - '--output-certificate=${certificate}'
       - '--output-signature=${signature}'
+      - '--bundle=${artifact}.bundle'    # ADDED
       - '${artifact}'
       - --yes
     artifacts: all
