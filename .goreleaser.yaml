@@ -25,7 +25,7 @@ signs:
     args:
       - sign-blob
       - '--output-signature=${signature}'
-      - '--bundle=${artifact}.bundle'    # ADDED
+      - '--bundle=${artifact}.bundle'    
       - '${artifact}'
       - --yes
     artifacts: all
