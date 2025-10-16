@@ -23,6 +23,7 @@ builds:
 signs:
   - cmd: cosign
     certificate: '${artifact}.cert'
+    signature: '${artifact}.sig'
     args:
       - sign-blob
       - '--output-certificate=${certificate}'
