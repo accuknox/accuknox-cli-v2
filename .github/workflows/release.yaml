@@ -32,12 +32,6 @@ jobs:
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
 
-      - name: Verify Cosign install
-        run: |
-            which cosign
-            cosign version
-            ls -lh dist/
-
       - name: Setup access for private go modules
         env:
           GOPRIVATE: github.com/accuknox/*
