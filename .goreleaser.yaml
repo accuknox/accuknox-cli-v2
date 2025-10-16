@@ -24,10 +24,9 @@ signs:
   - cmd: cosign
     certificate: '${artifact}.cert'
     args:
-      - sign-blob
+      -  sign-blob
       - '--output-certificate=${certificate}'
       - '--output-signature=${signature}'
-      - '--bundle=${signature}.bundle'  
       - '${artifact}'
       - --yes
     artifacts: all
