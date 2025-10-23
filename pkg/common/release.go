@@ -1,12 +1,14 @@
 package common
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"golang.org/x/mod/semver"
 )
 
@@ -119,25 +121,28 @@ func GetOrWriteReleaseInfo(releaseFile, path string) (string, error) {
 		}
 		ReleaseInfo = releaseInfo
 		fileContent = data
-		bakFile := defaultFileName + ".bak"
 		if _, err := os.Stat(defaultFileName); err == nil {
-			if err := os.Rename(defaultFileName, bakFile); err != nil {
+			if err := os.Rename(defaultFileName, defaultFileName+".bak"); err != nil {
 				return "", err
 			}
 		}
 
-	} else {
-		if _, err := os.Stat(defaultFileName); err == nil {
-			data, err := os.ReadFile(filepath.Clean(defaultFileName))
-			if err != nil {
+		return fmt.Sprintf("Using user defined release file %s", releaseFile), nil
+
+	}
+	if _, err := os.Stat(defaultFileName); err == nil {
+
+		data, err := os.ReadFile(filepath.Clean(defaultFileName))
+		if err != nil {
+			return "", err
+		}
+
+		if !bytes.Equal(data, releaseInfoFile) {
+			logger.Info1("Old release file found at %s, creating backup at %s", defaultFileName, defaultFileName+".bak")
+			if err := os.Rename(defaultFileName, defaultFileName+".bak"); err != nil {
 				return "", err
 			}
-			releaseInfo, err := unmarshal(data)
-			if err != nil {
-				return "", err
-			}
-			ReleaseInfo = releaseInfo
-			return fmt.Sprintf("Release file found at %s", defaultFileName), nil
+			logger.Info2("To use this release file, use --release-file %v ", defaultFileName+".bak")
 		}
 	}
 
