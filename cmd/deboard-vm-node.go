@@ -45,10 +45,10 @@ var deboardNodeCmd = &cobra.Command{
 			if err != nil && os.IsPermission(err) {
 				logger.Warn("Please remove any remaining resources at %s", configPath)
 			} else if err != nil {
-				return fmt.Errorf(color.RedString("Failed to deboard worker node: %s", err.Error()))
+				return fmt.Errorf("%s", color.RedString("Failed to deboard worker node: %s", err.Error()))
 			}
 		default:
-			return fmt.Errorf(color.RedString("vm mode: %s invalid, accepted values (docker/systemd)", vmMode))
+			return fmt.Errorf("%s", color.RedString("vm mode: %s invalid, accepted values (docker/systemd)", vmMode))
 		}
 		if disableVMScan {
 			logger.Info1("Removing RRA installation if it exists")

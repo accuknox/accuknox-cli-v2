@@ -6,7 +6,11 @@ application:
   name: policy-enf-agent
 
 spire:
+  {{ if .ProxyEnabled }}
+  enable: false
+  {{ else }}
   enable: true
+  {{ end }}
   agent: "unix:///var/run/spire/agent.sock"
 
 endpoint:
@@ -48,3 +52,7 @@ reconciler:
   interval: 30m
 
 log-level: info
+
+proxy:
+  enabled: {{.ProxyEnabled}}
+  address: {{.ProxyAddress}}

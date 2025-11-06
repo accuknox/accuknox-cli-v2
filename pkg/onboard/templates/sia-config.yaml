@@ -1,5 +1,9 @@
 spire:
+  {{ if .ProxyEnabled }}
+  enable: false
+  {{ else }}
   enable: true
+  {{ end }}
   agent: "unix:///var/run/spire/agent.sock"
 
 {{- if trimPrefix "v" .ReleaseVersion | semverCompare "<0.5.0" }}
@@ -30,3 +34,7 @@ tls:
   state-topic: {{.StateEventTopic}}
 
 deployMode: "vm"
+
+proxy:
+  enabled: {{.ProxyEnabled}}
+  address: {{.ProxyAddress}}
