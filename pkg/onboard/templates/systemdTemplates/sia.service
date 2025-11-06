@@ -7,6 +7,12 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/accuknox-shared-informer-agent/
 ExecStart=/opt/accuknox-shared-informer-agent/shared-informer-agent
+{{- if .ProxyEnabled }}
+{{- range .ProxyExtraArgs }}
+Environment={{ . }}
+{{- end }}
+Environment="JOIN_TOKEN={{ .JoinToken }}"
+{{- end }}
 {{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent.log
 StandardError=append:/opt/accuknox-shared-informer-agent/accuknox-shared-informer-agent-err.log

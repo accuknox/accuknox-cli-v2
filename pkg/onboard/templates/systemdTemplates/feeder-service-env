@@ -9,7 +9,12 @@ KMUX_LOGS_ENABLED={{.EnableLogs}}
 KMUX_CONFIG_PATH={{.KmuxConfigPath}}
 IGNORE_SUMMARY_EVENTS="Network:AF_UNIX,AF_NETLINK"
 SPIRE_AGENT_URL="unix:///var/run/spire/agent.sock"
+{{ if .ProxyEnabled }}
+SPIRE_ENABLED=false
+{{ else }}
 SPIRE_ENABLED=true
+{{ end }}
+
 DISCOVERYENGINE_ENABLED=true
 DISCOVERYENGINE_VERSION=2
 TLS_CERT_FILE="/opt/cert/encoded.pem"
@@ -26,3 +31,6 @@ DISCOVERYENGINE_POLICY_ENABLED=true
 KMUX_CONFIG_POLICY={{.PolicyKmuxConfig}}
 KMUX_CONFIG_SUMMARY={{.SummaryKmuxConfig}}
 LOG_LEVEL="INFO"
+
+PROXY_ENABLED={{.ProxyEnabled}}
+PROXY_ADDRESS="{{.ProxyAddress}}"

@@ -7,6 +7,12 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/accuknox-feeder-service/
 EnvironmentFile=/opt/accuknox-feeder-service/conf/env
+{{- if .ProxyEnabled }}
+{{- range .ProxyExtraArgs }}
+Environment={{ . }}
+{{- end }}
+Environment="JOIN_TOKEN={{ .JoinToken }}"
+{{- end }}
 {{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/accuknox-feeder-service/accuknox-feeder-service.log
 StandardError=append:/opt/accuknox-feeder-service/accuknox-feeder-service-err.log

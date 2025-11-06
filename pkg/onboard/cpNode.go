@@ -24,7 +24,14 @@ type agentConfigMeta struct {
 	kmuxConfigFileName       string
 }
 
+type Proxy struct {
+	Enabled   bool
+	Address   string
+	ExtraArgs []string
+}
+
 func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGateway, spireTrustBundle, secretDir string, enableLogs bool) *InitConfig {
+	cc.JoinToken = joinToken
 	return &InitConfig{
 		ClusterConfig: cc,
 		JoinToken:     joinToken,
@@ -129,6 +136,9 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		SpireCert:      ic.SpireCert,
 		SpireEnabled:   ic.SpireEnabled,
 		SpireSecretDir: ic.SpireSecretDir,
+		ProxyEnabled:   ic.Proxy.Enabled,
+		ProxyAddress:   ic.Proxy.Address,
+		ProxyExtraArgs: ic.Proxy.ExtraArgs,
 	}
 	return nil
 }

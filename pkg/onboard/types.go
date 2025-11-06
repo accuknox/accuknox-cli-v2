@@ -148,8 +148,9 @@ type ClusterConfig struct {
 	Splunk               SplunkConfig `json:"splunk,omitempty"`
 	NodeStateRefreshTime int          `json:"node_state_refresh_time,omitempty"`
 
-	SpireEnabled bool `json:"spire_enabled,omitempty"`
-	SpireCert    bool `json:"spire_cert,omitempty"`
+	SpireEnabled bool   `json:"spire_enabled,omitempty"`
+	SpireCert    bool   `json:"spire_cert,omitempty"`
+	JoinToken    string `json:"join_token,omitempty"`
 	// logrotateString
 	LogRotateTemplateString string `json:"-"`
 	LogRotate               string `json:"logrotate,omitempty"`
@@ -161,6 +162,8 @@ type ClusterConfig struct {
 
 	KaResource     ResourceConfig `json:"kubearmor_resource,omitempty"`
 	AgentsResource ResourceConfig `json:"agents_resource,omitempty"`
+
+	Proxy Proxy `json:"proxy,omitempty"`
 }
 
 type AccessKey struct {
@@ -336,6 +339,10 @@ type TemplateConfigArgs struct {
 	SpireCert    bool `json:"spire_cert,omitempty"`
 
 	AccessKey AccessKey `json:"access_key,omitempty"`
+
+	ProxyEnabled   bool     `json:"proxy_enabled,omitempty"`
+	ProxyAddress   string   `json:"proxy_address,omitempty"`
+	ProxyExtraArgs []string `json:"proxy_extra_env,omitempty"`
 }
 
 type KmuxConfigTemplateArgs struct {

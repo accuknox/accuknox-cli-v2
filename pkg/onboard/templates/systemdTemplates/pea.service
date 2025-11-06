@@ -7,6 +7,12 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/accuknox-policy-enforcement-agent/
 ExecStart=/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent
+{{- if .ProxyEnabled }}
+{{- range .ProxyExtraArgs }}
+Environment={{ . }}
+{{- end }}
+Environment="JOIN_TOKEN={{ .JoinToken }}"
+{{- end }}
 {{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent.log
 StandardError=append:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent-err.log

@@ -335,6 +335,10 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 		"WorkerNode":     cc.WorkerNode,
 		"SystemdVersion": getSystemdVersion(),
 		"ReleaseVersion": cc.AgentsVersion,
+		"ProxyEnabled":   cc.Proxy.Enabled,
+		"ProxyAddress":   cc.Proxy.Address,
+		"ProxyExtraArgs": cc.Proxy.ExtraArgs,
+		"JoinToken":      cc.JoinToken,
 	}
 
 	if cc.AdditionalArgs != nil {
@@ -544,6 +548,10 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 		if obj.AgentImage == "" || obj.PackageName == "" {
+			continue
+		}
+
+		if cc.Proxy.Enabled && obj.AgentName == cm.SpireAgent {
 			continue
 		}
 

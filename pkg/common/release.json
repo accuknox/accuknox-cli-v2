@@ -1992,6 +1992,27 @@
       "rra_tag": "v0.5.0",
       "rra_image": "accuknox/rra"
     },
+    "v0.11.12-proxy": {
+      "creation_time": "1756811879",
+      "kubearmor_tag": "v1.6.5",
+      "kubearmor_relay_tag": "v0.0.4",
+      "kubearmor_vm_adapter_tag": "v0.1.15",
+      "spire_agent_tag": "v2.0.12",
+      "sia_tag": "v0.8.10-proxy",
+      "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
+      "pea_tag": "v0.8.1-proxy",
+      "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+      "feeder_service_tag": "v0.10.2-proxy",
+      "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+      "discover_tag": "v0.3.18",
+      "discover_image": "public.ecr.aws/k9v9d5v2/discovery-engine-discover",
+      "sumengine_tag": "v0.3.18",
+      "sumengine_image": "public.ecr.aws/k9v9d5v2/discovery-engine-sumengine",
+      "hardening_agent_tag": "v0.3.18",
+      "hardening_agent_image": "public.ecr.aws/k9v9d5v2/discovery-engine-hardening",
+      "rra_tag": "v0.5.0",
+      "rra_image": "accuknox/rra"
+    },
     "v0.11.12": {
       "creation_time": "1756811879",
       "kubearmor_tag": "v1.6.5",
