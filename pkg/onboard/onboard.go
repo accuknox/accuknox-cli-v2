@@ -21,7 +21,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string) (*ClusterConfig, error) {
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string, proxy Proxy) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -130,6 +130,8 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	} else {
 		logger.Info1("%v", msg)
 	}
+
+	releaseVersion = "v0.10.11-proxy"
 
 	releaseInfo, ok := cm.ReleaseInfo[releaseVersion]
 	if !ok && releaseVersion != "" {
@@ -388,6 +390,8 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	cc.Splunk = splunk
 
 	cc.NodeStateRefreshTime = stateRefreshTime
+
+	cc.Proxy = proxy
 
 	return cc, nil
 }

@@ -108,6 +108,10 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 			continue
 		}
 
+		if ic.Proxy.Enabled && obj.AgentName == cm.SpireAgent {
+			continue
+		}
+
 		if obj.ConfigFilePath != "" {
 			// copy template args
 			tcArgs := ic.TCArgs

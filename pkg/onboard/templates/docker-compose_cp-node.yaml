@@ -1,10 +1,13 @@
 volumes:
+{{- if ne .ProxyEnabled true }}
   spire-vol:
     name: spire-vol
+{{- end }}
   kubearmor-init-vol:
     name: kubearmor-init-vol
 
 services:
+{{- if ne .ProxyEnabled true }}
   spire-agent:
     profiles:
       - "spire-agent"
@@ -54,7 +57,7 @@ services:
       accuknox-net:
         aliases:
           - wait-for-it
-
+{{- end }}
   kubearmor-init:
     profiles:
       - "kubearmor-only"
@@ -206,8 +209,10 @@ services:
     profiles:
       - "accuknox-agents"
     depends_on:
+      {{- if ne .ProxyEnabled true }}
       wait-for-it:
         condition: service_completed_successfully
+      {{- end }}
       kubearmor:
         condition: service_started
       {{- if not .TlsEnabled }}
@@ -220,6 +225,10 @@ services:
     command: ["-config-path", "/opt/sia/"]
     labels:
       app: shared-informer-agent
+    {{- if .ProxyEnabled }}
+    environment:
+    - "JOIN_TOKEN={{.JoinToken}}"
+    {{- end }}
     volumes:
       - "{{.ConfigPath}}:/opt"
       - "/var/run:/var/run:ro"
@@ -236,8 +245,10 @@ services:
     profiles:
       - "accuknox-agents"
     depends_on:
+      {{- if ne .ProxyEnabled true }}
       wait-for-it:
         condition: service_completed_successfully
+      {{- end }}
       kubearmor-relay-server:
         condition: service_started
       summary-engine:
@@ -275,7 +286,14 @@ services:
       - "IGNORE_SUMMARY_EVENTS=Network:AF_UNIX,AF_NETLINK"
 
       - "SPIRE_AGENT_URL=unix:///var/run/spire/agent.sock"
+      {{- if .ProxyEnabled }}
+      - "SPIRE_ENABLED=false"
+      - "PROXY_ENABLED={{.ProxyEnabled}}"
+      - "PROXY_ADDRESS={{.ProxyAddress}}"
+      - "JOIN_TOKEN={{.JoinToken}}
+      {{- else }}
       - "SPIRE_ENABLED=true"
+      {{- end }}
       - "TLS_ENABLED={{.TlsEnabled}}"
       - "TLS_CERT_FILE=/opt/cert/encoded.pem"
       - "RABBITMQ_ENABLED={{.TlsEnabled}}"
@@ -300,8 +318,10 @@ services:
     profiles:
       - "accuknox-agents"
     depends_on:
+      {{- if ne .ProxyEnabled true }}
       wait-for-it:
         condition: service_completed_successfully
+      {{- end }}
       kubearmor-relay-server:
         condition: service_started
     container_name: policy-enforcement-agent
@@ -314,6 +334,10 @@ services:
       - "{{.ConfigPath}}:/opt"
       # for spire socket
       - "/var/run:/var/run:ro"
+    {{- if .ProxyEnabled }}
+    environment:
+    - "JOIN_TOKEN={{.JoinToken}}"
+    {{- end }}
     restart: always
     ports:
       - "32770:32770"
