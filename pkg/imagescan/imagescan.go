@@ -62,7 +62,8 @@ func DiscoverAndScan(conf kubesheildScanner.ScanConfig, hostName, runtime string
 	conf.ArtifactConfig.AdditionalData = map[string]any{"host_name": hostName}
 	conf.ScanTool = "trivy" // Default scanning tool
 
-	imageScanner := kubesheildScanner.New(conf)
+	// Passing nil kubernetes.Clientset, because it won't be required incase of VM container Image scanning
+	imageScanner := kubesheildScanner.New(conf, nil)
 	imageScanner.ScannerHttpClient = httpclient.New()
 
 	// Scans the provided images and sends the result back to saas through the artifact API
