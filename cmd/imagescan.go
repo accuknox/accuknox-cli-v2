@@ -65,7 +65,6 @@ func init() {
 		"Optional: specify the URL path segment after the domain name")
 	imageScanCmd.Flags().StringVarP(&cfg.ArtifactConfig.Label, "label", "l", "", "used to filter the finding based on the label")
 	imageScanCmd.Flags().StringVarP(&cfg.ArtifactConfig.ArtifactToken, "token", "t", "", "token required for authentication")
-	imageScanCmd.Flags().StringVarP(&cfg.ArtifactConfig.TenantID, "tenantId", "", "", "tenant id")
 
 	// Scan Configurations
 	imageScanCmd.Flags().StringVarP(&HOST_NAME, "hostname", "", "", "name of the host")
@@ -74,7 +73,7 @@ func init() {
 	imageScanCmd.Flags().BoolVar(&imagesOnly, "images-only", false, "If set, discovers and scans all images. By default, only images from running containers are scanned.")
 
 	// Required Flags Validation
-	imageScanCmd.MarkFlagsOneRequired("artifactEndpoint", "token", "label", "tenantId")
-	imageScanCmd.MarkFlagsRequiredTogether("artifactEndpoint", "token", "label", "tenantId")
+	imageScanCmd.MarkFlagsOneRequired("artifactEndpoint", "token", "label")
+	imageScanCmd.MarkFlagsRequiredTogether("artifactEndpoint", "token", "label")
 	rootCmd.AddCommand(imageScanCmd)
 }
