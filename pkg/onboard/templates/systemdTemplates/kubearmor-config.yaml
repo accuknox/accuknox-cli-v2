@@ -25,3 +25,6 @@ hostDefaultCapabilitiesPosture: {{.KubeArmorHostCapPosture}}
 alertThrottling: {{.KubeArmorAlertThrottling}}
 maxAlertPerSec: {{.KubeArmorMaxAlertsPerSec}}
 throttleSec: {{.KubeArmorThrottleSec}}
+
+# usb handler 
+enableUSBDeviceHandler: true
