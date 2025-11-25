@@ -92,15 +92,13 @@ jobs:
             mkdir -p "$DEBIAN_DIR"
 
             cat > "$DEBIAN_DIR/control" <<EOF
-Package: knoxctl
-Version: $VERSION
-Section: utils
-Priority: optional
-Architecture: $DEB_ARCH
-Maintainer: Ramakant <ramakant@accuknox.com>, Vishnu <vishnu@accuknox.com>
-Description: Knoxctl CLI for KnoxSecurity platform
- A command line tool to manage KnoxSecurity infrastructure and operations.
-EOF
+            Package: knoxctl
+            Version: $VERSION
+            Architecture: $DEB_ARCH
+            Maintainer: Ramakant <ramakant@accuknox.com>, Vishnu <vishnu@accuknox.com>
+            Description: 
+                CLI for kubearmor client
+            EOF
 
             chmod 0755 "$DEBIAN_DIR"
             chmod 0644 "$DEBIAN_DIR/control"
