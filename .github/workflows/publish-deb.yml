@@ -7,6 +7,7 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,13 +22,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "${GH_TOKEN}" | gh auth login --with-token
-      - name: Build .deb and upload to Nexus (inline)
+
+      - name: Build .deb and upload to Nexus
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           NEXUS_URL: https://nexus.accuknox.com/repository/knoxctl/
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
           TAG: ${{ github.event.release.tag_name }}
+
         run: |
           set -euo pipefail
 
@@ -83,22 +86,17 @@ jobs:
             cp "$BIN_PATH" "$PKGROOT/usr/local/bin/knoxctl"
             chmod 0755 "$PKGROOT/usr/local/bin/knoxctl"
 
-            echo "Creating DEBIAN/control and building .deb for arch=$DEB_ARCH (package version will use full tag: $TAG)"
+            echo "Creating DEBIAN/control for arch=$DEB_ARCH"
 
             DEBIAN_DIR="$PKGROOT/DEBIAN"
             mkdir -p "$DEBIAN_DIR"
 
-            # compute installed size (in KB)
-            INSTALLED_SIZE=$(du -s "$PKGROOT" | cut -f1 || true)
-
-            # Create control file using numeric version (strip leading v)
             cat > "$DEBIAN_DIR/control" <<EOF
 Package: knoxctl
 Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: $DEB_ARCH
-Installed-Size: $INSTALLED_SIZE
 Maintainer: Ramakant <ramakant@accuknox.com>, Vishnu <vishnu@accuknox.com>
 Description: Knoxctl CLI for KnoxSecurity platform
  A command line tool to manage KnoxSecurity infrastructure and operations.
@@ -116,8 +114,11 @@ EOF
               exit 1
             fi
 
-            echo "Uploading $OUTPUT_DEB to Nexus at ${NEXUS_URL%/}/$OUTPUT_DEB"
-            curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --fail --show-error --upload-file "$OUTPUT_DEB" "${NEXUS_URL%/}/$OUTPUT_DEB"
+            echo "Uploading $OUTPUT_DEB to Nexus"
+            curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+              --fail --show-error \
+              --upload-file "$OUTPUT_DEB" \
+              "${NEXUS_URL%/}/$OUTPUT_DEB"
 
             echo "Uploaded $OUTPUT_DEB"
 
