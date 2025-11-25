@@ -1,0 +1,128 @@
+name: Build and publish .deb on release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential dpkg-dev curl gh
+
+      - name: Authenticate GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${GH_TOKEN}" | gh auth login --with-token
+      - name: Build .deb and upload to Nexus (inline)
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          NEXUS_URL: https://nexus.accuknox.com/repository/knoxctl/
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${NEXUS_USERNAME:-}" ] || [ -z "${NEXUS_PASSWORD:-}" ]; then
+            echo "ERROR: NEXUS_USERNAME and NEXUS_PASSWORD must be set as secrets"
+            exit 1
+          fi
+
+          VERSION="${TAG#v}"
+          REPO="${GITHUB_REPOSITORY:-${{ github.repository }}}"
+          ASSETS=("knoxctl_${VERSION}_linux_amd64.tar.gz" "knoxctl_${VERSION}_linux_arm64.tar.gz")
+
+          echo "Packaging release ${TAG} (version=${VERSION})"
+
+          for asset in "${ASSETS[@]}"; do
+            echo "Processing asset: $asset"
+
+            if ! gh release download "${TAG}" --pattern "$asset" --repo "$REPO"; then
+              echo "Failed to download $asset"
+              exit 1
+            fi
+
+            rm -rf extract_tmp pkgroot_* || true
+            mkdir -p extract_tmp
+            tar -xzf "$asset" -C extract_tmp
+
+            if [[ "$asset" == *"amd64"* ]]; then
+              DEB_ARCH="amd64"
+            elif [[ "$asset" == *"arm64"* ]]; then
+              DEB_ARCH="arm64"
+            else
+              echo "Unknown arch for asset $asset"
+              exit 1
+            fi
+
+            PKGROOT="$(pwd)/pkgroot_${DEB_ARCH}"
+            rm -rf "$PKGROOT"
+            mkdir -p "$PKGROOT/usr/local/bin"
+
+            BIN_PATH=""
+            if [ -f extract_tmp/knoxctl ]; then
+              BIN_PATH="extract_tmp/knoxctl"
+            else
+              BIN_PATH="$(find extract_tmp -maxdepth 3 -type f -name knoxctl | head -n1 || true)"
+            fi
+
+            if [ -z "$BIN_PATH" ] || [ ! -f "$BIN_PATH" ]; then
+              echo "Could not find 'knoxctl' binary inside $asset"
+              ls -R extract_tmp || true
+              exit 1
+            fi
+
+            cp "$BIN_PATH" "$PKGROOT/usr/local/bin/knoxctl"
+            chmod 0755 "$PKGROOT/usr/local/bin/knoxctl"
+
+            echo "Creating DEBIAN/control and building .deb for arch=$DEB_ARCH (package version will use full tag: $TAG)"
+
+            DEBIAN_DIR="$PKGROOT/DEBIAN"
+            mkdir -p "$DEBIAN_DIR"
+
+            # compute installed size (in KB)
+            INSTALLED_SIZE=$(du -s "$PKGROOT" | cut -f1 || true)
+
+            # Create control file using numeric version (strip leading v)
+            cat > "$DEBIAN_DIR/control" <<EOF
+Package: knoxctl
+Version: $VERSION
+Section: utils
+Priority: optional
+Architecture: $DEB_ARCH
+Installed-Size: $INSTALLED_SIZE
+Maintainer: Ramakant <ramakant@accuknox.com>, Vishnu <vishnu@accuknox.com>
+Description: Knoxctl CLI for KnoxSecurity platform
+ A command line tool to manage KnoxSecurity infrastructure and operations.
+EOF
+
+            chmod 0755 "$DEBIAN_DIR"
+            chmod 0644 "$DEBIAN_DIR/control"
+
+            OUTPUT_DEB="knoxctl_${VERSION}_${DEB_ARCH}.deb"
+            dpkg-deb --build "$PKGROOT" "$OUTPUT_DEB"
+
+            if [ ! -f "$OUTPUT_DEB" ]; then
+              echo "Failed to build $OUTPUT_DEB"
+              ls -la
+              exit 1
+            fi
+
+            echo "Uploading $OUTPUT_DEB to Nexus at ${NEXUS_URL%/}/$OUTPUT_DEB"
+            curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --fail --show-error --upload-file "$OUTPUT_DEB" "${NEXUS_URL%/}/$OUTPUT_DEB"
+
+            echo "Uploaded $OUTPUT_DEB"
+
+            rm -f *.deb
+            rm -rf extract_tmp "$PKGROOT" "$asset"
+          done
+
+          echo "All done."
