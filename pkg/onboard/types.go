@@ -106,7 +106,7 @@ type ClusterConfig struct {
 
 	CIDR string `json:"cidr,omitempty"`
 
-	TemplateFuncs map[string]interface{} `json:"-"`
+	TemplateFuncs map[string]any `json:"-"`
 
 	// internal
 	composeCmd     string
@@ -158,6 +158,9 @@ type ClusterConfig struct {
 	Parallel  int       `json:"parallel,omitempty"`
 
 	AdditionalArgs map[string]any `json:"additional_args,omitempty"`
+
+	KaResource     ResourceConfig `json:"kubearmor_resource,omitempty"`
+	AgentsResource ResourceConfig `json:"agents_resource,omitempty"`
 }
 
 type AccessKey struct {
@@ -437,4 +440,10 @@ type SplunkConfig struct {
 	Index       string
 	Certificate string
 	SkipTls     bool
+}
+
+type ResourceConfig struct {
+	CPUQuota   int64
+	MemoryMax  int64
+	MemoryHigh int64
 }

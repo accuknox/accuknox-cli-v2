@@ -78,6 +78,8 @@ var (
 	releaseFile string
 
 	printInspectOutput bool
+	kaResource         onboard.ResourceConfig
+	agentsResource     onboard.ResourceConfig
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -205,6 +207,15 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&releaseFile, "release-file", "", "release file containing release versions of accuknox agents")
 
 	onboardVMCmd.PersistentFlags().BoolVar(&printInspectOutput, "print-inspect", false, "print output of inspect command")
+
+	// resource config for agents and kubearmor
+	onboardVMCmd.PersistentFlags().Int64Var(&kaResource.CPUQuota, "kubearmor.cpu-quota", 5, "cpu quota for kubearmor in percentage. eg: 5")
+	onboardVMCmd.PersistentFlags().Int64Var(&kaResource.MemoryMax, "kubearmor.memory-max", 300, "memory max for kubearmor in MB. eg: 300")
+	onboardVMCmd.PersistentFlags().Int64Var(&kaResource.MemoryHigh, "kubearmor.memory-high", 240, "memory quota for kubearmor in MB. eg: 240")
+
+	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.CPUQuota, "agents.cpu-quota", 5, "cpu quota for agents in percentage. eg: 5")
+	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.MemoryMax, "agents.memory-max", 100, "memory max for agents in MB. eg: 100")
+	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.MemoryHigh, "agents.memory-high", 80, "memory quota for agents in MB. eg: 80")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

@@ -332,9 +332,9 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 // placeServiceFiles copies service files
 func (cc *ClusterConfig) placeServiceFiles() error {
 	configArgs := map[string]any{
-		"WorkerNode":       cc.WorkerNode,
-		"UseSystemdAppend": useSystemdAppend(),
-		"ReleaseVersion":   cc.AgentsVersion,
+		"WorkerNode":     cc.WorkerNode,
+		"SystemdVersion": getSystemdVersion(),
+		"ReleaseVersion": cc.AgentsVersion,
 	}
 
 	if cc.AdditionalArgs != nil {
@@ -350,6 +350,16 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 		}
 		if obj.AgentName == cm.HardeningAgent && semver.Compare(cc.AgentsVersion, "v0.9.4") >= 0 {
 			continue
+		}
+
+		configArgs["CPUQuota"] = fmt.Sprintf("%v%s", cc.AgentsResource.CPUQuota, "%")
+		configArgs["MemoryMax"] = fmt.Sprintf("%vM", cc.AgentsResource.MemoryMax)
+		configArgs["MemoryHigh"] = fmt.Sprintf("%vM", cc.AgentsResource.MemoryHigh)
+
+		if obj.AgentName == cm.KubeArmor {
+			configArgs["CPUQuota"] = fmt.Sprintf("%v%s", cc.KaResource.CPUQuota, "%")
+			configArgs["MemoryMax"] = fmt.Sprintf("%vM", cc.KaResource.MemoryMax)
+			configArgs["MemoryHigh"] = fmt.Sprintf("%vM", cc.KaResource.MemoryHigh)
 		}
 
 		if obj.ServiceTemplateString != "" {

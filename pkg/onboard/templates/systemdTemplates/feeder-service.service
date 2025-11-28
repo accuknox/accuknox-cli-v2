@@ -7,7 +7,7 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/accuknox-feeder-service/
 EnvironmentFile=/opt/accuknox-feeder-service/conf/env
-{{- if .UseSystemdAppend }}
+{{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/accuknox-feeder-service/accuknox-feeder-service.log
 StandardError=append:/opt/accuknox-feeder-service/accuknox-feeder-service-err.log
 {{- else }}
@@ -17,6 +17,19 @@ StandardError=file:/opt/accuknox-feeder-service/accuknox-feeder-service-err.log
 ExecStart=/opt/accuknox-feeder-service/accuknox-feeder-service
 Restart=always
 RestartSec=10
+
+CPUQuota={{ .CPUQuota | default "5%" }}
+MemoryMax={{ .MemoryMax | default "100M" }}
+
+{{- if gt .SystemdVersion 241 }}
+MemoryHigh={{ .MemoryHigh | default "80M" }}
+{{- end }}
+
+{{- if gt .SystemdVersion 241 }}
+CPUWeight=50
+{{- end }}
+
+OOMPolicy=kill
 
 [Install]
 WantedBy=multi-user.target

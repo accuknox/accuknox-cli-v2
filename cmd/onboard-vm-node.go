@@ -118,6 +118,8 @@ var joinNodeCmd = &cobra.Command{
 			logger.Error("failed to create VM config: %s", err.Error())
 			return err
 		}
+		vmConfigs.KaResource = kaResource
+		vmConfigs.AgentsResource = agentsResource
 
 		if accessKey != "" {
 			if joinToken, err = vmConfigs.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "Node", insecure); err != nil {

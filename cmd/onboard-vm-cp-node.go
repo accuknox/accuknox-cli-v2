@@ -139,6 +139,9 @@ var cpNodeCmd = &cobra.Command{
 			return err
 		}
 
+		vmConfig.KaResource = kaResource
+		vmConfig.AgentsResource = agentsResource
+
 		if accessKey != "" {
 			if joinToken, err = vmConfig.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "vm", insecure); err != nil {
 				return err
@@ -153,7 +156,6 @@ var cpNodeCmd = &cobra.Command{
 				logger.Warn("Failed to create config dump at %s: %s", configDumpPath, err.Error())
 			}
 		}()
-
 		err = onboardConfig.CreateBaseTemplateConfig()
 		if err != nil {
 			logger.Error("failed to create base template config: %s", err.Error())

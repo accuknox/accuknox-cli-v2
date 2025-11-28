@@ -7,7 +7,7 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/kubearmor-relay-server/
 ExecStart=/opt/kubearmor-relay-server/kubearmor-relay-server
-{{- if .UseSystemdAppend }}
+{{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/kubearmor-relay-server/kubearmor-relay-server.log
 StandardError=append:/opt/kubearmor-relay-server/kubearmor-relay-server-err.log
 {{- else }}
@@ -16,6 +16,19 @@ StandardError=file:/opt/kubearmor-relay-server/kubearmor-relay-server-err.log
 {{- end }}
 Restart=always
 RestartSec=10
+
+CPUQuota={{ .CPUQuota | default "5%" }}
+MemoryMax={{ .MemoryMax | default "100M" }}
+
+{{- if gt .SystemdVersion 241 }}
+MemoryHigh={{ .MemoryHigh | default "80M" }}
+{{- end }}
+
+{{- if gt .SystemdVersion 241 }}
+CPUWeight=50
+{{- end }}
+
+OOMPolicy=kill
 
 [Install]
 WantedBy=multi-user.target

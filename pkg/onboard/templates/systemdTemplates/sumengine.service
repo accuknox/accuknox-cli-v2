@@ -11,7 +11,7 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/accuknox-sumengine/
 ExecStart=/opt/accuknox-sumengine/sumengine --config conf/config.yaml --kmux-config kmux-config.yaml
-{{- if .UseSystemdAppend }}
+{{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/accuknox-sumengine/accuknox-sumengine.log
 StandardError=append:/opt/accuknox-sumengine/accuknox-sumengine-err.log
 {{- else }}
@@ -20,6 +20,19 @@ StandardError=file:/opt/accuknox-sumengine/accuknox-sumengine-err.log
 {{- end }}
 Restart=always
 RestartSec=10
+
+CPUQuota={{ .CPUQuota | default "5%" }}
+MemoryMax={{ .MemoryMax | default "100M" }}
+
+{{- if gt .SystemdVersion 241 }}
+MemoryHigh={{ .MemoryHigh | default "80M" }}
+{{- end }}
+
+{{- if gt .SystemdVersion 241 }}
+CPUWeight=50
+{{- end }}
+
+OOMPolicy=kill
 
 [Install]
 WantedBy=multi-user.target

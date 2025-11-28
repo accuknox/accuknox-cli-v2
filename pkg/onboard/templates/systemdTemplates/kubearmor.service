@@ -6,7 +6,7 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/kubearmor/
 ExecStart=/opt/kubearmor/kubearmor
-{{- if .UseSystemdAppend }}
+{{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/kubearmor/kubearmor.log
 StandardError=append:/opt/kubearmor/kubearmor-err.log
 {{- else }}
@@ -15,6 +15,19 @@ StandardError=file:/opt/kubearmor/kubearmor-err.log
 {{- end }}
 Restart=always
 RestartSec=10
+
+CPUQuota={{ .CPUQuota | default "5%" }}
+MemoryMax={{ .MemoryMax | default "300M" }}
+
+{{- if gt .SystemdVersion 241 }}
+MemoryHigh={{ .MemoryHigh | default "250M" }}
+{{- end }}
+
+{{- if gt .SystemdVersion 241 }}
+CPUWeight=50
+{{- end }}
+
+OOMPolicy=kill
 
 [Install]
 WantedBy=multi-user.target

@@ -178,24 +178,23 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	return nil
 }
 
-func useSystemdAppend() bool {
-
+func getSystemdVersion() int {
 	cmd := exec.Command("systemctl", "--version")
 	out, err := cmd.Output()
 	if err != nil {
-		return false
+		return 240
 	}
 	lines := strings.Split(string(out), "\n")
 	if len(lines) == 0 {
-		return false
+		return 240
 	}
 	fields := strings.Fields(lines[0])
 	if len(fields) < 2 {
-		return false
+		return 240
 	}
 	version, err := strconv.Atoi(fields[1])
 	if err != nil {
-		return false
+		return 240
 	}
-	return version > 240
+	return version
 }

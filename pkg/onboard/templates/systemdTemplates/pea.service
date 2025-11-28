@@ -7,7 +7,7 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/accuknox-policy-enforcement-agent/
 ExecStart=/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent
-{{- if .UseSystemdAppend }}
+{{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent.log
 StandardError=append:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforcement-agent-err.log
 {{- else }}
@@ -16,5 +16,20 @@ StandardError=file:/opt/accuknox-policy-enforcement-agent/accuknox-policy-enforc
 {{- end }}
 Restart=always
 RestartSec=10
+
+
+CPUQuota={{ .CPUQuota | default "5%" }}
+MemoryMax={{ .MemoryMax | default "100M" }}
+
+{{- if gt .SystemdVersion 241 }}
+MemoryHigh={{ .MemoryHigh | default "80M" }}
+{{- end }}
+
+{{- if gt .SystemdVersion 241 }}
+CPUWeight=50
+{{- end }}
+
+OOMPolicy=kill
+
 [Install]
 WantedBy=multi-user.target
