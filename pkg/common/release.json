@@ -1679,7 +1679,7 @@
     },
     "v0.10.9": {
       "creation_time": "1756460988",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1700,7 +1700,7 @@
     },
     "v0.10.10": {
       "creation_time": "1756460988",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1721,7 +1721,7 @@
     },
     "v0.10.11": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1805,7 +1805,7 @@
     },
     "v0.11.3": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1826,7 +1826,7 @@
     },
     "v0.11.4": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1847,7 +1847,7 @@
     },
     "v0.11.5": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1868,7 +1868,7 @@
     },
     "v0.11.6": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1889,7 +1889,7 @@
     },
     "v0.11.7": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1910,7 +1910,7 @@
     },
     "v0.11.8": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1931,7 +1931,7 @@
     },
     "v0.11.9": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1952,7 +1952,7 @@
     },
     "v0.11.10": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.3",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
@@ -1973,7 +1973,7 @@
     },
     "v0.11.11": {
       "creation_time": "1756811879",
-      "kubearmor_tag": "v1.6.4",
+      "kubearmor_tag": "v1.6.5",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.15",
       "spire_agent_tag": "v2.0.12",
