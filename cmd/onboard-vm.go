@@ -217,5 +217,11 @@ func init() {
 	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.MemoryMax, "agents.memory-max", 100, "memory max for agents in MB. eg: 100")
 	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.MemoryHigh, "agents.memory-high", 80, "memory quota for agents in MB. eg: 80")
 
+	onboardVMCmd.PersistentFlags().BoolVar(&proxy.Enabled, "proxy", false, "bypass spire and use proxy")
+
+	onboardVMCmd.PersistentFlags().StringVar(&proxy.Address, "proxy-address", "", "proxy address")
+
+	onboardVMCmd.PersistentFlags().StringArrayVar(&proxy.ExtraArgs, "proxy-args", []string{}, "extra env variables for proxy")
+
 	onboardCmd.AddCommand(onboardVMCmd)
 }

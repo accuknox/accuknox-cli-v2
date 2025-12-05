@@ -11,6 +11,14 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/accuknox-sumengine/
 ExecStart=/opt/accuknox-sumengine/sumengine --config conf/config.yaml --kmux-config kmux-config.yaml
+
+{{- range .ProxyExtraArgs }}
+Environment={{ . }}
+{{- end }}
+{{- if .ProxyEnabled }}
+Environment="JOIN_TOKEN={{ .JoinToken }}"
+{{- end }}
+
 {{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/accuknox-sumengine/accuknox-sumengine.log
 StandardError=append:/opt/accuknox-sumengine/accuknox-sumengine-err.log

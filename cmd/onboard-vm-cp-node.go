@@ -245,12 +245,6 @@ func init() {
 
 	cpNodeCmd.PersistentFlags().BoolVar(&enableHardeningAgent, "enable-hardening-agent", false, "to enable hardening agent")
 
-	cpNodeCmd.PersistentFlags().BoolVar(&proxy.Enabled, "proxy", false, "bypass spire and use proxy")
-
-	cpNodeCmd.PersistentFlags().StringVar(&proxy.Address, "proxy-address", "", "proxy address")
-
-	cpNodeCmd.PersistentFlags().StringArrayVar(&proxy.ExtraArgs, "proxy-args", []string{}, "extra env variables for proxy")
-
 	err := cpNodeCmd.MarkPersistentFlagRequired("pps-host")
 	if err != nil {
 		fmt.Println(err)

@@ -146,6 +146,14 @@ services:
     container_name: kubearmor-vm-adapter
     image: "{{.KubeArmorVMAdapterImage}}"
     pull_policy: "{{.ImagePullPolicy}}"
+    environment:
+    - "test=true"
+    {{- if .ProxyEnabled  }}
+    - "JOIN_TOKEN={{.JoinToken}}"
+    {{- end }}
+    {{- range .ProxyExtraArgs }}
+    - {{ . }}
+    {{- end }}
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       - "--relay-server-addr={{.RelayServerURL}}"
@@ -199,6 +207,14 @@ services:
     command: ["--config", "/opt/sumengine/config.yaml", "--kmux-config", "/opt/sumengine/kmux-config.yaml"]
     labels:
       app: sumengine
+    environment:
+    - "test=true"
+    {{- if .ProxyEnabled  }}
+    - "JOIN_TOKEN={{.JoinToken}}"
+    {{- end }}
+    {{- range .ProxyExtraArgs }}
+    - {{ . }}
+    {{- end }}
     volumes:
       - "{{.ConfigPath}}:/opt"
       {{- if .SpireEnabled }}
