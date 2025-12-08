@@ -225,9 +225,13 @@ services:
     command: ["-config-path", "/opt/sia/"]
     labels:
       app: shared-informer-agent
-    {{- if .ProxyEnabled }}
     environment:
+    - "test=true"
+    {{- if .ProxyEnabled }}
     - "JOIN_TOKEN={{.JoinToken}}"
+    {{- end }}
+    {{- range .ProxyExtraArgs }}
+    - {{ . }}
     {{- end }}
     volumes:
       - "{{.ConfigPath}}:/opt"
@@ -294,6 +298,9 @@ services:
       {{- else }}
       - "SPIRE_ENABLED=true"
       {{- end }}
+      {{- range .ProxyExtraArgs }}
+      - {{ . }}
+      {{- end }}
       - "TLS_ENABLED={{.TlsEnabled}}"
       - "TLS_CERT_FILE=/opt/cert/encoded.pem"
       - "RABBITMQ_ENABLED={{.TlsEnabled}}"
@@ -334,9 +341,13 @@ services:
       - "{{.ConfigPath}}:/opt"
       # for spire socket
       - "/var/run:/var/run:ro"
-    {{- if .ProxyEnabled }}
     environment:
+    - "test=true"
+    {{- if .ProxyEnabled  }}
     - "JOIN_TOKEN={{.JoinToken}}"
+    {{- end }}
+    {{- range .ProxyExtraArgs }}
+    - {{ . }}
     {{- end }}
     restart: always
     ports:

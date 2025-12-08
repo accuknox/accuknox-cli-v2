@@ -7,10 +7,10 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/accuknox-feeder-service/
 EnvironmentFile=/opt/accuknox-feeder-service/conf/env
-{{- if .ProxyEnabled }}
 {{- range .ProxyExtraArgs }}
 Environment={{ . }}
 {{- end }}
+{{- if .ProxyEnabled }}
 Environment="JOIN_TOKEN={{ .JoinToken }}"
 {{- end }}
 {{- if gt .SystemdVersion 240 }}

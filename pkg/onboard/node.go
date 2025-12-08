@@ -156,6 +156,9 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		NodeStateRefreshTime: jc.NodeStateRefreshTime,
 		SpireEnabled:         jc.SpireEnabled,
 		SpireCert:            jc.SpireCert,
+		ProxyExtraArgs:       jc.Proxy.ExtraArgs,
+		ProxyEnabled:         jc.Proxy.Enabled,
+		ProxyAddress:         jc.Proxy.Address,
 	}
 
 	jc.TCArgs.PoliciesKmuxConfig = common.KmuxPoliciesFileName

@@ -7,6 +7,14 @@ User=root
 KillMode=control-group
 WorkingDirectory=/opt/kubearmor-vm-adapter/
 ExecStart=/opt/kubearmor-vm-adapter/kubearmor-vm-adapter
+
+{{- range .ProxyExtraArgs }}
+Environment={{ . }}
+{{- end }}
+{{- if .ProxyEnabled }}
+Environment="JOIN_TOKEN={{ .JoinToken }}"
+{{- end }}
+
 {{- if gt .SystemdVersion 240 }}
 StandardOutput=append:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter.log
 StandardError=append:/opt/kubearmor-vm-adapter/kubearmor-vm-adapter-err.log
