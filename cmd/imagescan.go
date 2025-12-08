@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/imagescan"
@@ -13,6 +14,8 @@ var (
 	HOST_NAME                   string
 	RUN_TIME                    string
 	artifactEndpointPath        string
+	vulnerabilityDB             string
+	javaDB                      string
 	allContainers               bool
 	imagesOnly                  bool
 	cfg                         = kubesheildScanner.ScanConfig{}
@@ -51,6 +54,12 @@ and sends back the result to saas
 			artifactEndpointPath = "/" + artifactEndpointPath
 		}
 
+		// trivy can make use of this variable to download the trivyDB from the
+		// specified source. If it is empty, trivy will download from one of its public
+		// registries.
+		_ = os.Setenv("TRIVY_DB_REPOSITORY", vulnerabilityDB)
+		_ = os.Setenv("TRIVY_JAVA_DB_REPOSITORY", javaDB)
+
 		cfg.ArtifactConfig.ArtifactAPI += artifactEndpointPath
 		return imagescan.DiscoverAndScan(cfg, HOST_NAME, RUN_TIME, !allContainers, imagesOnly)
 	},
@@ -71,6 +80,10 @@ func init() {
 	imageScanCmd.Flags().StringVarP(&RUN_TIME, "runtime", "r", "", "container runtime used in the host machine")
 	imageScanCmd.Flags().BoolVar(&allContainers, "all-containers", false, "If set, discover containers in all states. By default, only running containers are discovered.")
 	imageScanCmd.Flags().BoolVar(&imagesOnly, "images-only", false, "If set, discovers and scans all images. By default, only images from running containers are scanned.")
+
+	// Trivy Configurations
+	imageScanCmd.Flags().StringVarP(&vulnerabilityDB, "db-repository", "", "", "OCI repository to retrieve vulnerability db")
+	imageScanCmd.Flags().StringVarP(&javaDB, "java-db-repository", "", "", "OCI repository to retrieve java db")
 
 	// Required Flags Validation
 	imageScanCmd.MarkFlagsOneRequired("artifactEndpoint", "token", "label")
