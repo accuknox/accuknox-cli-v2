@@ -30,3 +30,8 @@ spire: {{.SpireEnabled}}
 spire-agent: "unix:///var/run/spire/agent.sock"
 spire-cert: {{.SpireCert}}
 {{- end }}
+
+{{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.11.11" }}
+annotation-topic: {{.AnnotationTopic}}
+kmux-config-annotation: /opt/kubearmor-vm-adapter/annotation-kmux-config.yaml
+{{- end }}

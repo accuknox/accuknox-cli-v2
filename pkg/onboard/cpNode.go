@@ -27,6 +27,7 @@ type agentConfigMeta struct {
 type Proxy struct {
 	Enabled   bool
 	Address   string
+	SaaSAddr  string
 	ExtraArgs []string
 }
 
@@ -138,6 +139,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		SpireSecretDir: ic.SpireSecretDir,
 		ProxyEnabled:   ic.Proxy.Enabled,
 		ProxyAddress:   ic.Proxy.Address,
+		ProxySaaSAddr:  ic.Proxy.SaaSAddr,
 		ProxyExtraArgs: ic.Proxy.ExtraArgs,
 	}
 	return nil
@@ -191,6 +193,12 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		StreamName:     "knox-gateway",
 		ServerURL:      ic.KnoxGateway,
 		RMQServer:      "rabbitmq:5672",
+		ProxyEnabled:   ic.Proxy.Enabled,
+		ProxyAddress:   ic.Proxy.Address,
+	}
+
+	if ic.Proxy.Address != "" {
+		kmuxConfigArgs.ProxyEnabled = true
 	}
 
 	if ic.RMQServer != "" {
@@ -285,6 +293,7 @@ func (ic *InitConfig) populateCommonArgs() {
 	ic.TCArgs.StateEventTopic = getTopicName(ic.RMQTopicPrefix, "state-event")
 	ic.TCArgs.PolicyV1Topic = getTopicName(ic.RMQTopicPrefix, "policy-v1")
 	ic.TCArgs.SummaryV2Topic = getTopicName(ic.RMQTopicPrefix, "summary-v2")
+	ic.TCArgs.AnnotationTopic = getTopicName(ic.RMQTopicPrefix, "annotation")
 
 	ic.TCArgs.SplunkConfigObject = ic.Splunk
 
@@ -297,6 +306,7 @@ func populateAgentArgs(tcArgs *TemplateConfigArgs, configDir string) {
 	tcArgs.LogsKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxLogsFileName)
 	tcArgs.SummaryKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxSummaryFileName)
 	tcArgs.PolicyKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxPolicyFileName)
+	tcArgs.AnnotationKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxAnnotationFileName)
 }
 
 func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFile, prefix, hostname, connName string) {

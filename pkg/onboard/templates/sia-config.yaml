@@ -37,4 +37,4 @@ deployMode: "vm"
 
 proxy:
   enabled: {{.ProxyEnabled}}
-  address: {{.ProxyAddress}}
+  address: {{.ProxySaaSAddr}}

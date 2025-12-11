@@ -146,6 +146,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		StateEventTopic:             getTopicName(jc.RMQTopicPrefix, "state-event"),
 		PolicyV1Topic:               getTopicName(jc.RMQTopicPrefix, "policy-v1"),
 		SummaryV2Topic:              getTopicName(jc.RMQTopicPrefix, "summary-v2"),
+		AnnotationTopic:             getTopicName(jc.RMQTopicPrefix, "annotation"),
 
 		EnableHostPolicyDiscovery: jc.EnableHostPolicyDiscovery,
 
@@ -159,6 +160,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		ProxyExtraArgs:       jc.Proxy.ExtraArgs,
 		ProxyEnabled:         jc.Proxy.Enabled,
 		ProxyAddress:         jc.Proxy.Address,
+		ProxySaaSAddr:        jc.Proxy.SaaSAddr,
 	}
 
 	jc.TCArgs.PoliciesKmuxConfig = common.KmuxPoliciesFileName
@@ -167,6 +169,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	jc.TCArgs.LogsKmuxConfig = common.KmuxLogsFileName
 	jc.TCArgs.SummaryKmuxConfig = common.KmuxSummaryFileName
 	jc.TCArgs.PolicyKmuxConfig = common.KmuxPolicyFileName
+	jc.TCArgs.AnnotationKmuxConfig = common.KmuxAnnotationFileName
 
 	if jc.EnableVMScan {
 		jc.TCArgs.RRAConfigObject = jc.RRAConfigObject
@@ -260,6 +263,12 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		RMQPassword:    jc.TCArgs.RMQPassword,
 		TlsEnabled:     jc.TCArgs.TlsEnabled,
 		TlsCertFile:    jc.TCArgs.TlsCertFile,
+		ProxyEnabled:   jc.Proxy.Enabled,
+		ProxyAddress:   jc.Proxy.Address,
+	}
+
+	if jc.Proxy.Address != "" {
+		kmuxConfigArgs.ProxyEnabled = true
 	}
 
 	populateAgentArgs(&jc.TCArgs, "sumengine")

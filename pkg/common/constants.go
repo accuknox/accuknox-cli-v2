@@ -195,6 +195,7 @@ const (
 	KmuxPolicyFileName     = "policy-kmux-config.yaml"
 	KmuxSinkStream         = "publisher"
 	KmuxSourceStream       = "consumer"
+	KmuxAnnotationFileName = "annotation-kmux-config.yaml"
 
 	MaxQueueLength = 255
 )

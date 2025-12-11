@@ -55,4 +55,4 @@ log-level: info
 
 proxy:
   enabled: {{.ProxyEnabled}}
-  address: {{.ProxyAddress}}
+  address: {{.ProxySaaSAddr}}

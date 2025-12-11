@@ -61,6 +61,12 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 		RMQPassword:    ic.TCArgs.RMQPassword,
 		TlsEnabled:     ic.TCArgs.TlsEnabled,
 		TlsCertFile:    ic.TCArgs.TlsCertFile,
+		ProxyEnabled:   ic.TCArgs.ProxyEnabled,
+		ProxyAddress:   ic.TCArgs.ProxyAddress,
+	}
+
+	if ic.Proxy.Address != "" {
+		kmuxConfigArgs.ProxyEnabled = true
 	}
 
 	if ic.RMQServer != "" {

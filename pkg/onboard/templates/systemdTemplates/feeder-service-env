@@ -33,4 +33,4 @@ KMUX_CONFIG_SUMMARY={{.SummaryKmuxConfig}}
 LOG_LEVEL="INFO"
 
 PROXY_ENABLED={{.ProxyEnabled}}
-PROXY_ADDRESS="{{.ProxyAddress}}"
+PROXY_ADDRESS="{{.ProxySaaSAddr}}"

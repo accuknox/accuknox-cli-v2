@@ -63,6 +63,12 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		RMQPassword:    jc.TCArgs.RMQPassword,
 		TlsEnabled:     jc.TCArgs.TlsEnabled,
 		TlsCertFile:    jc.TCArgs.TlsCertFile,
+		ProxyEnabled:   jc.TCArgs.ProxyEnabled,
+		ProxyAddress:   jc.TCArgs.ProxyAddress,
+	}
+
+	if jc.Proxy.Address != "" {
+		kmuxConfigArgs.ProxyEnabled = true
 	}
 
 	logger.Info2("\nConfiguring services...")

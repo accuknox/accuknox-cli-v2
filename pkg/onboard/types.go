@@ -287,13 +287,14 @@ type TemplateConfigArgs struct {
 	NetworkCIDR string `json:"network_cidr,omitempty"`
 
 	// kmux config paths for agents
-	PoliciesKmuxConfig string `json:"policies_kmux_config,omitempty"`
-	StateKmuxConfig    string `json:"state_kmux_config,omitempty"`
-	AlertsKmuxConfig   string `json:"alerts_kmux_config,omitempty"`
-	LogsKmuxConfig     string `json:"logs_kmux_config,omitempty"`
-	KmuxConfigPath     string `json:"kmux_config_path,omitempty"`
-	PolicyKmuxConfig   string `json:"policy_kmux_config,omitempty"`
-	SummaryKmuxConfig  string `json:"summary_kmux_config,omitempty"`
+	PoliciesKmuxConfig   string `json:"policies_kmux_config,omitempty"`
+	StateKmuxConfig      string `json:"state_kmux_config,omitempty"`
+	AlertsKmuxConfig     string `json:"alerts_kmux_config,omitempty"`
+	LogsKmuxConfig       string `json:"logs_kmux_config,omitempty"`
+	KmuxConfigPath       string `json:"kmux_config_path,omitempty"`
+	PolicyKmuxConfig     string `json:"policy_kmux_config,omitempty"`
+	SummaryKmuxConfig    string `json:"summary_kmux_config,omitempty"`
+	AnnotationKmuxConfig string `json:"annotation_kmux_config,omitempty"`
 
 	// container security
 	SecureContainers bool `json:"secure_containers,omitempty"`
@@ -324,6 +325,7 @@ type TemplateConfigArgs struct {
 	AlertsTopic     string `json:"alerts_topic,omitempty"`
 	PolicyV1Topic   string `json:"policyv1_topic,omitempty"`
 	SummaryV2Topic  string `json:"summaryv2_topic,omitempty"`
+	AnnotationTopic string `json:"annotation_topic,omitempty"`
 
 	// rra configs
 	RRAConfigObject RRAConfig `json:"-"`
@@ -342,6 +344,7 @@ type TemplateConfigArgs struct {
 
 	ProxyEnabled   bool     `json:"proxy_enabled,omitempty"`
 	ProxyAddress   string   `json:"proxy_address,omitempty"`
+	ProxySaaSAddr  string   `json:"proxy_saas_addr,omitempty"`
 	ProxyExtraArgs []string `json:"proxy_extra_env,omitempty"`
 }
 
@@ -361,6 +364,8 @@ type KmuxConfigTemplateArgs struct {
 	QueueDurability bool   `json:"queue_durability,omitempty"`
 	ConnectionName  string `json:"connection_name,omitempty"`
 	UseCaFile       bool   `json:"use_ca_file,omitempty"`
+	ProxyEnabled    bool   `json:"proxy_enabled,omitempty"`
+	ProxyAddress    string `json:"proxy_address,omitempty"`
 }
 
 type TokenResponse struct {

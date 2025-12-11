@@ -220,6 +220,7 @@ func init() {
 	onboardVMCmd.PersistentFlags().BoolVar(&proxy.Enabled, "proxy", false, "bypass spire and use proxy")
 
 	onboardVMCmd.PersistentFlags().StringVar(&proxy.Address, "proxy-address", "", "proxy address")
+	onboardVMCmd.PersistentFlags().StringVar(&proxy.SaaSAddr, "proxy-addr-saas", "", "saas proxy address")
 
 	onboardVMCmd.PersistentFlags().StringArrayVar(&proxy.ExtraArgs, "proxy-args", []string{}, "extra env variables for proxy")
 

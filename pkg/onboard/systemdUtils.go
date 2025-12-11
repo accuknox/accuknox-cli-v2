@@ -331,14 +331,20 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 
 // placeServiceFiles copies service files
 func (cc *ClusterConfig) placeServiceFiles() error {
+
 	configArgs := map[string]any{
 		"WorkerNode":     cc.WorkerNode,
 		"SystemdVersion": getSystemdVersion(),
 		"ReleaseVersion": cc.AgentsVersion,
 		"ProxyEnabled":   cc.Proxy.Enabled,
 		"ProxyAddress":   cc.Proxy.Address,
+		"ProxySaaSAddr":  cc.Proxy.SaaSAddr,
 		"ProxyExtraArgs": cc.Proxy.ExtraArgs,
 		"JoinToken":      cc.JoinToken,
+	}
+
+	if cc.Proxy.Address != "" {
+		configArgs["ProxyEnabled"] = true
 	}
 
 	if cc.AdditionalArgs != nil {

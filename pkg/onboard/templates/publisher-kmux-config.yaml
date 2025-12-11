@@ -33,3 +33,6 @@ rabbitmq:
     {{- end }}
     skip-verify: false
   connection-name: {{.ConnectionName}}
+  proxy:
+    enabled: {{.ProxyEnabled}}
+    address: {{.ProxyAddress}}
