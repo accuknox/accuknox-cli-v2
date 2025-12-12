@@ -289,6 +289,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		"kubearmor-vm-adapter/" + common.KmuxAlertsFileName:     kmuxPublisherConfig,
 		"kubearmor-vm-adapter/" + common.KmuxLogsFileName:       kmuxPublisherConfig,
 		"kubearmor-vm-adapter/" + common.KmuxPoliciesFileName:   kmuxConsumerConfig,
+		"kubearmor-vm-adapter/" + common.KmuxAnnotationFileName: kmuxConsumerConfig,
 	}
 	// Generate or copy kmux config files
 	for filePath, templateString := range kmuxConfigFileTemplateMap {

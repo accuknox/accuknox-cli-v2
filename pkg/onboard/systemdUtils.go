@@ -223,6 +223,14 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			AgentImage:               cc.KubeArmorVMAdapterImage,
 		},
 		{
+			AgentName:                cm.VMAdapter,
+			AgentDir:                 cm.VmAdapterConfigPath,
+			KmuxConfigPath:           filepath.Join(cm.VmAdapterConfigPath, cm.KmuxAnnotationFileName),
+			KmuxConfigTemplateString: kmuxConsumerConfig,
+			KmuxConfigFileName:       cm.KmuxAnnotationFileName,
+			AgentImage:               cc.KubeArmorVMAdapterImage,
+		},
+		{
 			AgentName:                cm.SummaryEngine,
 			AgentDir:                 cm.SumEngineConfigPath,
 			KmuxConfigPath:           filepath.Join(cm.SumEngineConfigPath, cm.KmuxSummaryFileName),

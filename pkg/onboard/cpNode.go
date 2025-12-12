@@ -283,6 +283,7 @@ func (ic *InitConfig) populateCommonArgs() {
 	ic.TCArgs.LogsKmuxConfig = common.KmuxLogsFileName
 	ic.TCArgs.SummaryKmuxConfig = common.KmuxSummaryFileName
 	ic.TCArgs.PolicyKmuxConfig = common.KmuxPolicyFileName
+	ic.TCArgs.AnnotationKmuxConfig = common.KmuxAnnotationFileName
 
 	ic.TCArgs.DiscoverRules = combineVisibilities(ic.Visibility, ic.HostVisibility)
 
@@ -550,6 +551,13 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 				kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "vm-adapter", common.KmuxPoliciesFileName),
 				kmuxConfigTemplateString: kmuxConsumerConfig,
 				kmuxConfigFileName:       common.KmuxPoliciesFileName,
+			},
+			{
+				agentName:                "vm-adapter",
+				configDir:                "vm-adapter",
+				kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "vm-adapter", common.KmuxPoliciesFileName),
+				kmuxConfigTemplateString: kmuxConsumerConfig,
+				kmuxConfigFileName:       common.KmuxAnnotationFileName,
 			},
 		}...)
 	}
