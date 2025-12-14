@@ -17,7 +17,7 @@ var (
 	//go:embed templates/pea-config.yaml
 	peaConfig string
 
-	//go:embed templates/pea-postureConfig.cfg
+	//go:embed templates/postureConfig.cfg
 	peaPostureConfig string
 
 	//go:embed templates/sia-config.yaml
