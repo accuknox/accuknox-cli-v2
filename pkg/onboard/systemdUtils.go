@@ -77,6 +77,7 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			ConfigFilePath:           "conf/application.yaml",
 			ServiceTemplateString:    peaServiceFile,
 			ConfigTemplateString:     peaConfig,
+			PostureConfigString:      peaPostureConfig,
 			KmuxConfigPath:           filepath.Join(cm.PEAconfigPath, cm.KmuxConfigFileName),
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,

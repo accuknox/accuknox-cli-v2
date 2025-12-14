@@ -389,6 +389,7 @@ type SystemdServiceObject struct {
 	ServiceTemplateString string
 	TimerTemplateString   string
 	ConfigTemplateString  string
+	PostureConfigString   string
 
 	// TODO: Package instead of just tag
 	AgentImage string

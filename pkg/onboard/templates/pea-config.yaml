@@ -56,3 +56,7 @@ log-level: info
 proxy:
   enabled: {{.ProxyEnabled}}
   address: {{.ProxySaaSAddr}}
+
+connect-rpc:
+  enabled: true
+  server: https://{{.PPSHost}}

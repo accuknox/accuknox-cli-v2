@@ -474,7 +474,12 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 			kmuxConfigTemplateString: kmuxConfig,
 			kmuxConfigFileName:       common.KmuxConfigFileName,
 		},
-
+		{
+			agentName:            "pea",
+			configDir:            "pea",
+			configFilePath:       "postureConfig.cfg",
+			configTemplateString: peaPostureConfig,
+		},
 		{
 			agentName:                "feeder-service",
 			configDir:                "feeder-service",
