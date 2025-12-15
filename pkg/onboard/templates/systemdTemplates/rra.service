@@ -5,20 +5,7 @@ Wants=accuknox-rra.timer
 [Service]
 User=root
 KillMode=control-group
-ExecStart=/bin/bash -c 'for benchmark in $(echo "{{.Benchmark}}" | tr "," "\n"); do \
-  /usr/local/bin/rra analyze \
-    --profile {{.Profile}} \
-    --benchmark "$benchmark" \
-    --auth-token {{.AuthToken}} \
-    --url {{.Url}} \
-    --tenant-id {{.TenantID}} \
-    --cluster-name {{.ClusterName}} \
-    {{- if .ClusterID }}{{"\n"}}    --cluster-id {{.ClusterID}} \ {{ end }}
-    --label {{.Label}} \
-    {{- if .SpireEnabled }}{{"\n"}}    --spire-secret-dir {{.SpireSecretDir}} \{{ end }} 
-    {{- if .GatewayServer }}{{"\n"}}    --gateway-server {{.GatewayServer}} \{{ end }} 
-    {{- if .SpireEnabled }}{{"\n"}}    --spire {{.SpireEnabled}} \{{ end }} 
-    --json > /var/accuknox-rra_"$benchmark"_result.json 2>&1; \
+ExecStart=/bin/bash -c 'for benchmark in $(echo "{{.Benchmark}}" | tr "," "\n"); do /usr/local/bin/rra analyze --profile {{.Profile}} --benchmark "$benchmark" --auth-token {{.AuthToken}} --url {{.Url}} --tenant-id {{.TenantID}} --cluster-name {{.ClusterName}} {{- if .ClusterID }} --cluster-id {{.ClusterID}} {{- end }} --label {{.Label}} {{- if .SpireEnabled }} --spire-secret-dir {{.SpireSecretDir}} {{- end }} {{- if .GatewayServer }} --gateway-server {{.GatewayServer}} {{- end }} {{- if .SpireEnabled }} --spire {{.SpireEnabled}} {{- end }} --json > /var/accuknox-rra_"$benchmark"_result.json 2>&1; done'
 done'
 [Install]
 WantedBy=multi-user.target
