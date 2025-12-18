@@ -584,6 +584,10 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 
+		if obj.AgentName == cm.DiscoverAgent && !cc.DeployDiscover {
+			continue
+		}
+
 		logger.Print("Downloading Agent - %s | Image - %s", obj.AgentName, obj.AgentImage)
 		packageMeta := splitLast(obj.AgentImage, ":")
 

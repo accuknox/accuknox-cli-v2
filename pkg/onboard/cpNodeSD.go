@@ -10,6 +10,7 @@ import (
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"golang.org/x/mod/semver"
 )
 
 func (ic *InitConfig) InitializeControlPlaneSD() error {
@@ -96,6 +97,10 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	// initialize sprig for templating
 	ic.TemplateFuncs = sprig.GenericFuncMap()
 
+	if semver.Compare(ic.AgentsVersion, "v0.11.0") < 0 {
+		ic.DeployDiscover = true
+	}
+
 	// download and extract systemd packages
 	logger.Info2(("Downloading agents..."))
 	err = ic.SystemdInstall()
@@ -111,6 +116,9 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	for _, obj := range ic.SystemdServiceObjects {
 
 		if obj.AgentName == cm.HardeningAgent && !ic.EnableHardeningAgent {
+			continue
+		}
+		if obj.AgentName == cm.DiscoverAgent && !ic.DeployDiscover {
 			continue
 		}
 
@@ -172,6 +180,10 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	for _, obj := range ic.SystemdServiceObjects {
 
 		if obj.AgentName == cm.HardeningAgent && !ic.EnableHardeningAgent {
+			continue
+		}
+
+		if obj.AgentName == cm.DiscoverAgent && !ic.DeployDiscover {
 			continue
 		}
 		err = StartSystemdService(obj.ServiceName)

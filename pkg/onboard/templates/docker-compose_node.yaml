@@ -175,14 +175,15 @@ services:
       - "--kmux-config-state=/opt/kubearmor-vm-adapter/{{.StateKmuxConfig}}"
       - "--kmux-config-alerts=/opt/kubearmor-vm-adapter/{{.AlertsKmuxConfig}}"
       - "--kmux-config-logs=/opt/kubearmor-vm-adapter/{{.LogsKmuxConfig}}"
-      {{- if .ProxyEnabled }}
-      - "--annotation-topic={{.AnnotationTopic}}"
-      - "kmux-config-annotation=/opt/kubearmor-vm-adapter/{{.AnnotationKmuxConfig}}"
-      {{- end }}
       {{- else }}
       - "--sia-addr={{.SIAAddr}}"
       - "--pea-addr={{.PEAAddr}}"
       - "--harden-addr={{.HardenAddr}}"
+      {{- end }}
+      {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.11.11" }}
+      - "--annotation-topic={{.AnnotationTopic}}"
+      - "--kmux-config-annotation=/opt/kubearmor-vm-adapter/{{.AnnotationKmuxConfig}}"
+      - "--annotation-enable=true"
       {{- end }}
     volumes:
       - "{{.ConfigPath}}:/opt"

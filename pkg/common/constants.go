@@ -207,6 +207,7 @@ var QueueName = map[string]string{
 	KmuxPoliciesFileName:   "policies",
 	KmuxSummaryFileName:    "summary-v2",
 	KmuxPolicyFileName:     "policy-v1",
+	KmuxAnnotationFileName: "annotation",
 }
 
 var QueueDurability = map[string]bool{

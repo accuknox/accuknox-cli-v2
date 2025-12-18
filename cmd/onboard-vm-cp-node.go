@@ -130,7 +130,7 @@ var cpNodeCmd = &cobra.Command{
 			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
 			false, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
-			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumEngine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel, enableHardeningAgent, releaseFile, proxy)
+			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumEngine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel, enableHardeningAgent, releaseFile, proxy, deployDiscovery)
 		if err != nil {
 			errConfig := onboard.DumpConfig(vmConfig, configDumpPath)
 			if errConfig != nil {

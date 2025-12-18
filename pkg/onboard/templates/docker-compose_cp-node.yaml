@@ -163,8 +163,10 @@ services:
         condition: service_started
       summary-engine:
         condition: service_started
+      {{- if .DeployDiscover }}
       discover:
         condition: service_started
+      {{- end }}
       {{- if .TlsEnabled }}
       shared-informer-agent:
         condition: service_started
@@ -189,15 +191,16 @@ services:
       - "--kmux-config-state=/opt/kubearmor-vm-adapter/{{.StateKmuxConfig}}"
       - "--kmux-config-alerts=/opt/kubearmor-vm-adapter/{{.AlertsKmuxConfig}}"
       - "--kmux-config-logs=/opt/kubearmor-vm-adapter/{{.LogsKmuxConfig}}"
-      {{- if .ProxyEnabled }}
-      - "--annotation-topic={{.AnnotationTopic}}"
-      - "kmux-config-annotation=/opt/kubearmor-vm-adapter/{{.AnnotationKmuxConfig}}"
-      {{- end }}
       {{- else }}
       - "--relay-server-addr={{.RelayServerURL}}"
       - "--sia-addr={{.SIAAddr}}"
       - "--pea-addr={{.PEAAddr}}"
       - "--harden-addr={{.HardenAddr}}"
+      {{- end }}
+      {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.11.11" }}
+      - "--annotation-topic={{.AnnotationTopic}}"
+      - "--kmux-config-annotation=/opt/kubearmor-vm-adapter/{{.AnnotationKmuxConfig}}"
+      - "--annotation-enable=true"
       {{- end }}
     labels:
       app: kubearmor-vm-adapter
@@ -261,8 +264,10 @@ services:
         condition: service_started
       summary-engine:
         condition: service_started
+      {{- if .DeployDiscover }}
       discover:
         condition: service_started
+      {{- end }}
       {{- if and (not .TlsEnabled) ( .EnableHardeningAgent ) }}
       hardening-agent:
         condition: service_started
@@ -361,6 +366,7 @@ services:
       accuknox-net:
         aliases:
           - policy-enforcement-agent
+  {{- if .DeployDiscover }}
   discover:
     profiles:
       - "accuknox-agents"
@@ -387,6 +393,7 @@ services:
       accuknox-net:
         aliases:
           - discover
+  {{- end }}
   summary-engine:
     profiles:
       - "accuknox-agents"

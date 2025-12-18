@@ -164,6 +164,8 @@ type ClusterConfig struct {
 	AgentsResource ResourceConfig `json:"agents_resource,omitempty"`
 
 	Proxy Proxy `json:"proxy,omitempty"`
+
+	DeployDiscover bool `json:"deploy_discover,omitempty"`
 }
 
 type AccessKey struct {
@@ -346,6 +348,8 @@ type TemplateConfigArgs struct {
 	ProxyAddress   string   `json:"proxy_address,omitempty"`
 	ProxySaaSAddr  string   `json:"proxy_saas_addr,omitempty"`
 	ProxyExtraArgs []string `json:"proxy_extra_env,omitempty"`
+
+	DeployDiscover bool `json:"deploy_discover,omitempty"`
 }
 
 type KmuxConfigTemplateArgs struct {

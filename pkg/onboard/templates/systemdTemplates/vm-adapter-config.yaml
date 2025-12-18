@@ -34,4 +34,5 @@ spire-cert: {{.SpireCert}}
 {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.11.11" }}
 annotation-topic: {{.AnnotationTopic}}
 kmux-config-annotation: /opt/kubearmor-vm-adapter/annotation-kmux-config.yaml
+annotation-enable: true
 {{- end }}

@@ -79,6 +79,11 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		if obj.AgentName == cm.SummaryEngine && !jc.DeploySumengine {
 			continue
 		}
+
+		if obj.AgentName == cm.DiscoverAgent && !jc.DeployDiscover {
+			continue
+		}
+
 		if obj.ConfigFilePath != "" {
 			// copy template args
 			tcArgs := jc.TCArgs

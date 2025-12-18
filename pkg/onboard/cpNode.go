@@ -243,10 +243,20 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	// TODO: Refactor later
 	agentMeta := getAgentConfigMeta(ic.Tls.Enabled)
 
+	if semver.Compare(ic.AgentsVersion, "v0.11.0") < 0 {
+		ic.DeployDiscover = true
+	}
+
+	ic.TCArgs.DeployDiscover = ic.DeployDiscover
+
 	// Generate or copy config files
 	for _, agentObj := range agentMeta {
 
 		if agentObj.agentName == strings.TrimPrefix(cm.HardeningAgent, "accuknox-") && !ic.EnableHardeningAgent {
+			continue
+		}
+
+		if agentObj.agentName == strings.TrimPrefix(cm.DiscoverAgent, "accuknox-") && !ic.DeployDiscover {
 			continue
 		}
 
@@ -319,7 +329,7 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 	kmuxConfigArgs.ConsumerTag = agentName
 	kmuxConfigArgs.QueueDurability = getQueueDurability(kmuxFile)
 	kmuxConfigArgs.TlsCertFile = fmt.Sprintf("/opt%s/%s", common.DefaultCACertDir, common.DefaultEncodedFileName)
-	if kmuxFile == common.KmuxPoliciesFileName {
+	if kmuxFile == common.KmuxPoliciesFileName || kmuxFile == common.KmuxAnnotationFileName {
 		kmuxConfigArgs.ExchangeType = "fanout"
 		kmuxConfigArgs.ExchangeName = fmt.Sprintf("%s-fanout", prefix)
 	} else {
@@ -335,7 +345,7 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 		kmuxConfigArgs.QueueName = fmt.Sprintf("%s-%s", kmuxConfigArgs.QueueName, agentName)
 	}
 
-	if agentName == common.VMAdapter && kmuxFile == common.KmuxPoliciesFileName {
+	if agentName == common.VMAdapter && (kmuxFile == common.KmuxPoliciesFileName || kmuxFile == common.KmuxAnnotationFileName) {
 		if hostname == "" {
 			var err error
 			hostname, err = os.Hostname()

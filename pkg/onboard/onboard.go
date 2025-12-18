@@ -21,7 +21,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string, proxy Proxy) (*ClusterConfig, error) {
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string, proxy Proxy, deployDiscover bool) (*ClusterConfig, error) {
 
 	cc := new(ClusterConfig)
 
@@ -30,6 +30,8 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 			return nil, err
 		}
 	}
+
+	cc.DeployDiscover = deployDiscover
 
 	cc.Parallel = parallel
 	cc.SpireEnabled = spireEnabled

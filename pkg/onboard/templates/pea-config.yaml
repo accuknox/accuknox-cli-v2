@@ -59,4 +59,4 @@ proxy:
 
 connect-rpc:
   enabled: true
-  address: https://{{.PPSHost}}
+  server: https://{{.PPSHost}}

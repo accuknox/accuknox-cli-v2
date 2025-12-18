@@ -80,6 +80,8 @@ var (
 	printInspectOutput bool
 	kaResource         onboard.ResourceConfig
 	agentsResource     onboard.ResourceConfig
+
+	deployDiscovery bool
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -223,6 +225,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&proxy.SaaSAddr, "proxy-addr-saas", "", "saas proxy address")
 
 	onboardVMCmd.PersistentFlags().StringArrayVar(&proxy.ExtraArgs, "proxy-args", []string{}, "extra env variables for proxy")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&deployDiscovery, "deploy-discover", false, "deploy auto-discover policy agent")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }
