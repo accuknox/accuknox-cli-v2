@@ -34,3 +34,8 @@ LOG_LEVEL="INFO"
 
 PROXY_ENABLED={{.ProxyEnabled}}
 PROXY_ADDRESS="{{.ProxySaaSAddr}}"
+
+HEALTH_ENABLED="true"
+HEALTH_INTERVAL="00h05m00s"
+HEALTH_THRESHOLD="3"
+HEALTH_URL="http://localhost:9090/live"

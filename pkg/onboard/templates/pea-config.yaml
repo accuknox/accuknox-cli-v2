@@ -60,3 +60,13 @@ proxy:
 connect-rpc:
   enabled: true
   server: https://{{.PPSHost}}
+
+health:
+  enabled: true
+  interval: 00h05m00s
+  threshold: 3
+  {{- if eq .VmMode "systemd" }}
+  url: http://localhost:9090/live
+  {{- else }}
+  url: http://spire-agent:9090/live
+  {{- end }}
