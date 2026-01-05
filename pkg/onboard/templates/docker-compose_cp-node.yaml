@@ -323,6 +323,10 @@ services:
       - "DISCOVERYENGINE_POLICY_ENABLED=true"
       - "KMUX_CONFIG_POLICY=/opt/feeder-service/{{.PolicyKmuxConfig}}"
       - "KMUX_CONFIG_SUMMARY=/opt/feeder-service/{{.SummaryKmuxConfig}}"
+      - "HEALTH_ENABLED=true"
+      - "HEALTH_INTERVAL=00h05m00s"
+      - "HEALTH_THRESHOLD=3"
+      - "HEALTH_URL=http://spire-agent:9090/live"
 
     pid: "host"
     networks:
