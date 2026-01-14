@@ -72,3 +72,10 @@ jobs:
             dist/*.cert
             dist/*.sig
             pkg/common/release.json
+
+  publish-deb:
+    needs: knoxctl-release
+    uses: ./.github/workflows/publish-deb.yml
+    with:
+      tag_name: ${{ github.ref_name }}
+    secrets: inherit
