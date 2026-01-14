@@ -3,6 +3,11 @@ name: Build and publish .deb on release
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      tag_name:
+        required: true
+        type: string
 
 jobs:
   build-and-publish:
@@ -26,7 +31,7 @@ jobs:
           NEXUS_URL: https://nexus.accuknox.com/repository/knoxctl/
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ inputs.tag_name || github.event.release.tag_name }}
 
         run: |
           set -euo pipefail
