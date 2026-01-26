@@ -16,18 +16,14 @@ StandardError=file:/opt/kubearmor/kubearmor-err.log
 Restart=always
 RestartSec=10
 
-CPUQuota={{ .CPUQuota | default "5%" }}
-MemoryMax={{ .MemoryMax | default "300M" }}
-
-{{- if gt .SystemdVersion 241 }}
-MemoryHigh={{ .MemoryHigh | default "250M" }}
+{{- if .CPUEnabled }}
+CPUQuota={{ .CPUQuota | default "25%" }}
 {{- end }}
 
-{{- if gt .SystemdVersion 241 }}
-CPUWeight=50
+{{- if .MemEnabled }}
+MemoryMax={{ .MemoryMax | default "600M" }}
+OOMPolicy={{ .OOMPolicy | default "stop" }}
 {{- end }}
-
-OOMPolicy=kill
 
 [Install]
 WantedBy=multi-user.target

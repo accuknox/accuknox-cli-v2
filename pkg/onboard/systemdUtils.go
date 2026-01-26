@@ -370,14 +370,14 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 			continue
 		}
 
-		configArgs["CPUQuota"] = fmt.Sprintf("%v%s", cc.AgentsResource.CPUQuota, "%")
-		configArgs["MemoryMax"] = fmt.Sprintf("%vM", cc.AgentsResource.MemoryMax)
-		configArgs["MemoryHigh"] = fmt.Sprintf("%vM", cc.AgentsResource.MemoryHigh)
+		if err := applyResourceConfig(configArgs, cc.AgentsResource); err != nil {
+			return err
+		}
 
 		if obj.AgentName == cm.KubeArmor {
-			configArgs["CPUQuota"] = fmt.Sprintf("%v%s", cc.KaResource.CPUQuota, "%")
-			configArgs["MemoryMax"] = fmt.Sprintf("%vM", cc.KaResource.MemoryMax)
-			configArgs["MemoryHigh"] = fmt.Sprintf("%vM", cc.KaResource.MemoryHigh)
+			if err := applyResourceConfig(configArgs, cc.KaResource); err != nil {
+				return err
+			}
 		}
 
 		if obj.ServiceTemplateString != "" {
@@ -994,4 +994,29 @@ func GetSystemdServiceStatus(name string) (string, error) {
 	}
 
 	return status, nil
+}
+
+func applyResourceConfig(configArgs map[string]any, res ResourceConfig) error {
+
+	if res.MemoryMax < 0 || res.CPUQuota < 0 {
+		return fmt.Errorf("MemoryMax and CPUQuota cannot be negative")
+	}
+
+	configArgs["MemEnabled"] = res.MemoryMax != 0
+	configArgs["CPUEnabled"] = res.CPUQuota != 0
+
+	if res.MemoryMax != 0 {
+		configArgs["MemoryMax"] = fmt.Sprintf("%v%s", res.MemoryMax, "M")
+	}
+	if res.CPUQuota != 0 {
+		configArgs["CPUQuota"] = fmt.Sprintf("%v%s", res.CPUQuota, "%")
+	}
+
+	if !slices.Contains(OOMPolicy, strings.ToLower(res.OOMPolicy)) {
+		return fmt.Errorf("Invalid OOMPolicy: %s", res.OOMPolicy)
+	}
+
+	configArgs["OOMPolicy"] = strings.ToLower(res.OOMPolicy)
+
+	return nil
 }

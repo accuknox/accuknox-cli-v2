@@ -19,18 +19,14 @@ StandardError=file:/opt/spire-agent/spire-agent-err.log
 Restart=always
 RestartSec=10
 
-CPUQuota={{ .CPUQuota | default "5%" }}
-MemoryMax={{ .MemoryMax | default "100M" }}
-
-{{- if gt .SystemdVersion 241 }}
-MemoryHigh={{ .MemoryHigh | default "80M" }}
+{{- if .CPUEnabled }}
+CPUQuota={{ .CPUQuota | default "10%" }}
 {{- end }}
 
-{{- if gt .SystemdVersion 241 }}
-CPUWeight=50
+{{- if .MemEnabled }}
+MemoryMax={{ .MemoryMax | default "250M" }}
+OOMPolicy={{ .OOMPolicy | default "stop" }}
 {{- end }}
-
-OOMPolicy=kill
 
 [Install]
 WantedBy=multi-user.target

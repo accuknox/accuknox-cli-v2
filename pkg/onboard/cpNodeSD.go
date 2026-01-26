@@ -105,7 +105,7 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	logger.Info2(("Downloading agents..."))
 	err = ic.SystemdInstall()
 	if err != nil {
-		logger.Error("Installation failed!! Cleaning up downloaded assets...")
+		logger.Error("Installation failed!! Error: %v.\nCleaning up downloaded assets...", err)
 		// ignoring G104 - can't send nil in installation failed case
 		Deletedir(cm.DownloadDir)
 		DeboardSystemd(NodeType_ControlPlane) // #nosec G104

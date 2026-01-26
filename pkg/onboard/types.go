@@ -28,6 +28,8 @@ var (
 		ClusterType_VM:  "vm",
 		ClusterType_ECS: "ecs",
 	}
+
+	OOMPolicy = []string{"continue", "stop", "kill"}
 )
 
 type NodeType string
@@ -459,7 +461,9 @@ type SplunkConfig struct {
 }
 
 type ResourceConfig struct {
+	MemEnabled bool
+	CPUEnabled bool
 	CPUQuota   int64
 	MemoryMax  int64
-	MemoryHigh int64
+	OOMPolicy  string
 }

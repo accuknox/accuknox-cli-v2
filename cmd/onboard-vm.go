@@ -211,13 +211,13 @@ func init() {
 	onboardVMCmd.PersistentFlags().BoolVar(&printInspectOutput, "print-inspect", false, "print output of inspect command")
 
 	// resource config for agents and kubearmor
-	onboardVMCmd.PersistentFlags().Int64Var(&kaResource.CPUQuota, "kubearmor.cpu-quota", 5, "cpu quota for kubearmor in percentage. eg: 5")
-	onboardVMCmd.PersistentFlags().Int64Var(&kaResource.MemoryMax, "kubearmor.memory-max", 300, "memory max for kubearmor in MB. eg: 300")
-	onboardVMCmd.PersistentFlags().Int64Var(&kaResource.MemoryHigh, "kubearmor.memory-high", 240, "memory quota for kubearmor in MB. eg: 240")
+	onboardVMCmd.PersistentFlags().Int64Var(&kaResource.CPUQuota, "kubearmor.cpu-quota", 0, "cpu quota for kubearmor in percentage. eg: 25")
+	onboardVMCmd.PersistentFlags().Int64Var(&kaResource.MemoryMax, "kubearmor.memory-max", 0, "memory max for kubearmor in MB. eg: 600")
+	onboardVMCmd.PersistentFlags().StringVar(&kaResource.OOMPolicy, "kubearmor.oom-policy", "stop", "oom policy for kubearmor")
 
-	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.CPUQuota, "agents.cpu-quota", 5, "cpu quota for agents in percentage. eg: 5")
-	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.MemoryMax, "agents.memory-max", 100, "memory max for agents in MB. eg: 100")
-	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.MemoryHigh, "agents.memory-high", 80, "memory quota for agents in MB. eg: 80")
+	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.CPUQuota, "agents.cpu-quota", 0, "cpu quota for agents in percentage. eg: 10")
+	onboardVMCmd.PersistentFlags().Int64Var(&agentsResource.MemoryMax, "agents.memory-max", 0, "memory max for agents in MB. eg: 250")
+	onboardVMCmd.PersistentFlags().StringVar(&agentsResource.OOMPolicy, "agents.oom-policy", "stop", "oom policy for agents")
 
 	onboardVMCmd.PersistentFlags().BoolVar(&proxy.Enabled, "proxy", false, "bypass spire and use proxy")
 
