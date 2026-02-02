@@ -569,7 +569,8 @@ func getRMQUserPass(credentials string) (string, string, error) {
 	if len(rmqUserPass) != 2 {
 		return "", "", fmt.Errorf("invalid RMQ credentials")
 	}
-	return rmqUserPass[0], rmqUserPass[1], nil
+
+	return strings.TrimSpace(rmqUserPass[0]), strings.TrimSpace(rmqUserPass[1]), nil
 }
 
 func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath string) error {
@@ -619,4 +620,44 @@ func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath stri
 	defer conn.Close()
 
 	return nil
+}
+
+var dowMap = map[string]string{
+	"0": "Sun", "1": "Mon", "2": "Tue", "3": "Wed",
+	"4": "Thu", "5": "Fri", "6": "Sat", "7": "Sun",
+}
+
+// Convert cron expression into systemd timer format
+func cronToOnCalendar(cron string) (string, error) {
+	fields := strings.Fields(cron)
+	if len(fields) != 5 {
+		return "", fmt.Errorf("invalid cron format")
+	}
+
+	min, hour, dom, mon, dow := fields[0], fields[1], fields[2], fields[3], fields[4]
+
+	// day/month
+	datePart := "*-*-*"
+	if dom != "*" || mon != "*" {
+		datePart = fmt.Sprintf("*-%s-%s", mon, dom)
+	}
+
+	if dow != "*" {
+		dowPart := mapDow(dow)
+		if dowPart != "*" {
+			return fmt.Sprintf("%s %s %s:%s:00",
+				dowPart, datePart, hour, min), nil
+		}
+	}
+
+	return fmt.Sprintf("%s %s:%s:00",
+		datePart, hour, min), nil
+}
+
+func mapDow(dow string) string {
+	parts := strings.Split(dow, "-")
+	if len(parts) == 1 {
+		return dowMap[dow]
+	}
+	return dowMap[parts[0]] + ".." + dowMap[parts[1]]
 }

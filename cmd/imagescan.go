@@ -6,6 +6,9 @@ import (
 	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/imagescan"
+	"github.com/accuknox/kmux"
+	"github.com/accuknox/kmux/config"
+	"github.com/accuknox/kmux/security"
 	kubesheildScanner "github.com/accuknox/kubeshield/pkg/scanner/scan"
 	"github.com/spf13/cobra"
 )
@@ -20,6 +23,11 @@ var (
 	imagesOnly                  bool
 	cfg                         = kubesheildScanner.ScanConfig{}
 	defaultArtifactEndpointPath = "/api/v1/artifact/"
+
+	// systemd config
+	kmuxConfigPath        string
+	defaultKmuxconfigPath = "/opt/kubeshield-service/kmux-config.yaml"
+	spireSockPath         = "unix:///var/run/spire/agent.sock"
 )
 
 var imageScanCmd = &cobra.Command{
@@ -60,8 +68,27 @@ and sends back the result to saas
 		_ = os.Setenv("TRIVY_DB_REPOSITORY", vulnerabilityDB)
 		_ = os.Setenv("TRIVY_JAVA_DB_REPOSITORY", javaDB)
 
+		// Init kmux for both cp and worker node
+		if imagescan.NodeType != "" {
+			if err := kmux.Init(&config.Options{
+				LocalConfigFile: kmuxConfigPath,
+			}); err != nil {
+				return err
+			}
+		}
+
+		// Only for control plane, we are connecting to spire for pushing
+		// the messages to knoxgateway
+		if imagescan.NodeType == "cp" {
+			if err := initSpire(spireSockPath); err != nil {
+				return err
+			}
+
+		}
+
 		cfg.ArtifactConfig.ArtifactAPI += artifactEndpointPath
 		return imagescan.DiscoverAndScan(cfg, HOST_NAME, RUN_TIME, !allContainers, imagesOnly)
+
 	},
 }
 
@@ -85,8 +112,32 @@ func init() {
 	imageScanCmd.Flags().StringVarP(&vulnerabilityDB, "db-repository", "", "", "OCI repository to retrieve vulnerability db")
 	imageScanCmd.Flags().StringVarP(&javaDB, "java-db-repository", "", "", "OCI repository to retrieve java db")
 
+	// ImageScanning configurations for systemd mode
+	// TODO: Add validation for either knoxgateway or rmq
+	imageScanCmd.Flags().StringVar(&imagescan.FlushTo, "flush-to", "", "flushes the data to the specified service")
+	imageScanCmd.Flags().StringVar(&kmuxConfigPath, "kmux-config", defaultKmuxconfigPath, "kmux config path")
+	imageScanCmd.Flags().StringVar(&imagescan.NodeType, "node-type", "", "specify the type of node (CP/Worker)")
+	imageScanCmd.Flags().StringVar(&spireSockPath, "spire-sock", spireSockPath, "spire socket path")
+	imageScanCmd.Flags().StringVar(&imagescan.CreateRegistryURL, "create-registry-url", "", "create registry url")
+
 	// Required Flags Validation
 	imageScanCmd.MarkFlagsOneRequired("artifactEndpoint", "token", "label")
 	imageScanCmd.MarkFlagsRequiredTogether("artifactEndpoint", "token", "label")
+
+	// For intenral purpose hide the flags
+	_ = imageScanCmd.Flags().MarkHidden("flush-to")
+	_ = imageScanCmd.Flags().MarkHidden("kmux-config")
+	_ = imageScanCmd.Flags().MarkHidden("node-type")
+	_ = imageScanCmd.Flags().MarkHidden("create-registry-url")
+
 	rootCmd.AddCommand(imageScanCmd)
+}
+
+func initSpire(sockPath string) error {
+	spireSecurity, err := security.NewSecurity("")
+	if err != nil {
+		return err
+	}
+
+	return spireSecurity.Connect(sockPath)
 }

@@ -1,0 +1,48 @@
+[Unit]
+Description=AccuKnox Knoxctl Image Scan
+Wants=network-online.target spire-agent.service
+After=network-online.target spire-agent.service
+
+[Service]
+EnvironmentFile={{.EnvironmentFile}}
+Type=oneshot
+ExecStart=knoxctl image-scan \
+  --artifactEndpoint={{.Url}} \
+  --token=${AuthToken} \
+  --create-registry-url=https://{{.PpsHost}}/pps/api/v1/registries/create \
+  {{- if .WorkerNode}}
+  --flush-to=rmq \
+  --node-type=worker \
+  {{- else}}
+  --flush-to=knoxGateway \
+  --node-type=cp \
+  {{- end}}
+  {{- if .KmuxConfigPath}}
+  --kmux-config={{.KmuxConfigPath}} \
+  {{- end}}
+  --label={{.Label}}
+
+User=root
+{{- if gt .SystemdVersion 240 }}
+StandardOutput=append:/opt/accuknox-kubeshield/accuknox-kubeshield.log
+StandardError=append:/opt/accuknox-kubeshield/accuknox-kubeshield-err.log
+{{- else }}
+StandardOutput=file:/opt/accuknox-kubeshield/accuknox-kubeshield.log
+StandardError=file:/opt/accuknox-kubeshield/accuknox-kubeshield-err.log
+{{- end }}
+
+CPUQuota={{ .CPUQuota | default "5%" }}
+MemoryMax={{ .MemoryMax | default "100M" }}
+
+{{- if gt .SystemdVersion 241 }}
+MemoryHigh={{ .MemoryHigh | default "80M" }}
+{{- end }}
+
+{{- if gt .SystemdVersion 241 }}
+CPUWeight=50
+{{- end }}
+
+OOMPolicy=stop
+
+[Install]
+WantedBy=multi-user.target

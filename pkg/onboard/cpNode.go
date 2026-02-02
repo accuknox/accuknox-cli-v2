@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -150,7 +151,30 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		ProxyAddress:   ic.Proxy.Address,
 		ProxySaaSAddr:  ic.Proxy.SaaSAddr,
 		ProxyExtraArgs: ic.Proxy.ExtraArgs,
+
+		// kubeshield config
+		AuthToken: ic.AuthToken,
 	}
+
+	if ic.AdditionalArgs == nil {
+		ic.AdditionalArgs = make(map[string]any)
+	}
+
+	if ic.Schedule != "" {
+		if ic.Schedule, err = cronToOnCalendar(ic.Schedule); err != nil {
+			return err
+		}
+	}
+
+	maps.Copy(ic.AdditionalArgs, map[string]any{
+		"PpsHost":            ic.PPSHost,
+		"Label":              ic.Label,
+		"EnvironmentFile":    filepath.Join(cm.KubeshieldConfigPath, cm.Kubeshield+".env"),
+		"Url":                strings.Replace(ic.PPSHost, "pps", "cspm", 1),
+		"Schedule":           ic.Schedule,
+		"KubeshieldUnitName": cm.Kubeshield + ".service",
+	})
+
 	return nil
 }
 

@@ -176,6 +176,24 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 		},
 	}
 
+	//  Kubeshield configuration
+	if cc.DeployKubeshield {
+		kubeshieldObj := SystemdServiceObject{
+			AgentName:                cm.Kubeshield,
+			ServiceName:              cm.Kubeshield + ".service",
+			AgentDir:                 cm.KubeshieldConfigPath,
+			KmuxConfigPath:           filepath.Join(cm.KubeshieldConfigPath, cm.KmuxConfigFileName),
+			KmuxConfigTemplateString: kmuxConfig,
+			KmuxConfigFileName:       cm.KmuxConfigFileName,
+			ServiceTemplateString:    containerImageScannerFile,
+			TimerTemplateString:      containerImageScannerTimerFile,
+			EnvironmentFileTemplate:  kubeshieldEnvVal,
+			LogRotate:                cc.LogRotate,
+		}
+
+		systemdObjects = append(systemdObjects, kubeshieldObj)
+	}
+
 	systemdObjects = append(systemdObjects, getSystemdAgentsKmuxConfigs(cc)...)
 
 	// should be installed on control plane?
@@ -379,6 +397,10 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 			continue
 		}
 
+		if obj.KmuxConfigPath != "" {
+			configArgs["KmuxConfigPath"] = obj.KmuxConfigPath
+		}
+
 		configArgs["CPUQuota"] = fmt.Sprintf("%v%s", cc.AgentsResource.CPUQuota, "%")
 		configArgs["MemoryMax"] = fmt.Sprintf("%vM", cc.AgentsResource.MemoryMax)
 		configArgs["MemoryHigh"] = fmt.Sprintf("%vM", cc.AgentsResource.MemoryHigh)
@@ -409,7 +431,15 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 					return err
 				}
 
-				if cc.LogRotateTemplateString != "" {
+				//place timer file if exists
+				if obj.TimerTemplateString != "" {
+					_, err = copyOrGenerateFile("", cm.SystemdDir, obj.AgentName+".timer", cc.TemplateFuncs, obj.TimerTemplateString, configArgs)
+					if err != nil {
+						return err
+					}
+				}
+
+				if cc.LogRotateTemplateString != "" && obj.PackageName != "" {
 					logRotate := map[string]any{
 						"AgentDir":             obj.AgentDir,
 						"PackageName":          obj.PackageName,
@@ -705,7 +735,6 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 			return fmt.Errorf("failed to reload systemd configuration: %v", err)
 		}
 	}
-
 	return nil
 }
 
@@ -720,6 +749,8 @@ func Deletedir(dirName string) {
 
 func DeboardSystemd(nodeType NodeType) error {
 	pseudoCC := new(ClusterConfig)
+	// to ensure kubeshield is deleted
+	pseudoCC.DeployKubeshield = true
 	pseudoCC.CreateSystemdServiceObjects()
 
 	for _, obj := range pseudoCC.SystemdServiceObjects {
@@ -732,7 +763,20 @@ func DeboardSystemd(nodeType NodeType) error {
 			return err
 		}
 
+		if obj.TimerTemplateString != "" {
+			err := StopSystemdService(obj.AgentName+".timer", false, true)
+			if err != nil {
+				logger.Error("error stopping %s: %s", obj.AgentName+".timer", err)
+				return err
+			}
+		}
+
 		Deletedir(obj.AgentDir)
+
+		if obj.EnvironmentFileTemplate != "" {
+			Deletedir(filepath.Join(obj.AgentDir, obj.AgentName+".env"))
+		}
+
 		// Delete Logrotate Files
 		Deletedir(cm.LogrotateDir + obj.PackageName)
 	}
@@ -747,7 +791,7 @@ func DeboardSystemd(nodeType NodeType) error {
 }
 
 func CheckInstalledSystemdServices() ([]string, error) {
-	allAgents := []string{"kubearmor", cm.KubeArmorVMAdapter, cm.RelayServer, cm.PEAAgent, cm.SIAAgent, cm.FeederService, cm.SpireAgent, cm.SummaryEngine, cm.DiscoverAgent, cm.HardeningAgent}
+	allAgents := []string{"kubearmor", cm.KubeArmorVMAdapter, cm.RelayServer, cm.PEAAgent, cm.SIAAgent, cm.FeederService, cm.SpireAgent, cm.SummaryEngine, cm.DiscoverAgent, cm.HardeningAgent, cm.Kubeshield}
 	installedAgents := make([]string, 0)
 
 	for _, agent := range allAgents {
