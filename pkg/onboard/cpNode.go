@@ -119,6 +119,11 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 
 		NetworkCIDR: ic.CIDR,
 
+		KubeArmorCPUs:      fmt.Sprintf("%.2f", float64(ic.KaResource.CPUQuota)/100),
+		KubeArmorMemoryMax: fmt.Sprintf("%dm", ic.KaResource.MemoryMax),
+		AgentsCPUs:         fmt.Sprintf("%.2f", float64(ic.AgentsResource.CPUQuota)/100),
+		AgentsMemoryMax:    fmt.Sprintf("%dm", ic.AgentsResource.MemoryMax),
+
 		SecureContainers: ic.SecureContainers,
 
 		VmMode:         ic.Mode,

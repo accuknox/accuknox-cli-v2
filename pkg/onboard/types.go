@@ -288,6 +288,12 @@ type TemplateConfigArgs struct {
 	// docker config
 	NetworkCIDR string `json:"network_cidr,omitempty"`
 
+	// docker resource limits
+	KubeArmorCPUs      string `json:"kubearmor_cpus,omitempty"`
+	KubeArmorMemoryMax string `json:"kubearmor_memory_max,omitempty"`
+	AgentsCPUs         string `json:"agents_cpus,omitempty"`
+	AgentsMemoryMax    string `json:"agents_memory_max,omitempty"`
+
 	// kmux config paths for agents
 	PoliciesKmuxConfig   string `json:"policies_kmux_config,omitempty"`
 	StateKmuxConfig      string `json:"state_kmux_config,omitempty"`

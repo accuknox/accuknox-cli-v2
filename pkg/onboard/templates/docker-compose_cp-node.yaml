@@ -40,6 +40,11 @@ services:
       - "9090:9090"
     pid: "host"
     privileged: true
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
 
   wait-for-it:
     container_name: wait-for-it
@@ -130,6 +135,11 @@ services:
           - kubearmor
     pid: "host"
     privileged: true
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.KubeArmorCPUs}}'
+          memory: {{.KubeArmorMemoryMax}}
 
   kubearmor-relay-server:
     profiles:
@@ -153,6 +163,11 @@ services:
       accuknox-net:
         aliases:
           - kubearmor-relay-server
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
 
   kubearmor-vm-adapter:
     profiles:
@@ -211,6 +226,11 @@ services:
       accuknox-net:
         aliases:
           - kubearmor-vm-adapter
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
 
   shared-informer-agent:
     profiles:
@@ -251,6 +271,11 @@ services:
       accuknox-net:
         aliases:
           - shared-informer-agent
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
 
   feeder-service:
     profiles:
@@ -333,6 +358,11 @@ services:
       accuknox-net:
         aliases:
           - feeder-service
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
 
   policy-enforcement-agent:
     profiles:
@@ -370,6 +400,11 @@ services:
       accuknox-net:
         aliases:
           - policy-enforcement-agent
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
   {{- if .DeployDiscover }}
   discover:
     profiles:
@@ -397,6 +432,11 @@ services:
       accuknox-net:
         aliases:
           - discover
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
   {{- end }}
   summary-engine:
     profiles:
@@ -422,6 +462,11 @@ services:
       accuknox-net:
         aliases:
           - sumengine
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
   {{- if .EnableHardeningAgent }}
   hardening-agent:
     profiles:
@@ -449,6 +494,11 @@ services:
       accuknox-net:
         aliases:
           - hardening-agent
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
   {{- end }}
   {{- if .DeployRMQ }}
   rabbitmq:
