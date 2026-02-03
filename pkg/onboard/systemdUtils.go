@@ -47,8 +47,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			ExtraFilePathDest: map[string]string{
 				"system_monitor.bpf.o": cm.KASystemMonitorPath,
 			},
-			LogRotateMaxFileSize: cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:     cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize: cc.LogRotateMaxSize,
+			LogRotateMaxFile:     cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:             cm.RelayServer,
@@ -57,8 +57,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			AgentDir:              cm.RelayServerConfigPath,
 			ServiceTemplateString: relayServerServiceFile,
 			AgentImage:            cc.KubeArmorRelayServerImage,
-			LogRotateMaxFileSize:  cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:      cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:  cc.LogRotateMaxSize,
+			LogRotateMaxFile:      cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:             cm.SpireAgent,
@@ -69,8 +69,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			ConfigFilePath:        "conf/agent/agent.conf",
 			ConfigTemplateString:  spireAgentConfig,
 			AgentImage:            cc.SPIREAgentImage,
-			LogRotateMaxFileSize:  cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:      cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:  cc.LogRotateMaxSize,
+			LogRotateMaxFile:      cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.PEAAgent,
@@ -84,8 +84,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
 			AgentImage:               cc.PEAImage,
-			LogRotateMaxFileSize:     cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:         cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.FeederService,
@@ -99,8 +99,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
 			AgentImage:               cc.FeederImage,
-			LogRotateMaxFileSize:     cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:         cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.SummaryEngine,
@@ -114,8 +114,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigPath:           filepath.Join(cm.SumEngineConfigPath, cm.KmuxConfigFileName),
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
-			LogRotateMaxFileSize:     cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:         cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.DiscoverAgent,
@@ -129,8 +129,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigPath:           filepath.Join(cm.DiscoverConfigPath, cm.KmuxConfigFileName),
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
-			LogRotateMaxFileSize:     cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:         cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.HardeningAgent,
@@ -144,8 +144,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigPath:           filepath.Join(cm.HardeningAgentConfigPath, cm.KmuxConfigFileName),
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
-			LogRotateMaxFileSize:     cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:         cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:             cm.VMAdapter,
@@ -156,8 +156,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			ConfigFilePath:        "vm-adapter-config.yaml",
 			ConfigTemplateString:  vmAdapterConfig,
 			AgentImage:            cc.KubeArmorVMAdapterImage,
-			LogRotateMaxFileSize:  cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:      cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:  cc.LogRotateMaxSize,
+			LogRotateMaxFile:      cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.SIAAgent,
@@ -171,8 +171,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
 			AgentImage:               cc.SIAImage,
-			LogRotateMaxFileSize:     cc.SystemdLogRotateMaxSize,
-			LogRotateMaxFile:         cc.SystemdLogRotateMaxFile,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 	}
 

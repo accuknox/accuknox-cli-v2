@@ -24,8 +24,8 @@ func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr
 		SpireSecretDir:      secretDir,
 	}
 }
-func (jc *JoinConfig) CreateBaseNodeConfig() error {
 
+func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return err
@@ -142,8 +142,8 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		AgentsCPUs:                  fmt.Sprintf("%.2f", float64(jc.AgentsResource.CPUQuota)/100),
 		AgentsMemoryMax:             fmt.Sprintf("%dm", jc.AgentsResource.MemoryMax),
 		DockerLogDriver:             GetDockerLogDriver(),
-		DockerLogRotateMaxSize:      jc.DockerLogRotateMaxSize,
-		DockerLogRotateMaxFile:      fmt.Sprintf("%d", jc.DockerLogRotateMaxFile),
+		DockerLogRotateMaxSize:      jc.LogRotateMaxSize,
+		DockerLogRotateMaxFile:      fmt.Sprintf("%d", jc.LogRotateMaxFile),
 		VmMode:                      jc.Mode,
 		SecureContainers:            jc.SecureContainers,
 		TlsEnabled:                  jc.Tls.Enabled,
@@ -254,7 +254,6 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		if err := validateSplunkCredential(jc.TCArgs.SplunkConfigObject); err != nil {
 			return err
 		}
-
 	}
 
 	// write compose file

@@ -121,19 +121,19 @@ var joinNodeCmd = &cobra.Command{
 		vmConfigs.KaResource = kaResource
 		vmConfigs.AgentsResource = agentsResource
 
-		vmConfigs.DockerLogRotateMaxSize = dockerLogRotateMaxSize
-		vmConfigs.DockerLogRotateMaxFile = dockerLogRotateMaxFile
-
 		if cmd.Flags().Changed("log-rotate") {
-			vmConfigs.SystemdLogRotateMaxSize = logRotate
+			vmConfigs.LogRotateMaxSize = logRotate
 		}
-		if vmConfigs.SystemdLogRotateMaxSize == "" {
-			vmConfigs.SystemdLogRotateMaxSize = systemdLogRotateMaxSize
+		if vmConfigs.LogRotateMaxSize == "" {
+			vmConfigs.LogRotateMaxSize = logRotateMaxSize
 		}
-		vmConfigs.SystemdLogRotateMaxFile = systemdLogRotateMaxFile
+		vmConfigs.LogRotateMaxFile = logRotateMaxFile
 
+		// docker expects the size unit to be in lower case, while systemd
+		// expects it to be in upper case.
+		vmConfigs.LogRotateMaxSize = strings.ToLower(vmConfigs.LogRotateMaxSize)
 		if vmMode == onboard.VMMode_Systemd {
-			vmConfigs.SystemdLogRotateMaxSize = strings.ToUpper(vmConfigs.SystemdLogRotateMaxSize)
+			vmConfigs.LogRotateMaxSize = strings.ToUpper(vmConfigs.LogRotateMaxSize)
 			vmConfigs.CreateSystemdServiceObjects()
 		}
 

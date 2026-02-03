@@ -64,13 +64,12 @@ var onboardVmScanCmd = &cobra.Command{
 		cc.EnableVMScan = true
 		// create RRA config
 		cc.Mode = vmMode
-		cc.SystemdLogRotateMaxFile = systemdLogRotateMaxFile
-		cc.SystemdLogRotateMaxSize = systemdLogRotateMaxSize
-		cc.DockerLogRotateMaxFile = dockerLogRotateMaxFile
-		cc.DockerLogRotateMaxSize = dockerLogRotateMaxSize
+		cc.LogRotateMaxFile = logRotateMaxFile
+		cc.LogRotateMaxSize = logRotateMaxSize
 
+		cc.LogRotateMaxSize = strings.ToLower(cc.LogRotateMaxSize)
 		if vmMode == onboard.VMMode_Systemd {
-			cc.SystemdLogRotateMaxSize = strings.ToUpper(cc.SystemdLogRotateMaxSize)
+			cc.LogRotateMaxSize = strings.ToUpper(cc.LogRotateMaxSize)
 		}
 
 		err = cc.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream, agentsDeployed, spireAgentImage, spireHost, spireDir, knoxGateway)

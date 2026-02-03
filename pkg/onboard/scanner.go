@@ -138,8 +138,8 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 				ConfigFilePath:        "conf/agent/agent.conf",
 				ConfigTemplateString:  spireAgentConfig,
 				AgentImage:            cc.SPIREAgentImage,
-				LogRotateMaxFileSize:  cc.SystemdLogRotateMaxSize,
-				LogRotateMaxFile:      cc.SystemdLogRotateMaxFile,
+				LogRotateMaxFileSize:  cc.LogRotateMaxSize,
+				LogRotateMaxFile:      cc.LogRotateMaxFile,
 			})
 		}
 

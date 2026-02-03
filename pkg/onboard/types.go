@@ -153,10 +153,8 @@ type ClusterConfig struct {
 	JoinToken    string `json:"join_token,omitempty"`
 
 	LogRotateTemplateString string `json:"-"`
-	DockerLogRotateMaxSize  string `json:"docker_log_rotate_max_size,omitempty"`
-	DockerLogRotateMaxFile  int    `json:"docker_log_rotate_max_file,omitempty"`
-	SystemdLogRotateMaxSize string `json:"systemd_log_rotate_max_size,omitempty"`
-	SystemdLogRotateMaxFile int    `json:"systemd_log_rotate_max_file,omitempty"`
+	LogRotateMaxSize        string `json:"log_rotate_max_size,omitempty"`
+	LogRotateMaxFile        int    `json:"log_rotate_max_file,omitempty"`
 
 	AccessKey AccessKey `json:"access_key"`
 	Parallel  int       `json:"parallel,omitempty"`

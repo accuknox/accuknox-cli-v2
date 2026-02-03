@@ -125,8 +125,8 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		AgentsMemoryMax:    fmt.Sprintf("%dm", ic.AgentsResource.MemoryMax),
 
 		DockerLogDriver:        GetDockerLogDriver(),
-		DockerLogRotateMaxSize: ic.DockerLogRotateMaxSize,
-		DockerLogRotateMaxFile: fmt.Sprintf("%d", ic.DockerLogRotateMaxFile),
+		DockerLogRotateMaxSize: ic.LogRotateMaxSize,
+		DockerLogRotateMaxFile: fmt.Sprintf("%d", ic.LogRotateMaxFile),
 
 		SecureContainers: ic.SecureContainers,
 
