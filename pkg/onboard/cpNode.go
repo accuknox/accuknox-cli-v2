@@ -124,6 +124,10 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		AgentsCPUs:         fmt.Sprintf("%.2f", float64(ic.AgentsResource.CPUQuota)/100),
 		AgentsMemoryMax:    fmt.Sprintf("%dm", ic.AgentsResource.MemoryMax),
 
+		DockerLogDriver:        GetDockerLogDriver(),
+		DockerLogRotateMaxSize: ic.DockerLogRotateMaxSize,
+		DockerLogRotateMaxFile: fmt.Sprintf("%d", ic.DockerLogRotateMaxFile),
+
 		SecureContainers: ic.SecureContainers,
 
 		VmMode:         ic.Mode,
@@ -291,7 +295,6 @@ func (ic *InitConfig) InitializeControlPlane() error {
 }
 
 func (ic *InitConfig) populateCommonArgs() {
-
 	ic.TCArgs.PoliciesKmuxConfig = common.KmuxPoliciesFileName
 	ic.TCArgs.StateKmuxConfig = common.KmuxStateEventFileName
 	ic.TCArgs.AlertsKmuxConfig = common.KmuxAlertsFileName
@@ -312,7 +315,6 @@ func (ic *InitConfig) populateCommonArgs() {
 	ic.TCArgs.AnnotationTopic = getTopicName(ic.RMQTopicPrefix, "annotation")
 
 	ic.TCArgs.SplunkConfigObject = ic.Splunk
-
 }
 
 func populateAgentArgs(tcArgs *TemplateConfigArgs, configDir string) {
@@ -326,7 +328,6 @@ func populateAgentArgs(tcArgs *TemplateConfigArgs, configDir string) {
 }
 
 func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFile, prefix, hostname, connName string) {
-
 	if prefix == "" {
 		prefix = "agents"
 	}
@@ -409,7 +410,6 @@ func (ic *InitConfig) runComposeCommand(composeFilePath string) error {
 }
 
 func (ic *InitConfig) handleTLS() error {
-
 	paths := oldCertPaths(ic.TCArgs.ConfigPath)
 
 	if ic.Tls.Enabled && ic.Tls.CaPath == "" && len(paths) == 0 {
@@ -689,7 +689,6 @@ func getTopicName(prefix, topic string) string {
 }
 
 func oldCertPaths(root string) []string {
-
 	paths := []string{}
 
 	if err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
@@ -733,11 +732,9 @@ func useCaFile(tcArgs *TemplateConfigArgs, agentName, agentImage string) bool {
 		currentVersion = "v" + currentVersion
 	}
 	return semver.Compare(currentVersion, oldVersion) > 0
-
 }
 
 func getCurrentVersion(tcArgs *TemplateConfigArgs, agentName, agentImage string) string {
-
 	if agentImage != "" {
 		image := strings.Split(agentImage, ":")[1]
 		return strings.Split(image, "_")[0]

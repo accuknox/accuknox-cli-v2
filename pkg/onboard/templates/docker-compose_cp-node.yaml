@@ -40,6 +40,12 @@ services:
       - "9090:9090"
     pid: "host"
     privileged: true
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -135,6 +141,12 @@ services:
           - kubearmor
     pid: "host"
     privileged: true
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -163,6 +175,12 @@ services:
       accuknox-net:
         aliases:
           - kubearmor-relay-server
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -226,6 +244,12 @@ services:
       accuknox-net:
         aliases:
           - kubearmor-vm-adapter
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -271,6 +295,12 @@ services:
       accuknox-net:
         aliases:
           - shared-informer-agent
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -358,6 +388,12 @@ services:
       accuknox-net:
         aliases:
           - feeder-service
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -400,6 +436,12 @@ services:
       accuknox-net:
         aliases:
           - policy-enforcement-agent
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -432,6 +474,12 @@ services:
       accuknox-net:
         aliases:
           - discover
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -462,6 +510,12 @@ services:
       accuknox-net:
         aliases:
           - sumengine
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -494,6 +548,12 @@ services:
       accuknox-net:
         aliases:
           - hardening-agent
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -520,6 +580,12 @@ services:
       - "{{.ConfigPath}}/rabbitmq/ca_certificate.pem:/etc/ssl/ca_certificate.pem"
       - "{{.ConfigPath}}/rabbitmq/certificate.pem:/etc/ssl/server_certificate.pem"
       - "{{.ConfigPath}}/rabbitmq/key.pem:/etc/ssl/server_key.pem"
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
   {{- end }}
  
 networks:

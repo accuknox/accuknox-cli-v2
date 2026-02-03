@@ -1,8 +1,8 @@
 {{.AgentDir}}{{.PackageName}}.log {
-    size {{.LogRotate}}              
-    rotate 1               
-    compress             
-    copytruncate          
-    missingok            
-    notifempty            
+    size {{.LogRotateMaxFileSize}}
+    rotate {{.LogRotateMaxFile}}
+    compress
+    copytruncate
+    missingok
+    notifempty
 }

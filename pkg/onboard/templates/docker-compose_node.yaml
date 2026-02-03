@@ -41,6 +41,12 @@ services:
       - "9090:9090"
     pid: "host"
     privileged: true
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -136,6 +142,12 @@ services:
           - kubearmor
     pid: "host"
     privileged: true
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -205,6 +217,12 @@ services:
       app: kubearmor-vm-adapter
     restart: always
     network_mode: "host"
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:
@@ -244,6 +262,12 @@ services:
     restart: always
     pid: "host"
     network_mode: "host"
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
     deploy:
       resources:
         limits:

@@ -82,7 +82,7 @@ var joinNodeCmd = &cobra.Command{
 		var configDumpPath string
 		switch vmMode {
 		case onboard.VMMode_Systemd:
-			err := os.Mkdir(common.SystemdKnoxctlDir, 0755) // #nosec G301 need for archiving and file operations
+			err := os.Mkdir(common.SystemdKnoxctlDir, 0o755) // #nosec G301 need for archiving and file operations
 			if err != nil && !os.IsExist(err) {
 				return err
 			}
@@ -120,6 +120,22 @@ var joinNodeCmd = &cobra.Command{
 		}
 		vmConfigs.KaResource = kaResource
 		vmConfigs.AgentsResource = agentsResource
+
+		vmConfigs.DockerLogRotateMaxSize = dockerLogRotateMaxSize
+		vmConfigs.DockerLogRotateMaxFile = dockerLogRotateMaxFile
+
+		if cmd.Flags().Changed("log-rotate") {
+			vmConfigs.SystemdLogRotateMaxSize = logRotate
+		}
+		if vmConfigs.SystemdLogRotateMaxSize == "" {
+			vmConfigs.SystemdLogRotateMaxSize = systemdLogRotateMaxSize
+		}
+		vmConfigs.SystemdLogRotateMaxFile = systemdLogRotateMaxFile
+
+		if vmMode == onboard.VMMode_Systemd {
+			vmConfigs.SystemdLogRotateMaxSize = strings.ToUpper(vmConfigs.SystemdLogRotateMaxSize)
+			vmConfigs.CreateSystemdServiceObjects()
+		}
 
 		if accessKey != "" {
 			if joinToken, err = vmConfigs.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "Node", insecure); err != nil {
