@@ -138,7 +138,8 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 				ConfigFilePath:        "conf/agent/agent.conf",
 				ConfigTemplateString:  spireAgentConfig,
 				AgentImage:            cc.SPIREAgentImage,
-				LogRotate:             cc.LogRotate,
+				LogRotateMaxFileSize:  cc.LogRotateMaxSize,
+				LogRotateMaxFile:      cc.LogRotateMaxFile,
 			})
 		}
 
@@ -161,7 +162,6 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 }
 
 func (cc *ClusterConfig) InstallRRA() error {
-
 	var configObject map[string]any
 	configBytes, _ := json.Marshal(cc.RRAConfigObject)
 	if err := json.Unmarshal(configBytes, &configObject); err != nil {
@@ -187,7 +187,7 @@ func (cc *ClusterConfig) InstallRRA() error {
 		}
 		// initialize sprig for templating
 		sprigFuncs := sprig.GenericFuncMap()
-		//create compose file
+		// create compose file
 		composeFilePath, err := copyOrGenerateFile(cc.UserConfigPath, configPath, "docker-compose_rra.yaml", sprigFuncs, rraComposeFileTemplate, configObject)
 		if err != nil {
 			return err

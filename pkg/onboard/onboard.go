@@ -21,8 +21,8 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
 	alertThrottling bool, maxAlertPerSec, throttleSec int,
 	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string, proxy Proxy, deployDiscover bool) (*ClusterConfig, error) {
-
+	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string, proxy Proxy, deployDiscover bool,
+) (*ClusterConfig, error) {
 	cc := new(ClusterConfig)
 
 	if splunk.Enabled {
@@ -366,10 +366,6 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 		if err != nil {
 			return nil, err
 		}
-		// log file size
-		cc.LogRotate = strings.ToUpper(logRotate)
-		// create systemd service objects
-		cc.CreateSystemdServiceObjects()
 
 		// prepare OAuth credentials
 		loginOptions := LoginOptions{
@@ -470,7 +466,7 @@ func getSpireDetails(addrs, tbAddr string) (string, string, string, error) {
 	}
 
 	// currently unused as we use insecure bootstrap
-	var spireTrustBundleURL = tbAddr
+	spireTrustBundleURL := tbAddr
 	if spireTrustBundleURL == "" {
 		switch {
 		case strings.Contains(addrs, SpireDev):
@@ -489,7 +485,6 @@ func getSpireDetails(addrs, tbAddr string) (string, string, string, error) {
 }
 
 func (cc *ClusterConfig) PopulateAccessKeyConfig(url, key, clusterName, vmName, endpoint, mode string, insecure bool) (string, error) {
-
 	cc.AccessKey = AccessKey{
 		Key:         key,
 		Url:         url,
@@ -517,5 +512,4 @@ func (cc *ClusterConfig) PopulateAccessKeyConfig(url, key, clusterName, vmName, 
 	}
 
 	return joinToken, nil
-
 }

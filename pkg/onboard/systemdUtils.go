@@ -47,7 +47,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			ExtraFilePathDest: map[string]string{
 				"system_monitor.bpf.o": cm.KASystemMonitorPath,
 			},
-			LogRotate: cc.LogRotate,
+			LogRotateMaxFileSize: cc.LogRotateMaxSize,
+			LogRotateMaxFile:     cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:             cm.RelayServer,
@@ -56,7 +57,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			AgentDir:              cm.RelayServerConfigPath,
 			ServiceTemplateString: relayServerServiceFile,
 			AgentImage:            cc.KubeArmorRelayServerImage,
-			LogRotate:             cc.LogRotate,
+			LogRotateMaxFileSize:  cc.LogRotateMaxSize,
+			LogRotateMaxFile:      cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:             cm.SpireAgent,
@@ -67,7 +69,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			ConfigFilePath:        "conf/agent/agent.conf",
 			ConfigTemplateString:  spireAgentConfig,
 			AgentImage:            cc.SPIREAgentImage,
-			LogRotate:             cc.LogRotate,
+			LogRotateMaxFileSize:  cc.LogRotateMaxSize,
+			LogRotateMaxFile:      cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.PEAAgent,
@@ -81,7 +84,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
 			AgentImage:               cc.PEAImage,
-			LogRotate:                cc.LogRotate,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.FeederService,
@@ -95,7 +99,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
 			AgentImage:               cc.FeederImage,
-			LogRotate:                cc.LogRotate,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.SummaryEngine,
@@ -109,7 +114,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigPath:           filepath.Join(cm.SumEngineConfigPath, cm.KmuxConfigFileName),
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
-			LogRotate:                cc.LogRotate,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.DiscoverAgent,
@@ -123,7 +129,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigPath:           filepath.Join(cm.DiscoverConfigPath, cm.KmuxConfigFileName),
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
-			LogRotate:                cc.LogRotate,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.HardeningAgent,
@@ -137,7 +144,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigPath:           filepath.Join(cm.HardeningAgentConfigPath, cm.KmuxConfigFileName),
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
-			LogRotate:                cc.LogRotate,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:             cm.VMAdapter,
@@ -148,7 +156,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			ConfigFilePath:        "vm-adapter-config.yaml",
 			ConfigTemplateString:  vmAdapterConfig,
 			AgentImage:            cc.KubeArmorVMAdapterImage,
-			LogRotate:             cc.LogRotate,
+			LogRotateMaxFileSize:  cc.LogRotateMaxSize,
+			LogRotateMaxFile:      cc.LogRotateMaxFile,
 		},
 		{
 			AgentName:                cm.SIAAgent,
@@ -162,7 +171,8 @@ func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 			KmuxConfigTemplateString: kmuxConfig,
 			KmuxConfigFileName:       cm.KmuxConfigFileName,
 			AgentImage:               cc.SIAImage,
-			LogRotate:                cc.LogRotate,
+			LogRotateMaxFileSize:     cc.LogRotateMaxSize,
+			LogRotateMaxFile:         cc.LogRotateMaxFile,
 		},
 	}
 
@@ -339,7 +349,6 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 
 // placeServiceFiles copies service files
 func (cc *ClusterConfig) placeServiceFiles() error {
-
 	configArgs := map[string]any{
 		"WorkerNode":     cc.WorkerNode,
 		"SystemdVersion": getSystemdVersion(),
@@ -381,15 +390,14 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 		}
 
 		if obj.ServiceTemplateString != "" {
-
 			if obj.AgentName == cm.RRA {
-				//place service file for RRA
+				// place service file for RRA
 				cc.TemplateFuncs = sprig.GenericFuncMap()
 				_, err := copyOrGenerateFile("", cm.SystemdDir, obj.ServiceName, cc.TemplateFuncs, obj.ServiceTemplateString, configArgs)
 				if err != nil {
 					return err
 				}
-				//place timer file for RRA
+				// place timer file for RRA
 				_, err = copyOrGenerateFile("", cm.SystemdDir, "accuknox-rra.timer", cc.TemplateFuncs, obj.TimerTemplateString, configArgs)
 				if err != nil {
 					return err
@@ -402,10 +410,11 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 				}
 
 				if cc.LogRotateTemplateString != "" {
-					logRotate := map[string]interface{}{
-						"AgentDir":    obj.AgentDir,
-						"PackageName": obj.PackageName,
-						"LogRotate":   obj.LogRotate,
+					logRotate := map[string]any{
+						"AgentDir":             obj.AgentDir,
+						"PackageName":          obj.PackageName,
+						"LogRotateMaxFileSize": obj.LogRotateMaxFileSize,
+						"LogRotateMaxFile":     obj.LogRotateMaxFile,
 					}
 					_, err = copyOrGenerateFile("", cm.LogrotateDir, obj.PackageName, cc.TemplateFuncs, cc.LogRotateTemplateString, logRotate)
 					if err != nil {
@@ -492,7 +501,7 @@ func extractAgent(fileName string) error {
 
 		// Create parent directories if not exist
 
-		err = os.MkdirAll(filepath.Dir(filename), 0755) // #nosec G301
+		err = os.MkdirAll(filepath.Dir(filename), 0o755) // #nosec G301
 		if err != nil {
 			return err
 		}
@@ -509,8 +518,8 @@ func extractAgent(fileName string) error {
 
 		// Set execute permissions for the binaries
 
-		if header.Mode&0111 != 0 {
-			err := os.Chmod(filename, 0755) // #nosec G302
+		if header.Mode&0o111 != 0 {
+			err := os.Chmod(filename, 0o755) // #nosec G302
 			if err != nil {
 				return err
 			}
@@ -593,7 +602,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 
 		err = cc.installAgent(obj.AgentName, packageMeta[0], packageMeta[1])
 		if err != nil {
-			//fmt.Println(err)
+			// fmt.Println(err)
 			return err
 		}
 
@@ -754,6 +763,7 @@ func CheckInstalledSystemdServices() ([]string, error) {
 
 	return installedAgents, nil
 }
+
 func InstallAgent(agentName, agentRepo, agentTag string) error {
 	fileName, err := DownloadAgent(agentName, agentRepo, agentTag)
 	if err != nil {
@@ -816,7 +826,7 @@ func DumpSystemdLogs(sysdumpDir string, services []string) {
 			logger.Warn("Error while getting logs from %s: %s", service, err.Error())
 		} else {
 			filename := filepath.Join(sysdumpDir, service+".log")
-			err := os.WriteFile(filename, logs, 0644) // #nosec G306 need perms for archiving
+			err := os.WriteFile(filename, logs, 0o644) // #nosec G306 need perms for archiving
 			if err != nil {
 				logger.Warn("Error while writing logs to file %s: %s", filename, err.Error())
 				continue
@@ -846,7 +856,7 @@ func readAndDumpDir(sourceDirPath, destDirPath string) error {
 		}
 
 		if d.IsDir() {
-			errMkdir := os.MkdirAll(sysdumpFullPath, 0755) // #nosec G301 perms needed for archiving
+			errMkdir := os.MkdirAll(sysdumpFullPath, 0o755) // #nosec G301 perms needed for archiving
 			if errMkdir != nil {
 				return errMkdir
 			}
@@ -875,7 +885,7 @@ func readAndDumpDir(sourceDirPath, destDirPath string) error {
 			return nil
 		}
 
-		err = os.WriteFile(sysdumpFullPath, fileContent, 0644) // #nosec G306 need perms for archiving
+		err = os.WriteFile(sysdumpFullPath, fileContent, 0o644) // #nosec G306 need perms for archiving
 		if err != nil {
 			return err
 		}
@@ -905,7 +915,7 @@ func readAndDumpFile(sourceFilePath, destFilePath string) error {
 		return err
 	}
 
-	err = os.WriteFile(destFilePath, sourceFileContent, 0644) // #nosec G306 perms needed for archiving
+	err = os.WriteFile(destFilePath, sourceFileContent, 0o644) // #nosec G306 perms needed for archiving
 	if err != nil {
 		return err
 	}
@@ -943,7 +953,6 @@ func DumpSystemdKnoxctlDir(sysdumpDir string) {
 
 // ConvertCronToSystemd converts a crontab schedule into a systemd timer schedule format.
 func ConvertCronToSystemd(schedule string) (string, error) {
-
 	fields := strings.Fields(schedule)
 
 	// Validate that the schedule has exactly 5 fields.
@@ -974,6 +983,7 @@ func ConvertCronToSystemd(schedule string) (string, error) {
 
 	return finalSchedule, nil
 }
+
 func GetSystemdServiceStatus(name string) (string, error) {
 	ctx := context.Background()
 	status := ""

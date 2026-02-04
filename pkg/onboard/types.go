@@ -7,8 +7,10 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
-type ClusterType string
-type VMMode string
+type (
+	ClusterType string
+	VMMode      string
+)
 
 const (
 	ClusterType_VM  ClusterType = "vm"
@@ -37,12 +39,10 @@ const (
 	NodeType_WorkerNode   NodeType = "worker-node"
 )
 
-var (
-	NodeTypeValues = map[string]NodeType{
-		"control-plane": NodeType_ControlPlane,
-		"worker-node":   NodeType_WorkerNode,
-	}
-)
+var NodeTypeValues = map[string]NodeType{
+	"control-plane": NodeType_ControlPlane,
+	"worker-node":   NodeType_WorkerNode,
+}
 
 type ImagePullPolicy string
 
@@ -112,7 +112,7 @@ type ClusterConfig struct {
 	composeCmd     string
 	composeVersion string
 
-	//kubearmor systemd configs
+	// kubearmor systemd configs
 	Mode VMMode `json:"mode,omitempty"`
 
 	// container security
@@ -151,9 +151,10 @@ type ClusterConfig struct {
 	SpireEnabled bool   `json:"spire_enabled,omitempty"`
 	SpireCert    bool   `json:"spire_cert,omitempty"`
 	JoinToken    string `json:"join_token,omitempty"`
-	// logrotateString
+
 	LogRotateTemplateString string `json:"-"`
-	LogRotate               string `json:"logrotate,omitempty"`
+	LogRotateMaxSize        string `json:"log_rotate_max_size,omitempty"`
+	LogRotateMaxFile        int    `json:"log_rotate_max_file,omitempty"`
 
 	AccessKey AccessKey `json:"access_key"`
 	Parallel  int       `json:"parallel,omitempty"`
@@ -288,6 +289,17 @@ type TemplateConfigArgs struct {
 	// docker config
 	NetworkCIDR string `json:"network_cidr,omitempty"`
 
+	// docker resource limits
+	KubeArmorCPUs      string `json:"kubearmor_cpus,omitempty"`
+	KubeArmorMemoryMax string `json:"kubearmor_memory_max,omitempty"`
+	AgentsCPUs         string `json:"agents_cpus,omitempty"`
+	AgentsMemoryMax    string `json:"agents_memory_max,omitempty"`
+
+	// docker logging
+	DockerLogDriver        string `json:"docker_log_driver,omitempty"`
+	DockerLogRotateMaxSize string `json:"docker_log_rotate_max_size,omitempty"`
+	DockerLogRotateMaxFile string `json:"docker_log_rotate_max_file,omitempty"`
+
 	// kmux config paths for agents
 	PoliciesKmuxConfig   string `json:"policies_kmux_config,omitempty"`
 	StateKmuxConfig      string `json:"state_kmux_config,omitempty"`
@@ -305,7 +317,7 @@ type TemplateConfigArgs struct {
 
 	EnableHardeningAgent bool `json:"enable_hardening_agent,omitempty"`
 
-	//summary engine configuration
+	// summary engine configuration
 	ProcessOperation bool `json:"process_operation,omitempty"`
 	FileOperation    bool `json:"file_operation,omitempty"`
 	NetworkOperation bool `json:"network_operation,omitempty"`
@@ -396,7 +408,7 @@ type SystemdServiceObject struct {
 
 	// TODO: Package instead of just tag
 	AgentImage string
-	//AgentPackage string
+	// AgentPackage string
 	InstallOnWorkerNode bool
 
 	KmuxConfigPath           string
@@ -407,7 +419,8 @@ type SystemdServiceObject struct {
 	ExtraFilePathSrc  map[string]string
 	ExtraFilePathDest map[string]string
 
-	LogRotate string
+	LogRotateMaxFileSize string
+	LogRotateMaxFile     int
 }
 
 type RRAConfig struct {
@@ -429,9 +442,7 @@ type RRAConfig struct {
 	GatewayServer  string
 }
 
-var (
-	ErrInvalidToken = errors.New("invalid JWT format")
-)
+var ErrInvalidToken = errors.New("invalid JWT format")
 
 const AccessKeyEndpoint = "/access-token/api/v1/process"
 

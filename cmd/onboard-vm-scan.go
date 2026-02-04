@@ -3,6 +3,7 @@ package cmd
 import (
 	"net"
 	"slices"
+	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/deboard"
@@ -17,7 +18,6 @@ var onboardVmScanCmd = &cobra.Command{
 	Short: "sub-command for onboarding RRA(risk assessment tool)",
 	Long:  "sub-command for onboarding RRA(risk assessment tool)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		// create cluster config
 		var cc onboard.ClusterConfig
 		_, err := cc.ValidateEnv()
@@ -64,7 +64,14 @@ var onboardVmScanCmd = &cobra.Command{
 		cc.EnableVMScan = true
 		// create RRA config
 		cc.Mode = vmMode
-		cc.LogRotate = logRotate
+		cc.LogRotateMaxFile = logRotateMaxFile
+		cc.LogRotateMaxSize = logRotateMaxSize
+
+		cc.LogRotateMaxSize = strings.ToLower(cc.LogRotateMaxSize)
+		if vmMode == onboard.VMMode_Systemd {
+			cc.LogRotateMaxSize = strings.ToUpper(cc.LogRotateMaxSize)
+		}
+
 		err = cc.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream, agentsDeployed, spireAgentImage, spireHost, spireDir, knoxGateway)
 		if err != nil {
 			logger.Error(" failed to initialize RRA config:%s", err.Error())
@@ -90,7 +97,6 @@ func init() {
 }
 
 func isDeployed(vmMode onboard.VMMode) bool {
-
 	switch vmMode {
 	case onboard.VMMode_Docker:
 		containers, _, err := deboard.GetInstalledObjects()

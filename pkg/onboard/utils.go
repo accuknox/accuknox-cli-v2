@@ -355,8 +355,15 @@ func (cc *ClusterConfig) ValidateEnv() (string, error) {
 	return fmt.Sprintf("Using %s version %s\n", composeCmd, composeVersion), nil
 }
 
-func CreateDockerClient() (*client.Client, error) {
+// GetDockerLogDriver returns the docker log driver.
+// Since minimum supported docker version is v19.0.3 (which is >= v18.09.0), we
+// always use the "local" driver which is more efficient than default
+// "json-file"
+func GetDockerLogDriver() string {
+	return "local"
+}
 
+func CreateDockerClient() (*client.Client, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
@@ -554,7 +561,6 @@ func getLastOldVersion(agentName string) string {
 }
 
 func getRMQUserPass(credentials string) (string, string, error) {
-
 	if credentials == "" {
 		return "", "", nil
 	}

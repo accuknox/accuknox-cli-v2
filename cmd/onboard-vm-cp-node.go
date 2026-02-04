@@ -89,7 +89,6 @@ var cpNodeCmd = &cobra.Command{
 				logger.Warn("warning: Docker requirements did not match:\n%s.\nFalling back to systemd mode for installation.\n", err.Error())
 				vmMode = onboard.VMMode_Systemd
 			}
-
 		} else if vmMode == onboard.VMMode_Docker && err != nil {
 			// docker mode specified explicitly but requirements didn't match
 			logger.Error("failed to validate environment:\n%s", err.Error())
@@ -104,7 +103,7 @@ var cpNodeCmd = &cobra.Command{
 		var configDumpPath string
 		switch vmMode {
 		case onboard.VMMode_Systemd:
-			err := os.Mkdir(common.SystemdKnoxctlDir, 0755) // #nosec G301 need for archiving and file operations
+			err := os.Mkdir(common.SystemdKnoxctlDir, 0o755) // #nosec G301 need for archiving and file operations
 			if err != nil && !os.IsExist(err) {
 				return err
 			}
@@ -143,6 +142,22 @@ var cpNodeCmd = &cobra.Command{
 
 		vmConfig.KaResource = kaResource
 		vmConfig.AgentsResource = agentsResource
+
+		if cmd.Flags().Changed("log-rotate") {
+			vmConfig.LogRotateMaxSize = logRotate
+		}
+		if vmConfig.LogRotateMaxSize == "" {
+			vmConfig.LogRotateMaxSize = logRotateMaxSize
+		}
+		vmConfig.LogRotateMaxFile = logRotateMaxFile
+
+		// docker expects the size unit to be in lower case, while systemd
+		// expects it to be in upper case.
+		vmConfig.LogRotateMaxSize = strings.ToLower(vmConfig.LogRotateMaxSize)
+		if vmMode == onboard.VMMode_Systemd {
+			vmConfig.LogRotateMaxSize = strings.ToUpper(vmConfig.LogRotateMaxSize)
+			vmConfig.CreateSystemdServiceObjects()
+		}
 
 		if accessKey != "" {
 			if joinToken, err = vmConfig.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "vm", insecure); err != nil {

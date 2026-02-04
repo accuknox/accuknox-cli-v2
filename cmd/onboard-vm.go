@@ -44,7 +44,7 @@ var (
 	skipBTF           bool
 	systemMonitorPath string
 
-	//flags for RRA scan
+	// flags for RRA scan
 	enableVMScan bool
 	profile      string
 	benchmark    string
@@ -71,7 +71,9 @@ var (
 	spireHost string
 	spireDir  = "/opt/spire-agent/spire-data"
 
-	logRotate string
+	logRotate        string // deprecated. Use logRotateMaxSize instead.
+	logRotateMaxSize string
+	logRotateMaxFile int
 
 	parallel int
 
@@ -165,6 +167,9 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&sumEngineVisibility, "sumengine-viz", "process,network,file", "Events other than these won't be processed by summary engine. Possible values: \"none\" or any combo of [process,network,file]")
 
 	onboardVMCmd.PersistentFlags().StringVar(&logRotate, "log-rotate", "50M", "log rotate file size. Acceptable format similar to journalctl(10K, 200M, 2G, etc). Default: 50M")
+	_ = onboardVMCmd.PersistentFlags().MarkDeprecated("log-rotate", "flag is deprecated and will be removed in the future version. Please use --log-rotate-max-size instead.")
+	onboardVMCmd.PersistentFlags().StringVar(&logRotateMaxSize, "log-rotate-max-size", "50M", "maximum size of the log before it's rolled. A positive integer plus a modifier representing the unit of measure (K, M, or G). Default: 50M")
+	onboardVMCmd.PersistentFlags().IntVar(&logRotateMaxFile, "log-rotate-max-file", 1, "maximum number of log files that can be present. A positive integer. Default: 1")
 
 	// flags for RRA
 	onboardVMCmd.PersistentFlags().StringVar(&rraTag, "rra-tag", "", "version tag for RRA( rapid risk assessment tool)")

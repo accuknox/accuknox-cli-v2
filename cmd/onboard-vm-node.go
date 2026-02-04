@@ -82,7 +82,7 @@ var joinNodeCmd = &cobra.Command{
 		var configDumpPath string
 		switch vmMode {
 		case onboard.VMMode_Systemd:
-			err := os.Mkdir(common.SystemdKnoxctlDir, 0755) // #nosec G301 need for archiving and file operations
+			err := os.Mkdir(common.SystemdKnoxctlDir, 0o755) // #nosec G301 need for archiving and file operations
 			if err != nil && !os.IsExist(err) {
 				return err
 			}
@@ -120,6 +120,22 @@ var joinNodeCmd = &cobra.Command{
 		}
 		vmConfigs.KaResource = kaResource
 		vmConfigs.AgentsResource = agentsResource
+
+		if cmd.Flags().Changed("log-rotate") {
+			vmConfigs.LogRotateMaxSize = logRotate
+		}
+		if vmConfigs.LogRotateMaxSize == "" {
+			vmConfigs.LogRotateMaxSize = logRotateMaxSize
+		}
+		vmConfigs.LogRotateMaxFile = logRotateMaxFile
+
+		// docker expects the size unit to be in lower case, while systemd
+		// expects it to be in upper case.
+		vmConfigs.LogRotateMaxSize = strings.ToLower(vmConfigs.LogRotateMaxSize)
+		if vmMode == onboard.VMMode_Systemd {
+			vmConfigs.LogRotateMaxSize = strings.ToUpper(vmConfigs.LogRotateMaxSize)
+			vmConfigs.CreateSystemdServiceObjects()
+		}
 
 		if accessKey != "" {
 			if joinToken, err = vmConfigs.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "Node", insecure); err != nil {

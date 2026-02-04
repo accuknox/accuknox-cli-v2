@@ -41,6 +41,17 @@ services:
       - "9090:9090"
     pid: "host"
     privileged: true
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
 
   wait-for-it:
     container_name: wait-for-it
@@ -131,6 +142,17 @@ services:
           - kubearmor
     pid: "host"
     privileged: true
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.KubeArmorCPUs}}'
+          memory: {{.KubeArmorMemoryMax}}
 
   kubearmor-vm-adapter:
     profiles:
@@ -195,6 +217,17 @@ services:
       app: kubearmor-vm-adapter
     restart: always
     network_mode: "host"
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
 
   summary-engine:
     profiles:
@@ -229,6 +262,17 @@ services:
     restart: always
     pid: "host"
     network_mode: "host"
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
+    deploy:
+      resources:
+        limits:
+          cpus: '{{.AgentsCPUs}}'
+          memory: {{.AgentsMemoryMax}}
 
 networks:
   accuknox-net:

@@ -45,6 +45,12 @@ services:
       - "9090:9090"
     pid: "host"
     privileged: true
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
 
   wait-for-it:
     container_name: wait-for-it
@@ -92,4 +98,10 @@ services:
       - SPIRE_SECRET_DIR={{.SpireSecretDir}}
       - GATEWAY_SERVER={{.GatewayServer}}
       {{- end }}
-    entrypoint: ["/rra/rra-cronjob.sh"]   
+    logging:
+      driver: {{.DockerLogDriver}}
+      options:
+        max-size: "{{.DockerLogRotateMaxSize}}"
+        max-file: "{{.DockerLogRotateMaxFile}}"
+        compress: {{ ne .DockerLogRotateMaxFile "1" | quote }}
+    entrypoint: ["/rra/rra-cronjob.sh"]
