@@ -667,8 +667,11 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 		return fmt.Errorf("Failed to check service status: %s", err.Error())
 	}
 
-	// service not active, return
-	if property.Value.Value() != "active" && !force {
+	state, ok := property.Value.Value().(string)
+	if !ok {
+		return fmt.Errorf("failed to get %s service state", serviceName)
+	}
+	if state != "active" && state != "deactivating" && !force {
 		return nil
 	}
 
