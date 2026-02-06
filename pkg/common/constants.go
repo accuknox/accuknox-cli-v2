@@ -95,6 +95,7 @@ const (
 	DiscoverAgent      string = "accuknox-discover"
 	HardeningAgent     string = "accuknox-hardening-agent"
 	RRA                string = "accuknox-rra"
+	Kubeshield         string = "accuknox-scanner"
 
 	InContainerConfigDir string = "/opt"
 
@@ -109,8 +110,10 @@ const (
 	SumEngineConfigPath      string = "/opt/accuknox-sumengine/"
 	DiscoverConfigPath       string = "/opt/accuknox-discover/"
 	HardeningAgentConfigPath string = "/opt/accuknox-hardening-agent/"
-	RRAPath                  string = "/usr/local/bin/rra"
-	SystemdPath              string = "/usr/lib/systemd/system/"
+
+	KubeshieldConfigPath string = "/opt/accuknox-kubeshield/"
+	RRAPath              string = "/usr/local/bin/rra"
+	SystemdPath          string = "/usr/lib/systemd/system/"
 
 	//TODO make configurable for policy dir in accuknox policy enforcement agent
 	PeaPolicyPath string = "/opt/pea/"

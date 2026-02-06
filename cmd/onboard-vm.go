@@ -84,6 +84,9 @@ var (
 	agentsResource     onboard.ResourceConfig
 
 	deployDiscovery bool
+
+	// flag for kubeshield
+	deploykubeshield bool
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -184,7 +187,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterID), "cluster-id", "", "cluster id")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&url), "url", "", "url")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&label), "label", "", "label")
-	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "auth-token", "url", "tenant-id", "cluster-name", "label", "schedule")
+	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "url", "tenant-id", "cluster-name")
+	onboardVMCmd.MarkFlagsRequiredTogether("auth-token", "label", "schedule")
 
 	// splunk flags
 	onboardVMCmd.PersistentFlags().BoolVar(&splunk.Enabled, "splunk", false, "enable Splunk")
@@ -232,6 +236,7 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringArrayVar(&proxy.ExtraArgs, "proxy-args", []string{}, "extra env variables for proxy")
 
 	onboardVMCmd.PersistentFlags().BoolVar(&deployDiscovery, "deploy-discover", false, "deploy auto-discover policy agent")
+	onboardVMCmd.PersistentFlags().BoolVar(&deploykubeshield, "deploy-kubeshield", false, "deploy kubeshield")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

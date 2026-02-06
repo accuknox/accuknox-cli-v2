@@ -166,7 +166,11 @@ type ClusterConfig struct {
 
 	Proxy Proxy `json:"proxy,omitempty"`
 
-	DeployDiscover bool `json:"deploy_discover,omitempty"`
+	DeployDiscover   bool   `json:"deploy_discover,omitempty"`
+	DeployKubeshield bool   `json:"deploy_kubeshield,omitempty"`
+	Label            string `json:"label,omitempty"`
+	AuthToken        string `json:"auth_token,omitempty"`
+	Schedule         string `json:"schedule,omitempty"`
 }
 
 type AccessKey struct {
@@ -360,8 +364,10 @@ type TemplateConfigArgs struct {
 	ProxyAddress   string   `json:"proxy_address,omitempty"`
 	ProxySaaSAddr  string   `json:"proxy_saas_addr,omitempty"`
 	ProxyExtraArgs []string `json:"proxy_extra_env,omitempty"`
+	DeployDiscover bool     `json:"deploy_discover,omitempty"`
 
-	DeployDiscover bool `json:"deploy_discover,omitempty"`
+	// kubeshield config
+	AuthToken string `json:"auth_token,omitempty"`
 }
 
 type KmuxConfigTemplateArgs struct {
@@ -415,6 +421,8 @@ type SystemdServiceObject struct {
 	KmuxConfigTemplateString string
 	KmuxConfigFileName       string
 
+	// EnvironmentFile
+	EnvironmentFileTemplate string
 	// map of file name and path
 	ExtraFilePathSrc  map[string]string
 	ExtraFilePathDest map[string]string

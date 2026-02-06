@@ -152,6 +152,15 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 			}
 		}
 
+		if obj.EnvironmentFileTemplate != "" {
+			ic.TemplateFuncs = sprig.FuncMap()
+			_, err = copyOrGenerateFile(ic.UserConfigPath, obj.AgentDir, obj.AgentName+".env", ic.TemplateFuncs, obj.EnvironmentFileTemplate, ic.TCArgs)
+			if err != nil {
+				logger.Error("err env generate: %v\n", err)
+				return err
+			}
+		}
+
 		// copy additional files
 		for filename, srcPath := range obj.ExtraFilePathSrc {
 			if srcPath == "" {
@@ -190,6 +199,15 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 		if err != nil {
 			logger.Warn("failed to start service %s: %s\n", obj.ServiceName, err.Error())
 			return err
+		}
+
+		// For starting the timer, if exists
+		if obj.TimerTemplateString != "" {
+			err = StartSystemdService(obj.AgentName + ".timer")
+			if err != nil {
+				logger.Warn("failed to start timer %s: %s\n", obj.AgentName+".timer", err.Error())
+				return err
+			}
 		}
 
 	}

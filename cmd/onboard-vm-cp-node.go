@@ -54,8 +54,7 @@ var (
 
 	enableHostPolicyDiscovery bool
 	enableHardeningAgent      bool
-
-	proxy onboard.Proxy
+	proxy                     onboard.Proxy
 )
 
 // cpNodeCmd represents the init command
@@ -129,7 +128,9 @@ var cpNodeCmd = &cobra.Command{
 			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
 			false, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
-			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumEngine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel, enableHardeningAgent, releaseFile, proxy, deployDiscovery)
+			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumEngine, registry, registryConfigPath, insecure, plainHTTP,
+			preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime,
+			spireEnabled, spireCert, logRotate, parallel, enableHardeningAgent, releaseFile, proxy, deployDiscovery, deploykubeshield, label, authToken, schedule)
 		if err != nil {
 			errConfig := onboard.DumpConfig(vmConfig, configDumpPath)
 			if errConfig != nil {
@@ -198,6 +199,7 @@ var cpNodeCmd = &cobra.Command{
 			logger.Error("vm mode: %s invalid, accepted values (docker/systemd)", vmMode)
 			return err
 		}
+
 		if enableVMScan {
 			err := vmConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream, true, spireAgentImage, spireHost, spireDir, knoxGateway)
 			if err != nil {

@@ -18,11 +18,12 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	kubearmorVersion, releaseVersion, kubearmorImage, kubearmorInitImage,
 	vmAdapterImage, relayServerImage, siaImage, peaImage,
 	feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireImage, waitForItImage, discoverImage, nodeAddress string, dryRun, workerNode, deployRMQ bool,
-	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string,
-	alertThrottling bool, maxAlertPerSec, throttleSec int,
-	cidr string, secureContainers, skipBTF bool, systemMonitorPath string,
-	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string, proxy Proxy, deployDiscover bool,
-) (*ClusterConfig, error) {
+	imagePullPolicy, visibility, hostVisibility, sumengineViz, audit, block, hostAudit, hostBlock string, alertThrottling bool, maxAlertPerSec, throttleSec int,
+	cidr string, secureContainers, skipBTF bool, systemMonitorPath string, rmqAddr string, deploySumengine bool, registry, registryConfigPath string,
+	insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS,
+	enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int,
+	hardeningService bool, releaseFile string, proxy Proxy, deployDiscover bool, deployKubeshield bool, label, authToken, schedule string) (*ClusterConfig, error) {
+
 	cc := new(ClusterConfig)
 
 	if splunk.Enabled {
@@ -32,7 +33,6 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	}
 
 	cc.DeployDiscover = deployDiscover
-
 	cc.Parallel = parallel
 	cc.SpireEnabled = spireEnabled
 	cc.SpireCert = spireCert
@@ -108,6 +108,12 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	cc.AlertThrottling = alertThrottling
 	cc.MaxAlertsPerSec = maxAlertPerSec
 	cc.ThrottleSec = throttleSec
+
+	// kubeshield config
+	cc.DeployKubeshield = deployKubeshield
+	cc.AuthToken = authToken
+	cc.Label = label
+	cc.Schedule = schedule
 
 	var (
 		err  error
