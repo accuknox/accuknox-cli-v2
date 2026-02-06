@@ -62,6 +62,11 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 	cc.RRAConfigObject.Profile = profile
 	cc.RRAConfigObject.Benchmark = benchmark
 
+	// docker config
+	cc.RRAConfigObject.DockerLogDriver = GetDockerLogDriver()
+	cc.RRAConfigObject.DockerLogRotateMaxSize = cc.LogRotateMaxSize
+	cc.RRAConfigObject.DockerLogRotateMaxFile = fmt.Sprintf("%d", cc.LogRotateMaxFile)
+
 	switch cc.Mode {
 	case VMMode_Docker:
 		cc.RRAImage, err = getImage(registry, cm.DefaultDockerRegistry,

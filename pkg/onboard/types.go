@@ -440,6 +440,11 @@ type RRAConfig struct {
 	// Spire configs
 	SpireSecretDir string
 	GatewayServer  string
+
+	// docker logging
+	DockerLogDriver        string
+	DockerLogRotateMaxSize string
+	DockerLogRotateMaxFile string
 }
 
 var ErrInvalidToken = errors.New("invalid JWT format")
