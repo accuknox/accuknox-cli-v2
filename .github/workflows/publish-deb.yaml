@@ -115,10 +115,14 @@ jobs:
             fi
 
             echo "Uploading $OUTPUT_DEB to Nexus"
+    
+            UPLOAD_URL="${NEXUS_URL%/}/pool/main/k/knoxctl/$OUTPUT_DEB"
+
             curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
               --fail --show-error \
+              -X PUT \
               --upload-file "$OUTPUT_DEB" \
-              "${NEXUS_URL%/}/$OUTPUT_DEB"
+              "$UPLOAD_URL"
 
             echo "Uploaded $OUTPUT_DEB"
 
