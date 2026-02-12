@@ -106,7 +106,7 @@ require (
 	github.com/accuknox/knox-gateway v0.10.0 // indirect
 	github.com/accuknox/knoxjobs v0.1.1-0.20260129160332-ffbf56c71eea // indirect
 	github.com/accuknox/registry-scanning/common v0.0.0-20250513065108-b8f4ebc6e184 // indirect
-	github.com/accuknox/spire v1.0.6-0.20260121134154-51c2f5f630d1 // indirect
+	github.com/accuknox/spire v1.0.6-0.20260212085209-37e955088b00 // indirect
 	github.com/accuknox/spire-plugin-sdk v0.0.0-20230228130247-7f63972dff88 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect

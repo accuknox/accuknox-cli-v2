@@ -34,7 +34,7 @@ install: prebuild build
 
 .PHONY: clean
 clean:
-	cd $(CURDIR); rm -f knoxctl
+	cd $(CURDIR); rm -fr knoxctl dist
 
 
 .PHONY: protobuf
