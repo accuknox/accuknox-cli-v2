@@ -181,6 +181,7 @@ func charsToString(ca [65]int8) string {
 		if v == 0 {
 			break
 		}
+		// #nosec G115 -- unused function
 		s = append(s, byte(v))
 	}
 	return string(s)

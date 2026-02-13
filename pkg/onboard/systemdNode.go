@@ -6,12 +6,22 @@ import (
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"github.com/pterm/pterm"
 	"golang.org/x/mod/semver"
 )
 
 func (jc *JoinConfig) JoinSystemdNode() error {
 	// initialize template funcs
 	jc.TemplateFuncs = sprig.GenericFuncMap()
+
+	if jc.FromSource != "" {
+		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
+		defer p.Stop()
+		if err := extractAllAgents(jc.FromSource, p); err != nil {
+			return err
+		}
+		jc.SkipDownload = true
+	}
 
 	// Download and install agents
 	logger.Info2("Downloading agents...")

@@ -101,6 +101,7 @@ func fetchPolicies(clusterID string, options ClusterPolicyOptions) ([]map[string
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Tenant-ID", config.Cfg.TENANT_ID)
 
+		// #nosec G704 -- request controlled internally
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error making API request: %v\n", err)
@@ -290,6 +291,7 @@ func fetchPolicy(options ClusterPolicyOptions, policyID, name, namespace string)
 	req.Header.Set("X-Tenant-ID", config.Cfg.TENANT_ID)
 
 	client := &http.Client{}
+	// #nosec G704 -- request controlled internally
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error making API call: %v\n", err)

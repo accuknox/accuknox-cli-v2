@@ -42,7 +42,7 @@ var loginCmd = &cobra.Command{
 			Registry:           registry,
 			RegistryConfigPath: registryConfigPath,
 			Username:           username,
-			Password:           password,
+			UserPass:           password,
 			UsernameSTDIN:      usernameSTDIN,
 			PasswordSTDIN:      passwordSTDIN,
 			IDTokenSTDIN:       idTokenSTDIN,

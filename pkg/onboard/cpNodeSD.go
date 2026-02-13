@@ -10,6 +10,7 @@ import (
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"github.com/pterm/pterm"
 	"golang.org/x/mod/semver"
 )
 
@@ -101,6 +102,14 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 		ic.DeployDiscover = true
 	}
 
+	if ic.FromSource != "" {
+		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
+		defer p.Stop()
+		if err = extractAllAgents(ic.FromSource, p); err != nil {
+			return err
+		}
+		ic.SkipDownload = true
+	}
 	// download and extract systemd packages
 	logger.Info2(("Downloading agents..."))
 	err = ic.SystemdInstall()

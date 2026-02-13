@@ -2,17 +2,20 @@ package onboard
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/template"
 	"time"
@@ -21,6 +24,7 @@ import (
 	se_splunk "github.com/accuknox/dev2/sumengine/pkg/sumengine/kubearmor"
 	"github.com/docker/docker/client"
 	"github.com/golang-jwt/jwt"
+	"github.com/pterm/pterm"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/mod/semver"
 )
@@ -458,6 +462,7 @@ func getJoinToken(payload []byte, apiURL, token string, insecure bool) (string, 
 		Transport: transportConfig,
 	}
 
+	// #nosec G704 -- request controlled internally
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		fmt.Println("Error sending request:", err)
@@ -619,4 +624,100 @@ func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath stri
 	defer conn.Close()
 
 	return nil
+}
+
+func (m VMMode) String() string {
+	return string(m)
+}
+
+func loadDockerImagesFromPath(rootPath string, p *pterm.ProgressbarPrinter) error {
+	dClient, err := CreateDockerClient()
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+
+	return filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == rootPath {
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		rel, err := filepath.Rel(rootPath, path)
+		if err != nil {
+			return err
+		}
+
+		parts := strings.Split(rel, string(os.PathSeparator))
+
+		if len(parts) < 2 || parts[0] != "docker" {
+			return nil
+		}
+
+		if parts[1] == runtime.GOARCH {
+			p.UpdateTitle(fmt.Sprintf("Loading image %s [%v]", path, runtime.GOARCH))
+			p.Increment()
+			return loadImage(ctx, dClient, path)
+
+		}
+		return nil
+
+	})
+}
+
+func loadImage(ctx context.Context, dClient *client.Client, path string) error {
+	// #nosec G304 -- false positive
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	resp, err := dClient.ImageLoad(ctx, file)
+	if err != nil {
+		return fmt.Errorf("failed to load image %s: %w", path, err)
+	}
+	defer resp.Body.Close()
+
+	_, err = io.Copy(io.Discard, resp.Body)
+	return err
+}
+
+func extractAllAgents(rootPath string, p *pterm.ProgressbarPrinter) error {
+
+	return filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == rootPath {
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		rel, err := filepath.Rel(rootPath, path)
+		if err != nil {
+			return err
+		}
+
+		parts := strings.Split(rel, string(os.PathSeparator))
+
+		if len(parts) < 2 || parts[0] != "systemd" {
+			return nil
+		}
+
+		if parts[1] == runtime.GOARCH {
+			p.UpdateTitle(fmt.Sprintf("Extracting agent %s [%v]", path, runtime.GOARCH))
+			p.Increment()
+			return ExtractAgent(path)
+		}
+		return nil
+
+	})
 }

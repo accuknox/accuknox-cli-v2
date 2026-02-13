@@ -7,6 +7,8 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"github.com/pterm/pterm"
 	"golang.org/x/mod/semver"
 )
 
@@ -308,6 +310,14 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		}
 	}
 
+	if jc.FromSource != "" {
+		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
+		defer p.Stop()
+		if err = loadDockerImagesFromPath(jc.FromSource, p); err != nil {
+			return err
+		}
+	}
+
 	diagnosis := true
 
 	args := []string{"-f", composeFilePath, "--profile", "kubearmor-only"}
@@ -323,6 +333,11 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	args = append(args, "up", "-d")
+
+	if jc.SkipDownload {
+		logger.Debug("Skipping image download\n")
+		args = append(args, "--pull", "never")
+	}
 
 	// need these flags for diagnosis
 	if semver.Compare(jc.composeVersion, common.MinDockerComposeWithWaitSupported) >= 0 {

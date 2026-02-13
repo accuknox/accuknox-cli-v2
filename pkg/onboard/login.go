@@ -28,7 +28,7 @@ const (
 type LoginOptions struct {
 	Registry                   string
 	Username                   string
-	Password                   string
+	UserPass                   string
 	RegistryConfigPath         string
 	FallbackRegistryConfigPath []string
 
@@ -88,6 +88,7 @@ func getDockerConfigPath(customHomeDir string) (string, error) {
 
 func readLine(outWriter io.Writer, prompt string, silent bool) (string, error) {
 	_, _ = fmt.Fprint(outWriter, prompt)
+	// #nosec G115 -- skip for now
 	fd := int(os.Stdin.Fd())
 	var bytes []byte
 	var err error
@@ -189,7 +190,7 @@ func (lo *LoginOptions) authClient() (client *auth.Client, err error) {
 		Credential: lo.credentialFunc,
 	}
 
-	cred := Credential(lo.Username, lo.Password)
+	cred := Credential(lo.Username, lo.UserPass)
 	if cred != auth.EmptyCredential {
 		client.Credential = func(ctx context.Context, s string) (auth.Credential, error) {
 			return cred, nil
@@ -271,8 +272,8 @@ func (lo *LoginOptions) ORASRegistryLogin() error {
 
 	// if registry config path was specified it would be handled by newStore
 	if lo.RegistryConfigPath == "" {
-		if lo.IDTokenSTDIN || (lo.Username == "" && !lo.UsernameSTDIN && lo.Password != "") {
-			lo.Password, err = readLine(os.Stdin, "ID TOKEN: ", true)
+		if lo.IDTokenSTDIN || (lo.Username == "" && !lo.UsernameSTDIN && lo.UserPass != "") {
+			lo.UserPass, err = readLine(os.Stdin, "ID TOKEN: ", true)
 			if err != nil {
 				return err
 			}
@@ -284,8 +285,8 @@ func (lo *LoginOptions) ORASRegistryLogin() error {
 				}
 			}
 
-			if lo.Password == "" || lo.PasswordSTDIN {
-				lo.Password, err = readLine(os.Stdin, "Password: ", true)
+			if lo.UserPass == "" || lo.PasswordSTDIN {
+				lo.UserPass, err = readLine(os.Stdin, "Password: ", true)
 				if err != nil {
 					return err
 				}
@@ -307,7 +308,7 @@ func (lo *LoginOptions) ORASRegistryLogin() error {
 	}
 
 	ctx := context.Background()
-	if err = credentials.Login(ctx, lo.store, remote, Credential(lo.Username, lo.Password)); err != nil {
+	if err = credentials.Login(ctx, lo.store, remote, Credential(lo.Username, lo.UserPass)); err != nil {
 		return err
 	}
 

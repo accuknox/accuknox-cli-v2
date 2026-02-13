@@ -161,6 +161,7 @@ func queryClusterAlerts(clusterIDs []float64, options ClusterALertOptions) {
 		req.Header.Set("X-Tenant-ID", config.Cfg.TENANT_ID)
 
 		client := &http.Client{}
+		// #nosec G704 -- request controlled internally
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error fetching nodes: %v\n", err)

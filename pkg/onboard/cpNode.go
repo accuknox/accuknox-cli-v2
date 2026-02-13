@@ -11,6 +11,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"github.com/pterm/pterm"
 	"golang.org/x/mod/semver"
 )
 
@@ -290,6 +291,14 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		}
 	}
 
+	if ic.FromSource != "" {
+		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
+		defer p.Stop()
+		if err = loadDockerImagesFromPath(ic.FromSource, p); err != nil {
+			return err
+		}
+	}
+
 	// Diagnose if necessary and run compose command
 	return ic.runComposeCommand(composeFilePath)
 }
@@ -394,6 +403,11 @@ func (ic *InitConfig) runComposeCommand(composeFilePath string) error {
 		args = append(args, "--wait", "--wait-timeout", "60")
 	} else {
 		diagnosis = false
+	}
+
+	if ic.SkipDownload {
+		logger.Debug("Skipping image download\n")
+		args = append(args, "--pull", "never")
 	}
 
 	// run compose command

@@ -84,6 +84,10 @@ var (
 	agentsResource     onboard.ResourceConfig
 
 	deployDiscovery bool
+
+	skipDownload bool
+
+	fromSource string
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -232,6 +236,10 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringArrayVar(&proxy.ExtraArgs, "proxy-args", []string{}, "extra env variables for proxy")
 
 	onboardVMCmd.PersistentFlags().BoolVar(&deployDiscovery, "deploy-discover", false, "deploy auto-discover policy agent")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&skipDownload, "no-download", false, "skip downloading images or binaries")
+
+	onboardVMCmd.PersistentFlags().StringVar(&fromSource, "from-source", "", "use agents from url or local path")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

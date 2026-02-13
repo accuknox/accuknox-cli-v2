@@ -197,6 +197,7 @@ func fetchClustersList(url string) interface{} {
 	req.Header.Set("X-Tenant-ID", config.Cfg.TENANT_ID)
 
 	client := &http.Client{}
+	// #nosec G704 -- request controlled internally
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error making API call: %v\n", err)
@@ -263,6 +264,7 @@ func fetchNodes(ClusterInfo Cluster, options CLusterListOptions, tableNode *tabl
 		req.Header.Set("X-Tenant-ID", config.Cfg.TENANT_ID)
 
 		client := &http.Client{}
+		// #nosec G704 -- request controlled internally
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error fetching nodes: %v\n", err)
@@ -272,6 +274,7 @@ func fetchNodes(ClusterInfo Cluster, options CLusterListOptions, tableNode *tabl
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
+			// #nosec G705 - writing to stderr
 			fmt.Fprintf(os.Stderr, "Error: Received status code %d with body: %s\n", resp.StatusCode, body)
 			return nil
 		}

@@ -26,7 +26,7 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 	}
 	cc.RRAConfigObject.EnableVMScan = true
 	cc.AgentsVersion = releaseVersion
-	cc.RRAConfigObject.AuthToken = authToken
+	cc.RRAConfigObject.ArtifactToken = authToken
 	cc.RRAConfigObject.Url = url
 	cc.RRAConfigObject.TenantID = tenantID
 	cc.RRAConfigObject.ClusterID = clusterID

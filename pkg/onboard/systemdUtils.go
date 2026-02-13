@@ -435,12 +435,17 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 	return nil
 }
 
-// downloadAgent downloads agents as OCI artifacts
-func (cc *ClusterConfig) downloadAgent(agentName, agentRepo, agentTag string) (string, error) {
-	fs, err := file.New(cm.DownloadDir)
+// DownloadAgent downloads agents as OCI artifacts
+func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadDir string) (string, error) {
+
+	if downloadDir == "" {
+		downloadDir = cm.DownloadDir
+	}
+	fs, err := file.New(downloadDir)
 	if err != nil {
 		return "", err
 	}
+
 	defer fs.Close()
 
 	// 1. Connect to a remote repository
@@ -458,12 +463,12 @@ func (cc *ClusterConfig) downloadAgent(agentName, agentRepo, agentTag string) (s
 		return "", err
 	}
 
-	filepath := path.Join(cm.DownloadDir, agentName+"_"+agentTag+".tar.gz")
+	filepath := path.Join(downloadDir, agentName+"_"+agentTag+".tar.gz")
 	return filepath, nil
 }
 
-// extractAgent extracts agent tar
-func extractAgent(fileName string) error {
+// ExtractAgent extracts agent tar
+func ExtractAgent(fileName string) error {
 	file, err := os.Open(filepath.Clean(fileName))
 	if err != nil {
 		fmt.Println("Error opening file:", fileName, err)
@@ -501,11 +506,11 @@ func extractAgent(fileName string) error {
 
 		// Create parent directories if not exist
 
-		err = os.MkdirAll(filepath.Dir(filename), 0o755) // #nosec G301
+		err = os.MkdirAll(filepath.Dir(filename), 0o755) // #nosec G301 G703
 		if err != nil {
 			return err
 		}
-		file, err := os.Create(filepath.Clean(filename))
+		file, err := os.Create(filepath.Clean(filename)) // #nosec G703
 		if err != nil {
 			return err
 		}
@@ -519,7 +524,7 @@ func extractAgent(fileName string) error {
 		// Set execute permissions for the binaries
 
 		if header.Mode&0o111 != 0 {
-			err := os.Chmod(filename, 0o755) // #nosec G302
+			err := os.Chmod(filename, 0o755) // #nosec G302 G703
 			if err != nil {
 				return err
 			}
@@ -532,12 +537,12 @@ func extractAgent(fileName string) error {
 // InstallAgent downloads agent using downloadAgent.
 // It disables the systemd service first if it is running
 func (cc *ClusterConfig) installAgent(agentName, agentRepo, agentTag string) error {
-	fileName, err := cc.downloadAgent(agentName, agentRepo, agentTag)
+	fileName, err := cc.DownloadAgent(agentName, agentRepo, agentTag, "")
 	if err != nil {
 		return err
 	}
 
-	err = extractAgent(fileName)
+	err = ExtractAgent(fileName)
 	if err != nil {
 		return err
 	}
@@ -597,24 +602,27 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 
-		logger.Print("Downloading Agent - %s | Image - %s", obj.AgentName, obj.AgentImage)
-		packageMeta := splitLast(obj.AgentImage, ":")
+		if !cc.SkipDownload {
+			logger.Print("Downloading Agent - %s | Image - %s", obj.AgentName, obj.AgentImage)
+			packageMeta := splitLast(obj.AgentImage, ":")
 
-		err = cc.installAgent(obj.AgentName, packageMeta[0], packageMeta[1])
-		if err != nil {
-			// fmt.Println(err)
-			return err
+			err = cc.installAgent(obj.AgentName, packageMeta[0], packageMeta[1])
+			if err != nil {
+				// fmt.Println(err)
+				return err
+			}
+
+			logger.Print("%s version %s downloaded successfully\n", obj.AgentName, packageMeta[1])
 		}
-
-		logger.Print("%s version %s downloaded successfully\n", obj.AgentName, packageMeta[1])
 	}
 
 	err = cc.placeServiceFiles()
 	if err != nil {
 		return err
 	}
-
-	logger.PrintSuccess("All agents downloaded successfully.")
+	if !cc.SkipDownload {
+		logger.PrintSuccess("All agents downloaded successfully.")
+	}
 
 	return nil
 }
@@ -770,7 +778,7 @@ func InstallAgent(agentName, agentRepo, agentTag string) error {
 		return err
 	}
 
-	err = extractAgent(fileName)
+	err = ExtractAgent(fileName)
 	if err != nil {
 		return err
 	}
@@ -809,6 +817,7 @@ func DownloadAgent(agentName, agentRepo, agentTag string) (string, error) {
 // could've used bindings from systemd-go but they require CGO, adding which
 // would make it impossible to run knoxctl in any environment
 func runJournalCTLCommand(args ...string) ([]byte, error) {
+	// #nosec G204 -- journalctl args are internally controlled and no shell is used
 	journalCTLCommand := exec.Command("journalctl", args...)
 
 	data, err := journalCTLCommand.CombinedOutput()

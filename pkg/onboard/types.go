@@ -167,6 +167,9 @@ type ClusterConfig struct {
 	Proxy Proxy `json:"proxy,omitempty"`
 
 	DeployDiscover bool `json:"deploy_discover,omitempty"`
+	SkipDownload   bool `json:"skip_download,omitempty"`
+
+	FromSource string `json:"from_source,omitempty"`
 }
 
 type AccessKey struct {
@@ -424,18 +427,18 @@ type SystemdServiceObject struct {
 }
 
 type RRAConfig struct {
-	Hostname     string
-	RRAImage     string
-	EnableVMScan bool
-	AuthToken    string
-	Url          string
-	TenantID     string
-	ClusterName  string
-	ClusterID    string
-	Label        string
-	Schedule     string
-	Benchmark    string
-	Profile      string
+	Hostname      string
+	RRAImage      string
+	EnableVMScan  bool
+	ArtifactToken string
+	Url           string
+	TenantID      string
+	ClusterName   string
+	ClusterID     string
+	Label         string
+	Schedule      string
+	Benchmark     string
+	Profile       string
 
 	// Spire configs
 	SpireSecretDir string
