@@ -4,10 +4,13 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"maps"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -19,8 +22,10 @@ import (
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/coreos/go-systemd/v22/dbus"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/mod/semver"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/registry/remote"
 )
@@ -441,12 +446,8 @@ func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadD
 	if downloadDir == "" {
 		downloadDir = cm.DownloadDir
 	}
-	fs, err := file.New(downloadDir)
-	if err != nil {
-		return "", err
-	}
 
-	defer fs.Close()
+	fileName := path.Join(downloadDir, agentName+"_"+agentTag+".tar.gz")
 
 	// 1. Connect to a remote repository
 	ctx := context.Background()
@@ -458,13 +459,87 @@ func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadD
 	repo.Client = cc.ORASClient
 	repo.PlainHTTP = cc.PlainHTTP
 
-	_, err = oras.Copy(ctx, repo, agentTag, fs, agentTag, oras.DefaultCopyOptions)
+	desc, err := repo.Resolve(ctx, agentTag)
 	if err != nil {
 		return "", err
 	}
 
-	filepath := path.Join(downloadDir, agentName+"_"+agentTag+".tar.gz")
-	return filepath, nil
+	manifestBytes, err := content.FetchAll(ctx, repo, desc)
+	if err != nil {
+		return "", err
+	}
+
+	var manifest ocispec.Manifest
+	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
+		return "", err
+	}
+	if len(manifest.Layers) == 0 {
+		return "", errors.New("no layers in manifest")
+	}
+
+	layer := manifest.Layers[0]
+
+	var offset int64
+	if info, err := os.Stat(fileName); err == nil {
+		offset = info.Size()
+	}
+
+	if offset >= layer.Size {
+		return fileName, nil
+	}
+
+	schema := "http"
+	if !repo.PlainHTTP {
+		schema = "https"
+	}
+
+	registry := repo.Reference.Registry
+	if registry == cm.DockerHubRegisty {
+		registry = cm.DockerHubRegistyReplace
+	}
+
+	blobURL := fmt.Sprintf(
+		"%s://%s/v2/%s/blobs/%s",
+		schema,
+		registry,
+		repo.Reference.Repository,
+		layer.Digest.String(),
+	)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", blobURL, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	if offset > 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
+	}
+	resp, err := repo.Client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK &&
+		resp.StatusCode != http.StatusPartialContent {
+		return "", fmt.Errorf("unexpected HTTP status: %s", resp.Status)
+	}
+
+	out, err := os.OpenFile(filepath.Clean(fileName),
+		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
+		0600,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return fileName, nil
 }
 
 // ExtractAgent extracts agent tar

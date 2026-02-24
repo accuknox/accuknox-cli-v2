@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"archive/tar"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -8,9 +9,12 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
+	"time"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 	"github.com/docker/docker/api/types/image"
 
@@ -42,7 +46,10 @@ func (o *DownloadOptions) Download() error {
 
 	releaseInfo, ok := cm.ReleaseInfo[o.Version]
 	if !ok {
-		return fmt.Errorf("unknown image tag %s", o.Version)
+		var version string
+		version, releaseInfo = cm.GetLatestReleaseInfo()
+		logger.Warn("unknown image tag %s, using latest version %s instead", o.Version, version)
+		o.Version = version
 	}
 	tableData := pterm.TableData{
 		{"Mode", "Arch", "Downloaded", "Skipped", "Version"},
@@ -74,6 +81,12 @@ func (o *DownloadOptions) Download() error {
 			}
 
 			tableData = append(tableData, pterm.TableData{data}...)
+
+			outFileName := fmt.Sprintf("%v-%v.tar.gz", string(mode), arch)
+			if err := compressDirectory(basePath, dir, outFileName); err != nil {
+				return err
+			}
+
 		}
 	}
 	pterm.Println()
@@ -112,6 +125,11 @@ func getBasePath(path string) (string, error) {
 }
 
 func pullAndSave(dockerImage, arch, outFileName string) error {
+
+	if !shouldDownload(outFileName) {
+		time.Sleep(time.Second)
+		return nil
+	}
 
 	dClient, err := onboard.CreateDockerClient()
 	if err != nil {
@@ -174,24 +192,38 @@ func pullAndSave(dockerImage, arch, outFileName string) error {
 		return err
 	}
 	defer saveReader.Close()
+
+	tmpFile := outFileName + ".tmp"
+
 	// #nosec G304 -- false positive
-	outFile, err := os.Create(outFileName)
+	outFile, err := os.Create(tmpFile)
 	if err != nil {
 		return err
 	}
-	defer outFile.Close()
-
 	gzWriter := gzip.NewWriter(outFile)
-	defer gzWriter.Close()
 
 	_, err = io.Copy(gzWriter, saveReader)
 	if err != nil {
+		if err := gzWriter.Close(); err != nil {
+			return err
+		}
+		if err := outFile.Close(); err != nil {
+			return err
+		}
+		if err := os.Remove(tmpFile); err != nil {
+			return err
+		}
 		return fmt.Errorf("reading pull output failed: %w", err)
 	}
-	_, err = dClient.ImageRemove(ctx, digestRef, image.RemoveOptions{
-		Force: true,
-	})
-	if err != nil {
+
+	if err := gzWriter.Close(); err != nil {
+		return err
+	}
+	if err := outFile.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Rename(tmpFile, outFileName); err != nil {
 		return err
 	}
 
@@ -244,27 +276,27 @@ func downloadSystemdAgents(
 
 	p, _ := pterm.DefaultProgressbar.WithTotal(len(images)).WithTitle("Downloading binaries").WithRemoveWhenDone(true).Start()
 
-	for image, dockerImage := range images {
+	for image, binaryImage := range images {
 
 		p.UpdateTitle(fmt.Sprintf("Downloading %s [%s] binary", image, arch))
 
-		if dockerImage == "" {
+		if binaryImage == "" {
 			skipped++
-			pterm.Warning.Printf("skipping %v [%v]: image is empty\n", image, arch)
+			pterm.Warning.Printf("skipping %v [%v]: binary not required\n", image, arch)
 			p.Increment()
 			continue
 		}
-		imgTag := strings.Split(dockerImage, ":")
+		imgTag := strings.Split(binaryImage, ":")
 		if len(imgTag) != 2 {
 			skipped++
-			pterm.Warning.Printf("skipping %v [%v] since tag is empty\n", image, arch)
+			pterm.Warning.Printf("skipping %v [%v]: binary tag is empty\n", image, arch)
 			p.Increment()
 			continue
 		}
 
 		_, err := cc.DownloadAgent(image, imgTag[0], imgTag[1], dir)
 		if err != nil {
-			pterm.Error.Printf("error downloading %s [%v]: %v\n", image, arch, err)
+			pterm.Error.Printf("error downloading binary %s [%v]: %v\n", image, arch, err)
 			p.Increment()
 			skipped++
 			continue
@@ -299,7 +331,7 @@ func downloadDockerAgents(
 		}
 		imgTag := strings.Split(dockerImage, ":")
 		if len(imgTag) != 2 {
-			pterm.Warning.Printf("skipping %v [%v] since tag is empty\n", image, arch)
+			pterm.Warning.Printf("skipping %v [%v]: image tag is empty\n", image, arch)
 			p.Increment()
 			skipped++
 			continue
@@ -328,7 +360,7 @@ func buildTree(path string, parent *pterm.TreeNode, debug bool) error {
 
 	for _, entry := range entries {
 
-		if !debug && !entry.IsDir() {
+		if !debug && !entry.IsDir() && !shouldShow(entry.Name()) {
 			continue
 		}
 
@@ -346,4 +378,92 @@ func buildTree(path string, parent *pterm.TreeNode, debug bool) error {
 		}
 	}
 	return nil
+}
+
+func compressDirectory(baseDir, sourceDir, fileName string) error {
+
+	outFileName := filepath.Join(baseDir, fileName)
+
+	if !shouldDownload(outFileName) {
+		time.Sleep(time.Second)
+		return nil
+	}
+
+	outFile, err := os.Create(filepath.Clean(outFileName))
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	gz := gzip.NewWriter(outFile)
+	defer gz.Close()
+	tw := tar.NewWriter(gz)
+	defer tw.Close()
+
+	return filepath.Walk(sourceDir, func(file string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		relPath, err := filepath.Rel(baseDir, file)
+		if err != nil {
+			return err
+		}
+
+		header, err := tar.FileInfoHeader(fi, "")
+		if err != nil {
+			return err
+		}
+		header.Name = relPath
+
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if fi.IsDir() {
+			return nil
+		}
+
+		f, err := os.Open(filepath.Clean(file))
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		_, err = io.Copy(tw, f)
+		return err
+	})
+
+}
+
+func shouldShow(path string) bool {
+	return slices.ContainsFunc([]string{
+		"systemd-arm64.tar.gz",
+		"systemd-amd64.tar.gz",
+		"docker-arm64.tar.gz",
+		"docker-amd64.tar.gz",
+	}, func(s string) bool {
+		return strings.Contains(path, s)
+	})
+}
+
+func shouldDownload(filename string) bool {
+	info, err := os.Stat(filename)
+	if err != nil {
+		return true
+	}
+
+	if info.Size() > 0 {
+		f, err := os.Open(filepath.Clean(filename))
+		if err != nil {
+			return true
+		}
+		defer f.Close()
+
+		gz, err := gzip.NewReader(f)
+		if err == nil {
+			defer gz.Close()
+			return false
+		}
+	}
+
+	return true
 }

@@ -1,6 +1,7 @@
 package onboard
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"io"
@@ -9,11 +10,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"github.com/mholt/archives"
 )
 
 // TODO: THIS FUNCTION IS UNUSABLE!!!
@@ -589,12 +592,33 @@ func (cc *ClusterConfig) PopulateImageDetails(releaseInfo cm.ReleaseMetadata, im
 func resolveSource(source string) (string, error) {
 	if isURL(source) {
 		fmt.Println("Source detected as URL, downloading...")
-		tempPath, err := downloadToTemp(source)
-		return tempPath, err
+		return downloadToTemp(source)
 	}
 
 	if _, err := os.Stat(source); err != nil {
 		return "", fmt.Errorf("file does not exist: %s", source)
+	}
+
+	err := filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+		if shouldExtract(info.Name()) {
+			fileName := filepath.Join(source, info.Name())
+			if _, err := extractTarGz(fileName); err != nil {
+				return err
+			}
+		}
+		return nil
+
+	})
+
+	if err != nil {
+		return "", err
 	}
 
 	return source, nil
@@ -605,7 +629,7 @@ func isURL(input string) bool {
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
-func createRandomTempFile() (string, error) {
+func createRandomTempFolder() (string, error) {
 	b := make([]byte, 8)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -628,8 +652,14 @@ func downloadToTemp(sourceURL string) (string, error) {
 		return "", fmt.Errorf("bad status: %s", resp.Status)
 	}
 
-	tempFile, err := createRandomTempFile()
+	tempFolder, err := createRandomTempFolder()
 	if err != nil {
+		return "", err
+	}
+
+	tempFile := filepath.Join(tempFolder, "file")
+
+	if err := os.MkdirAll(tempFolder, 0750); err != nil {
 		return "", err
 	}
 
@@ -645,5 +675,75 @@ func downloadToTemp(sourceURL string) (string, error) {
 		return "", err
 	}
 
-	return tempFile, nil
+	folder, err := extractTarGz(tempFile)
+	if err != nil {
+		return "", err
+	}
+
+	return folder, os.RemoveAll(tempFile)
+
+}
+
+func extractTarGz(fileName string) (string, error) {
+	ctx := context.Background()
+
+	f, err := os.Open(filepath.Clean(fileName))
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	format, input, err := archives.Identify(ctx, fileName, f)
+	if err != nil {
+		return "", err
+	}
+
+	extractor, ok := format.(archives.Extractor)
+	if !ok {
+		return "", fmt.Errorf("unsupported archive format: %s", format)
+	}
+
+	tempFolder := filepath.Dir(fileName)
+
+	handler := func(ctx context.Context, f archives.FileInfo) error {
+		targetPath := filepath.Join(tempFolder, f.NameInArchive)
+		if f.IsDir() {
+			return os.MkdirAll(targetPath, f.Mode())
+		}
+		if err := os.MkdirAll(filepath.Dir(targetPath), 0750); err != nil {
+			return err
+		}
+
+		out, err := os.OpenFile(filepath.Clean(targetPath), os.O_CREATE|os.O_RDWR, f.Mode())
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		in, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+
+		_, err = io.Copy(out, in)
+		return err
+	}
+
+	err = extractor.Extract(ctx, input, handler)
+	if err != nil {
+		return "", err
+	}
+	return tempFolder, nil
+}
+
+func shouldExtract(path string) bool {
+	return slices.ContainsFunc([]string{
+		"systemd-arm64.tar.gz",
+		"systemd-amd64.tar.gz",
+		"docker-arm64.tar.gz",
+		"docker-amd64.tar.gz",
+	}, func(s string) bool {
+		return strings.Contains(path, s)
+	})
 }

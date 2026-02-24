@@ -223,3 +223,8 @@ var LastOldAgentVersion = map[string]string{
 	SummaryEngine:      "v0.3.0",
 	"sumengine":        "v0.3.0",
 }
+
+const (
+	DockerHubRegisty        = "docker.io"
+	DockerHubRegistyReplace = "registry-1.docker.io"
+)
