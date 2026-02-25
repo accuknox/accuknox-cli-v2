@@ -1,0 +1,41 @@
+[Unit]
+Description=AccuKnox Knoxctl Image Scan
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+EnvironmentFile={{.EnvironmentFile}}
+Type=oneshot
+ExecStart=knoxctl image-scan \
+  --artifactEndpoint={{.Url}} \
+  --token=${AuthToken} \
+  {{- if .AllImages }}
+  --images-only \
+  {{- end}}
+  --label={{.Label}} 
+  
+
+User=root
+{{- if gt .SystemdVersion 240 }}
+StandardOutput=append:/opt/{{.AgentName}}/{{.AgentName}}.log
+StandardError=append:/opt/{{.AgentName}}/{{.AgentName}}-err.log
+{{- else }}
+StandardOutput=file:/opt/{{.AgentName}}/{{.AgentName}}.log
+StandardError=file:/opt/{{.AgentName}}/{{.AgentName}}-err.log
+{{- end }}
+
+CPUQuota={{ .CPUQuota | default "5%" }}
+MemoryMax={{ .MemoryMax | default "100M" }}
+
+{{- if gt .SystemdVersion 241 }}
+MemoryHigh={{ .MemoryHigh | default "80M" }}
+{{- end }}
+
+{{- if gt .SystemdVersion 241 }}
+CPUWeight=50
+{{- end }}
+
+OOMPolicy=stop
+
+[Install]
+WantedBy=multi-user.target

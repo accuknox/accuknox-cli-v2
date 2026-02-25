@@ -721,3 +721,19 @@ func extractAllAgents(rootPath string, p *pterm.ProgressbarPrinter) error {
 
 	})
 }
+
+func CheckImagescanSystemdInstallation() (bool, error) {
+	// check imagescanner service or Timer file
+	files := []string{cm.Imagescan + ".service", cm.Imagescan + ".timer"}
+
+	for _, file := range files {
+		filePath := cm.SystemdPath + file
+		if _, err := os.Stat(filePath); err == nil {
+			// found service or timer file means we have imagescanner installation as systemd
+			return true, nil
+		} else if !os.IsNotExist(err) {
+			return false, fmt.Errorf("error checking service file %s: %v", filePath, err)
+		}
+	}
+	return false, nil
+}

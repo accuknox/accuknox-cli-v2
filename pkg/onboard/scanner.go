@@ -1,13 +1,16 @@
 package onboard
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"maps"
 	"os"
+	"path/filepath"
 
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/fatih/color"
 )
 
@@ -247,4 +250,97 @@ func (cc *ClusterConfig) InstallRRA() error {
 		Deletedir(cm.DownloadDir)
 	}
 	return nil
+}
+
+// Initialize Imagescan config and delete if it already exists
+func (cc *ClusterConfig) InitImageScan(authToken, url, tenantID, clusterID, clusterName, label, schedule string, allImages bool) error {
+
+	cc.ImageScanConfig = ImageScanConfig{
+		tenantID:    tenantID,
+		clusterName: clusterName,
+		clusterID:   clusterID,
+		authToken:   authToken,
+		schedule:    schedule,
+		url:         url,
+		label:       label,
+		allImages:   allImages,
+	}
+
+	cc.SystemdServiceObjects = append(cc.SystemdServiceObjects, SystemdServiceObject{
+		AgentName:               cm.Imagescan,
+		PackageName:             cm.Imagescan,
+		ServiceName:             cm.Imagescan + ".service",
+		AgentDir:                cm.ImageScanConfigPath,
+		ServiceTemplateString:   containerImageScannerFile,
+		TimerTemplateString:     containerImageScannerTimerFile,
+		EnvironmentFileTemplate: imagescanEnvVal,
+		LogRotateMaxFileSize:    cc.LogRotateMaxSize,
+		LogRotateMaxFile:        cc.LogRotateMaxFile,
+	},
+	)
+
+	cc.LogRotateTemplateString = logRotateFile
+
+	cc.TemplateFuncs = sprig.FuncMap()
+
+	// Stop existing running service
+	return StopSystemdService(cm.Imagescan+".service", true, false)
+}
+
+func (cc *ClusterConfig) InstallImagescan() error {
+	schedule, err := ConvertCronToSystemd(cc.ImageScanConfig.schedule)
+	if err != nil {
+		logger.Error("error while converting cron into systemd timer: ", err)
+		return err
+	}
+
+	args := map[string]any{
+		"Url":               cc.ImageScanConfig.url,
+		"AuthToken":         cc.ImageScanConfig.authToken,
+		"Label":             cc.ImageScanConfig.label,
+		"AllImages":         cc.ImageScanConfig.allImages,
+		"TenantID":          cc.ImageScanConfig.tenantID,
+		"ClusterID":         cc.ImageScanConfig.clusterID,
+		"ClusterName":       cc.ImageScanConfig.clusterName,
+		"EnvironmentFile":   cmp.Or(cc.UserConfigPath, filepath.Join(cm.ImageScanConfigPath, cm.Imagescan+".env")),
+		"ImagescanUnitName": cm.Imagescan + ".service",
+		"Schedule":          schedule,
+		"AgentName":         cm.Imagescan,
+	}
+
+	if cc.AdditionalArgs == nil {
+		cc.AdditionalArgs = make(map[string]any)
+	}
+
+	maps.Copy(cc.AdditionalArgs, args)
+
+	if err := cc.placeServiceFiles(); err != nil {
+		logger.Error("err while placing service file: %v\n", err)
+		Deletedir(cm.ImageScanConfigPath)
+		return err
+	}
+
+	// Create required environment files for the scan
+	cc.createEnvironmentFile()
+
+	err = StartSystemdService(cm.Imagescan + ".service")
+	if err != nil {
+		logger.Warn("failed to start service %s: %s\n", cm.Imagescan, err.Error())
+		return err
+	}
+
+	return err
+}
+
+func (cc *ClusterConfig) createEnvironmentFile() {
+	for _, obj := range cc.SystemdServiceObjects {
+		if obj.EnvironmentFileTemplate != "" {
+			cc.TemplateFuncs = sprig.FuncMap()
+			_, err := copyOrGenerateFile(cc.UserConfigPath, obj.AgentDir, obj.AgentName+".env", cc.TemplateFuncs, obj.EnvironmentFileTemplate, cc.AdditionalArgs)
+			if err != nil {
+				logger.Error("err while creating env file for %s: %v\n", obj.AgentName, err)
+				continue
+			}
+		}
+	}
 }

@@ -25,6 +25,18 @@ var deboardRRAScanner = &cobra.Command{
 		} else {
 			logger.PrintSuccess("RRA uninstalled successfully.")
 		}
+
+		if err = deboard.UninstallImagescan(); err != nil {
+			if os.IsNotExist(err) {
+				logger.Info1("Imagescan Installation not found")
+				return nil
+			} else {
+				logger.Error("error removing Imagescan installation:%s", err.Error())
+				return err
+			}
+		}
+
+		logger.PrintSuccess("Imagescan uninstalled successfully.")
 		return nil
 	},
 }

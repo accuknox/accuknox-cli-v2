@@ -1,0 +1,10 @@
+[Unit]
+Description="Runs conatainer images scanning based on the specified schedule"
+
+[Timer]
+OnCalendar={{.Schedule}}
+Unit={{.ImagescanUnitName}}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

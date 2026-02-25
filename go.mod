@@ -3,7 +3,7 @@ module github.com/accuknox/accuknox-cli-v2
 go 1.24.11
 
 replace (
-	github.com/accuknox/kubeshield v0.3.1-0.20260209134613-278ced517ff0 => github.com/accuknox/kubesheild v0.3.1-0.20260209134613-278ced517ff0
+	github.com/accuknox/kubeshield v0.3.3 => github.com/accuknox/kubesheild v0.3.3
 	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.6
 	github.com/google/gnostic-models v0.7.0 => github.com/google/gnostic-models v0.6.9
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
@@ -27,7 +27,7 @@ require (
 	github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d
 	github.com/accuknox/dev2/hardening v0.0.0-20250720150630-0e643f247e04
 	github.com/accuknox/dev2/sumengine v0.0.0-20250109055732-04767b7ac965
-	github.com/accuknox/kubeshield v0.3.1-0.20260209134613-278ced517ff0
+	github.com/accuknox/kubeshield v0.3.3
 	github.com/clarketm/json v1.17.1
 	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/creativeprojects/go-selfupdate v1.5.0
@@ -111,7 +111,7 @@ require (
 	github.com/accuknox/knox-gateway v0.10.0 // indirect
 	github.com/accuknox/knoxjobs v0.1.1-0.20260129160332-ffbf56c71eea // indirect
 	github.com/accuknox/registry-scanning/common v0.0.0-20250513065108-b8f4ebc6e184 // indirect
-	github.com/accuknox/spire v1.0.6-0.20260212085209-37e955088b00 // indirect
+	github.com/accuknox/spire v1.0.6-0.20260121134154-51c2f5f630d1 // indirect
 	github.com/accuknox/spire-plugin-sdk v0.0.0-20230228130247-7f63972dff88 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
