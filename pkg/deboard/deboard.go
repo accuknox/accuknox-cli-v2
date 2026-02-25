@@ -265,6 +265,29 @@ func UninstallRRA() error {
 	return os.ErrNotExist
 }
 
+func UninstallImagescan() error {
+	//check for imagescan systemd installation
+
+	exists, err := onboard.CheckImagescanSystemdInstallation()
+	if err != nil {
+		fmt.Println(color.RedString("error checking imagescan systemd installation"))
+	}
+	if exists {
+		fmt.Println(color.BlueString("Image scanner found running in systemd mode"))
+		imagescanFiles := []string{cm.Imagescan + ".service", cm.Imagescan + ".timer"}
+		for _, file := range imagescanFiles {
+			err := onboard.StopSystemdService(file, false, true)
+			if err != nil {
+				logger.Error("error stopping %s: %s\n", file, err)
+				return err
+			}
+			onboard.Deletedir(cm.ImageScanConfigPath)
+		}
+		return nil
+	}
+	return os.ErrNotExist
+}
+
 func getContainerObjects(containerNames []string) (map[string]dockerTypes.Container, error) {
 	installedContainers := make(map[string]dockerTypes.Container, 0)
 	dockerClient, err := onboard.CreateDockerClient()

@@ -43,4 +43,10 @@ var (
 
 	//go:embed templates/systemdTemplates/spire-agent.service
 	spireAgentFile string
+
+	//go:embed templates/systemdTemplates/containerscan.service
+	containerImageScannerFile string
+
+	//go:embed templates/systemdTemplates/containerscan.timer
+	containerImageScannerTimerFile string
 )

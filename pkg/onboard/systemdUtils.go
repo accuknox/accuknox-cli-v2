@@ -409,6 +409,14 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 					return err
 				}
 
+				//place timer file if exists
+				if obj.TimerTemplateString != "" {
+					_, err = copyOrGenerateFile("", cm.SystemdDir, obj.AgentName+".timer", cc.TemplateFuncs, obj.TimerTemplateString, configArgs)
+					if err != nil {
+						return err
+					}
+				}
+
 				if cc.LogRotateTemplateString != "" {
 					logRotate := map[string]any{
 						"AgentDir":             obj.AgentDir,

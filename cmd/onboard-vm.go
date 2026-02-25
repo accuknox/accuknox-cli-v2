@@ -86,8 +86,9 @@ var (
 	deployDiscovery bool
 
 	skipDownload bool
-
-	fromSource string
+	imageScan    bool
+	allImages    bool
+	fromSource   string
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -188,7 +189,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterID), "cluster-id", "", "cluster id")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&url), "url", "", "url")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&label), "label", "", "label")
-	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "auth-token", "url", "tenant-id", "cluster-name", "label", "schedule")
+	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "url", "tenant-id", "cluster-name")
+	onboardVMCmd.MarkFlagsRequiredTogether("auth-token", "label", "schedule")
 
 	// splunk flags
 	onboardVMCmd.PersistentFlags().BoolVar(&splunk.Enabled, "splunk", false, "enable Splunk")
@@ -240,6 +242,10 @@ func init() {
 	onboardVMCmd.PersistentFlags().BoolVar(&skipDownload, "no-download", false, "skip downloading images or binaries")
 
 	onboardVMCmd.PersistentFlags().StringVar(&fromSource, "from-source", "", "use agents from url or local path")
+
+	// Enable image scanning
+	onboardVMCmd.PersistentFlags().BoolVar(&imageScan, "image-scan", false, "deploy container image scanner")
+	onboardVMCmd.PersistentFlags().BoolVar(&allImages, "all-image", false, "if flag set, all the images in the VM will be scanned")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

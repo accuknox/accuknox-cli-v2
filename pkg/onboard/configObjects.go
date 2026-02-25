@@ -47,6 +47,9 @@ var (
 	//go:embed templates/systemdTemplates/feeder-service-env
 	fsEnvVal string
 
+	//go:embed templates/systemdTemplates/containerscan.env
+	imagescanEnvVal string
+
 	spireTrustBundleURLMap = map[string]string{
 		"dev":     "https://accuknox-dev-cert-spire.s3.us-east-2.amazonaws.com/ca.crt",
 		"stage":   "https://accuknox-stage-cert-spire.s3.us-east-2.amazonaws.com/ca.crt",

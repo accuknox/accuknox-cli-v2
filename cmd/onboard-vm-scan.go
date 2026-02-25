@@ -15,9 +15,10 @@ import (
 // onboardVM scan represents the sub-command to onboard VM clusters
 var onboardVmScanCmd = &cobra.Command{
 	Use:   "scanner",
-	Short: "sub-command for onboarding RRA(risk assessment tool)",
-	Long:  "sub-command for onboarding RRA(risk assessment tool)",
+	Short: "sub-command for onboarding RRA(risk assessment tool) and container image scanning",
+	Long:  "sub-command for onboarding RRA(risk assessment tool) and container image scanning",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
 		// create cluster config
 		var cc onboard.ClusterConfig
 		_, err := cc.ValidateEnv()
@@ -85,6 +86,23 @@ var onboardVmScanCmd = &cobra.Command{
 		}
 
 		logger.PrintSuccess("RRA installed successfully!!")
+
+		// Install image-scan
+		if imageScan && vmMode == onboard.VMMode_Systemd {
+			cc.AgentsResource = agentsResource
+			if err := cc.InitImageScan(authToken, url, tenantID, clusterID, clusterName, label, schedule, allImages); err != nil {
+				logger.Error("failed to initialize image scanner: %s", err.Error())
+				return err
+			}
+
+			if err := cc.InstallImagescan(); err != nil {
+				logger.Error("failed to installing image scanner: %s", err.Error())
+				return err
+			}
+
+			logger.PrintSuccess("Image scanner installed successfully!!")
+		}
+
 		return nil
 	},
 }

@@ -95,6 +95,7 @@ const (
 	DiscoverAgent      string = "accuknox-discover"
 	HardeningAgent     string = "accuknox-hardening-agent"
 	RRA                string = "accuknox-rra"
+	Imagescan          string = "accuknox-scanner"
 
 	InContainerConfigDir string = "/opt"
 
@@ -111,6 +112,7 @@ const (
 	HardeningAgentConfigPath string = "/opt/accuknox-hardening-agent/"
 	RRAPath                  string = "/usr/local/bin/rra"
 	SystemdPath              string = "/usr/lib/systemd/system/"
+	ImageScanConfigPath      string = "/opt/accuknox-scanner/"
 
 	//TODO make configurable for policy dir in accuknox policy enforcement agent
 	PeaPolicyPath string = "/opt/pea/"
