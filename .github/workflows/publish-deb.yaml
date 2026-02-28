@@ -116,16 +116,13 @@ jobs:
 
             echo "Uploading $OUTPUT_DEB to Nexus via REST API"
 
-
             curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
               --fail --show-error \
               -X POST \
               "https://nexus.accuknox.com/service/rest/v1/components?repository=knoxctl" \
               -F "apt.asset=@${OUTPUT_DEB}" \
-              -F "apt.asset.filename=${OUTPUT_DEB}" \
               -F "apt.distribution=stable" \
-              -F "apt.component=main" \
-              -F "apt.architecture=${DEB_ARCH}"
+              -F "apt.component=main"
 
             echo "Uploading $OUTPUT_DEB to Nexus APT repo"
             
