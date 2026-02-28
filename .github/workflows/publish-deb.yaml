@@ -116,14 +116,18 @@ jobs:
 
             echo "Uploading $OUTPUT_DEB to Nexus via REST API"
 
+            UPLOAD_PATH="pool/k/knoxctl/${OUTPUT_DEB}"
+            
             curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
               --fail --show-error \
-              -X POST "${NEXUS_URL%/}/../service/rest/v1/components?repository=knoxctl" \
-              -F "raw.directory=/" \
-              -F "raw.asset1=@${OUTPUT_DEB}" \
-              -F "raw.asset1.filename=${OUTPUT_DEB}"
-
-            echo "Uploaded $OUTPUT_DEB"
+              --upload-file "${OUTPUT_DEB}" \
+              "${NEXUS_URL%/}/${UPLOAD_PATH}"
+            
+            echo "Rebuilding APT metadata"
+            
+            curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+              -X POST \
+              "https://nexus.accuknox.com/service/rest/v1/apt/repositories/knoxctl/rebuild-index"
 
             rm -f *.deb
             rm -rf extract_tmp "$PKGROOT" "$asset"
