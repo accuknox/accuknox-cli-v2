@@ -88,7 +88,7 @@ var onboardVmScanCmd = &cobra.Command{
 		logger.PrintSuccess("RRA installed successfully!!")
 
 		// Install image-scan
-		if imageScan && vmMode == onboard.VMMode_Systemd {
+		if imageScan {
 			cc.AgentsResource = agentsResource
 			if err := cc.InitImageScan(authToken, url, tenantID, clusterID, clusterName, label, schedule, allImages); err != nil {
 				logger.Error("failed to initialize image scanner: %s", err.Error())

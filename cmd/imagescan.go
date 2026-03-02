@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/imagescan"
+	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	kubesheildScanner "github.com/accuknox/kubeshield/pkg/scanner/scan"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +18,7 @@ var (
 	artifactEndpointPath        string
 	vulnerabilityDB             string
 	javaDB                      string
+	triggerSchedulescan         bool
 	allContainers               bool
 	imagesOnly                  bool
 	cfg                         = kubesheildScanner.ScanConfig{}
@@ -61,6 +64,26 @@ and sends back the result to saas
 		_ = os.Setenv("TRIVY_JAVA_DB_REPOSITORY", javaDB)
 
 		cfg.ArtifactConfig.ArtifactAPI += artifactEndpointPath
+
+		if schedule != "" {
+			c := cron.New(cron.WithChain(cron.SkipIfStillRunning(cron.DefaultLogger)))
+
+			_, err := c.AddFunc(schedule, func() {
+				imagescan.DiscoverAndScan(cfg, HOST_NAME, RUN_TIME, !allContainers, imagesOnly)
+			})
+			if err != nil {
+				logger.Warn("error while schedule scanning")
+				return err
+			}
+
+			if triggerSchedulescan {
+				imagescan.DiscoverAndScan(cfg, HOST_NAME, RUN_TIME, !allContainers, imagesOnly)
+			}
+
+			c.Run()
+			return nil
+		}
+
 		return imagescan.DiscoverAndScan(cfg, HOST_NAME, RUN_TIME, !allContainers, imagesOnly)
 	},
 }
@@ -78,6 +101,9 @@ func init() {
 	// Scan Configurations
 	imageScanCmd.Flags().StringVarP(&HOST_NAME, "hostname", "", "", "name of the host")
 	imageScanCmd.Flags().StringVarP(&RUN_TIME, "runtime", "r", "", "container runtime used in the host machine")
+	imageScanCmd.Flags().StringVarP(&schedule, "schedule", "", "", "scans the images based on the provided schedule")
+	imageScanCmd.Flags().BoolVar(&triggerSchedulescan, "trigger-schedule-scan", true, "If set, triggers the schdeule scan immediately without waiting for the schedule.")
+
 	imageScanCmd.Flags().BoolVar(&allContainers, "all-containers", false, "If set, discover containers in all states. By default, only running containers are discovered.")
 	imageScanCmd.Flags().BoolVar(&imagesOnly, "images-only", false, "If set, discovers and scans all images. By default, only images from running containers are scanned.")
 
@@ -88,5 +114,6 @@ func init() {
 	// Required Flags Validation
 	imageScanCmd.MarkFlagsOneRequired("artifactEndpoint", "token", "label")
 	imageScanCmd.MarkFlagsRequiredTogether("artifactEndpoint", "token", "label")
+	imageScanCmd.Flags().MarkHidden("schedule")
 	rootCmd.AddCommand(imageScanCmd)
 }

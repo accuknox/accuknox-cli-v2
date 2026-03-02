@@ -35,5 +35,6 @@ knoxctl
 *.md
 *.yaml
 !docker-compose_rra.yaml
+!docker-compose_image-scanner.yaml 
 rra
 accuknox/

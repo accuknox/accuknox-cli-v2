@@ -13,4 +13,7 @@ var (
 
 	//go:embed templates/docker-compose_rra.yaml
 	rraComposeFileTemplate string
+
+	//go:embed templates/docker-compose_image-scanner.yaml
+	accuknoxScannerComposeFileTemplate string
 )
