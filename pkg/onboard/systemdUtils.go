@@ -959,6 +959,7 @@ func readAndDumpDir(sourceDirPath, destDirPath string) error {
 			return nil
 		}
 
+		// #nosec G122 -- parameters are controlled
 		fileContent, err := os.ReadFile(filepath.Clean(path))
 		if err != nil {
 			return err
@@ -969,6 +970,7 @@ func readAndDumpDir(sourceDirPath, destDirPath string) error {
 			return nil
 		}
 
+		// #nosec G122 G703 G306 -- parameters are controlled
 		err = os.WriteFile(sysdumpFullPath, fileContent, 0o644) // #nosec G306 need perms for archiving
 		if err != nil {
 			return err
@@ -999,6 +1001,7 @@ func readAndDumpFile(sourceFilePath, destFilePath string) error {
 		return err
 	}
 
+	// #nosec G703 G306 -- parameters are controlled
 	err = os.WriteFile(destFilePath, sourceFileContent, 0o644) // #nosec G306 perms needed for archiving
 	if err != nil {
 		return err

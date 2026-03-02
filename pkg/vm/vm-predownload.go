@@ -422,6 +422,7 @@ func compressDirectory(baseDir, sourceDir, fileName string) error {
 			return nil
 		}
 
+		// #nosec G122 -- parameters are controlled
 		f, err := os.Open(filepath.Clean(file))
 		if err != nil {
 			return err
