@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var defaultTrivyVersion = "0.64.1"
+var defaultTrivyVersion = "0.69.2"
 
 // Returns the tar.gz url for the provided trivy version
 func GetTrivyDownloadURL(version string) string {

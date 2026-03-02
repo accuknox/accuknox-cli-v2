@@ -1,0 +1,19 @@
+services:
+  image-scanner:
+    image: {{.BaseImage}}
+    container_name: {{.AgentName}}
+    volumes:
+      - {{.KnoxctlPath}}:/usr/local/bin/knoxctl
+      {{- range .SockPaths }}
+      - {{ . }}:{{ . }}
+      {{- end }}
+    entrypoint: ["/usr/local/bin/knoxctl"]
+    command:
+      - image-scan
+      - --artifactEndpoint={{.Url}}
+      - --label={{.Label}}
+      - --token={{.AuthToken}}
+      - --schedule={{.Schedule}}
+      {{- if .AllImages }}
+      - --images-only
+      {{- end }}

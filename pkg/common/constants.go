@@ -43,6 +43,7 @@ const (
 	Hardening          = "hardening"
 	HardeningImage     = "accuknox/dev2-hardening:latest"
 	ServiceAccountName = "discovery-engine"
+	ImagescanBaseImage = "aquasec/trivy:0.69.2"
 
 	DiscoverConfMap  = "dev2-discover"
 	HardeningConfMap = "dev2-hardening"
@@ -83,20 +84,19 @@ const (
 	DownloadDir string = "/tmp/accuknox-downloads/"
 
 	// agents names
-	KubeArmor          string = "kubearmor"
-	KubeArmorVMAdapter string = "kubearmor-vm-adapter" // to identify service
-	VMAdapter          string = "vm-adapter"           // for download package
-	RelayServer        string = "kubearmor-relay-server"
-	SpireAgent         string = "spire-agent"
-	PEAAgent           string = "accuknox-policy-enforcement-agent"
-	SIAAgent           string = "accuknox-shared-informer-agent"
-	FeederService      string = "accuknox-feeder-service"
-	SummaryEngine      string = "accuknox-sumengine"
-	DiscoverAgent      string = "accuknox-discover"
-	HardeningAgent     string = "accuknox-hardening-agent"
-	RRA                string = "accuknox-rra"
-	Imagescan          string = "accuknox-scanner"
-
+	KubeArmor            string = "kubearmor"
+	KubeArmorVMAdapter   string = "kubearmor-vm-adapter" // to identify service
+	VMAdapter            string = "vm-adapter"           // for download package
+	RelayServer          string = "kubearmor-relay-server"
+	SpireAgent           string = "spire-agent"
+	PEAAgent             string = "accuknox-policy-enforcement-agent"
+	SIAAgent             string = "accuknox-shared-informer-agent"
+	FeederService        string = "accuknox-feeder-service"
+	SummaryEngine        string = "accuknox-sumengine"
+	DiscoverAgent        string = "accuknox-discover"
+	HardeningAgent       string = "accuknox-hardening-agent"
+	RRA                  string = "accuknox-rra"
+	Imagescan            string = "accuknox-scanner"
 	InContainerConfigDir string = "/opt"
 
 	//config paths for systemd mode

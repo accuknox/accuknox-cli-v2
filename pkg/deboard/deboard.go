@@ -210,58 +210,11 @@ func UninstallRRA() error {
 		}
 		return err
 	}
-	var cc onboard.ClusterConfig
-	// validate docker environment
-	_, err = cc.ValidateEnv()
-	if err != nil {
-		return os.ErrNotExist
+
+	if err = deleteContainer(cm.RRA); err != nil {
+		return err
 	}
-	//check for RRA docker installation
-	rraObj, err := getContainerObjects([]string{"accuknox-rra"})
-	if err != nil {
-		logger.Warn("error:%s", err.Error())
-	}
-	if len(rraObj) > 0 {
-		fmt.Println(color.BlueString("RRA docker installation found"))
-		configPath, err := cm.GetDefaultConfigPath()
-		if err != nil {
-			return err
-		}
-		composeFilePath := filepath.Join(configPath, "docker-compose_rra.yaml")
-		_, err = os.Stat(composeFilePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				err = removeInstalledObjects(rraObj, nil, nil)
-				if err != nil {
-					fmt.Println("error", err.Error())
-				}
-				return err
-			} else {
-				return err
-			}
-		}
-		composeCmd, _, err := onboard.GetComposeCommand()
-		if err != nil {
-			return err
-		}
-		_, err = onboard.ExecComposeCommand(true, false, composeCmd,
-			"-f", composeFilePath, "--profile", "accuknox-agents", "down")
-		if err != nil {
-			return fmt.Errorf("error: %s", err.Error())
-		}
-		err = os.Remove(composeFilePath)
-		if err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		// delete configdir if it is empty(for cases if only RRA is installed)
-		err = os.Remove(configPath)
-		if err != nil {
-			if !os.IsNotExist(err) && !errors.Is(err, syscall.ENOTEMPTY) && !errors.Is(err, syscall.EEXIST) {
-				return err
-			}
-		}
-		return nil
-	}
+
 	return os.ErrNotExist
 }
 
@@ -272,6 +225,8 @@ func UninstallImagescan() error {
 	if err != nil {
 		fmt.Println(color.RedString("error checking imagescan systemd installation"))
 	}
+
+	// Delete systemd service
 	if exists {
 		fmt.Println(color.BlueString("Image scanner found running in systemd mode"))
 		imagescanFiles := []string{cm.Imagescan + ".service", cm.Imagescan + ".timer"}
@@ -285,7 +240,79 @@ func UninstallImagescan() error {
 		}
 		return nil
 	}
+
+	// Delete docker service
+	if err = deleteContainer(cm.Imagescan); err != nil {
+		return err
+	}
+
 	return os.ErrNotExist
+}
+
+func deleteContainer(serviceName string) error {
+	var cc onboard.ClusterConfig
+
+	// validate docker environment
+	_, err := cc.ValidateEnv()
+	if err != nil {
+		return os.ErrNotExist
+	}
+
+	// check for docker installation for the provided service name
+	containerObj, err := getContainerObjects([]string{serviceName})
+	if err != nil {
+		logger.Warn("error:%s", err.Error())
+	}
+
+	// No containers found for the provided service name prefix
+	if len(containerObj) == 0 {
+		return os.ErrNotExist // exit
+	}
+
+	// logic for deleting the docker container
+	fmt.Println(color.BlueString("%s docker installation found", serviceName))
+
+	configPath, err := cm.GetDefaultConfigPath()
+	if err != nil {
+		return err
+	}
+
+	composeFilePath := filepath.Join(configPath, fmt.Sprintf("docker-compose_%s.yaml", serviceName))
+	_, err = os.Stat(composeFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = removeInstalledObjects(containerObj, nil, nil)
+			if err != nil {
+				fmt.Println("error", err.Error())
+			}
+			return err
+		} else {
+			return err
+		}
+	}
+
+	composeCmd, _, err := onboard.GetComposeCommand()
+	if err != nil {
+		return err
+	}
+
+	if _, err = onboard.ExecComposeCommand(true, false, composeCmd,
+		"-f", composeFilePath, "--profile", "accuknox-agents", "down"); err != nil {
+		return fmt.Errorf("error: %s", err.Error())
+	}
+
+	if err = os.Remove(composeFilePath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	// delete configdir if it is empty(for cases if only RRA is installed)
+	if err = os.Remove(configPath); err != nil {
+		if !os.IsNotExist(err) && !errors.Is(err, syscall.ENOTEMPTY) && !errors.Is(err, syscall.EEXIST) {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func getContainerObjects(containerNames []string) (map[string]dockerTypes.Container, error) {

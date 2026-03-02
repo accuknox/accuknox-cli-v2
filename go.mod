@@ -1,6 +1,6 @@
 module github.com/accuknox/accuknox-cli-v2
 
-go 1.24.11
+go 1.25.0
 
 replace (
 	github.com/accuknox/kubeshield v0.3.3 => github.com/accuknox/kubesheild v0.3.3
@@ -25,7 +25,7 @@ require (
 	github.com/accuknox/dev2/api v0.0.0-20250312100155-99ada31827b0
 	github.com/accuknox/dev2/common v0.0.0-20250312100155-99ada31827b0
 	github.com/accuknox/dev2/discover v0.0.0-20231026051927-56fe5412ae0d
-	github.com/accuknox/dev2/hardening v0.0.0-20250720150630-0e643f247e04
+	github.com/accuknox/dev2/hardening v0.0.0-20260227064851-38c0f45f90a0
 	github.com/accuknox/dev2/sumengine v0.0.0-20250109055732-04767b7ac965
 	github.com/accuknox/kubeshield v0.3.3
 	github.com/clarketm/json v1.17.1
@@ -52,8 +52,9 @@ require (
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/pterm/pterm v0.12.82
 	github.com/rabbitmq/amqp091-go v1.10.0
-	github.com/regclient/regclient v0.11.1
+	github.com/regclient/regclient v0.11.2
 	github.com/rivo/tview v0.0.0-20231115183240-7c9e464bac02
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/lo v1.51.0
 	github.com/schollz/progressbar/v3 v3.14.1
@@ -64,7 +65,7 @@ require (
 	golang.org/x/mod v0.29.0
 	golang.org/x/net v0.47.0
 	golang.org/x/sync v0.18.0
-	golang.org/x/term v0.37.0
+	golang.org/x/term v0.40.0
 	google.golang.org/grpc v1.77.0
 	gopkg.in/yaml.v2 v2.4.0
 	hermannm.dev/ipfinder v0.2.0
@@ -114,7 +115,7 @@ require (
 	github.com/accuknox/knox-gateway v0.10.0 // indirect
 	github.com/accuknox/knoxjobs v0.1.1-0.20260129160332-ffbf56c71eea // indirect
 	github.com/accuknox/registry-scanning/common v0.0.0-20250513065108-b8f4ebc6e184 // indirect
-	github.com/accuknox/spire v1.0.6-0.20260121134154-51c2f5f630d1 // indirect
+	github.com/accuknox/spire v1.0.6-0.20260217070521-ee6837429c27 // indirect
 	github.com/accuknox/spire-plugin-sdk v0.0.0-20230228130247-7f63972dff88 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
@@ -293,7 +294,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/klauspost/compress v1.18.2 // indirect
+	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20250509115833-5b371e16ac8a // indirect
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20250526061550-bac6deab5fa8 // indirect
@@ -370,7 +371,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/sorairolake/lzip-go v0.3.8 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
@@ -416,7 +417,7 @@ require (
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
-	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/api v0.220.0 // indirect
