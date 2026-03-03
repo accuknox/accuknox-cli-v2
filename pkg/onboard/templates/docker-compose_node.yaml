@@ -98,9 +98,14 @@ services:
     profiles:
       - "kubearmor-only"
       - "kubearmor"
+    {{- if hasPrefix .DockerComposeVersion "v2." }}
     depends_on:
       kubearmor-init:
         condition: service_completed_successfully
+    {{- else }}
+    depends_on:
+      - kubearmor-init
+    {{- end }}
     hostname: {{.Hostname}}
     container_name: kubearmor
     image: "{{.KubeArmorImage}}"
@@ -133,6 +138,9 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "/run/docker:/run/docker"
       - "/var/lib/docker:/var/lib/docker"
+      - "/usr/share/kubearmor:/usr/share/kubearmor:rw"
+      - "/var/run/kubearmor:/var/run/kubearmor:rw"
+
     restart: always
     ports:
       - "{{.KubeArmorPort}}:32767"
@@ -153,16 +161,44 @@ services:
         limits:
           cpus: '{{.KubeArmorCPUs}}'
           memory: {{.KubeArmorMemoryMax}}
+    {{- if not (hasPrefix .DockerComposeVersion "v2.") }}
+    entrypoint: >
+      sh -c '
+        echo "[kubearmor] Waiting for kubearmor-init to complete..."
+
+        while true; do
+          status=$$(docker inspect -f "{{`{{.State.Status}}`}}" kubearmor-init 2>/dev/null || true)
+          exitcode=$$(docker inspect -f "{{`{{.State.ExitCode}}`}}" kubearmor-init 2>/dev/null || true)
+
+          if [ "$$status" = "exited" ]; then
+            if [ "$$exitcode" = "0" ]; then
+              echo "[kubearmor] Init completed successfully"
+              break
+            else
+              echo "[kubearmor] Init failed with exit code $$exitcode"
+              exit 1
+            fi
+          fi
+          sleep 2
+        done
+
+        exec /KubeArmor/kubearmor "$$@"
+      ' --
+    {{- end }}
 
   kubearmor-vm-adapter:
     profiles:
       - "kubearmor-only"
       - "kubearmor"
     depends_on:
-      {{- if .SpireEnabled }}
+    {{- if .SpireEnabled }}
+      {{- if hasPrefix .DockerComposeVersion "v2." }}
       wait-for-it:
         condition: service_completed_successfully
+      {{- else }}
+      - wait-for-it
       {{- end }}
+    {{- end }}
       kubearmor:
         condition: service_started
     container_name: kubearmor-vm-adapter
