@@ -7,7 +7,7 @@ volumes:
   {{- end }}
 
 services:
-
+# DEBUG: DockerComposeVersion = {{ .DockerComposeVersion }}
   {{- if .SpireEnabled }}
   spire-agent:
     profiles:
@@ -93,12 +93,34 @@ services:
       accuknox-net:
         aliases:
           - kubearmor-init
+  {{- if eq (printf "%.3s" .DockerComposeVersion) "v1." }}
+    entrypoint:
+      - sh
+      - -c
+      - |
+          echo "[kubearmor-init] Cleaning old status..."
+          rm -f /opt/kubearmor/BPF/init.status
 
+          echo "[kubearmor-init] Starting compile..."
+
+          /KubeArmor/compile.sh
+          rc=$$?
+
+          echo "$$rc" > /opt/kubearmor/BPF/init.status
+
+          if [ "$$rc" -eq 0 ]; then
+            echo "[kubearmor-init] Compile successful"
+          else
+            echo "[kubearmor-init] Compile failed"
+          fi
+
+          exit $$rc
+  {{- end }}
   kubearmor:
     profiles:
       - "kubearmor-only"
       - "kubearmor"
-    {{- if hasPrefix .DockerComposeVersion "v2." }}
+    {{- if not (eq (printf "%.3s" .DockerComposeVersion) "v1.") }}
     depends_on:
       kubearmor-init:
         condition: service_completed_successfully
@@ -140,7 +162,6 @@ services:
       - "/var/lib/docker:/var/lib/docker"
       - "/usr/share/kubearmor:/usr/share/kubearmor:rw"
       - "/var/run/kubearmor:/var/run/kubearmor:rw"
-
     restart: always
     ports:
       - "{{.KubeArmorPort}}:32767"
@@ -161,46 +182,54 @@ services:
         limits:
           cpus: '{{.KubeArmorCPUs}}'
           memory: {{.KubeArmorMemoryMax}}
-    {{- if not (hasPrefix .DockerComposeVersion "v2.") }}
-    entrypoint: >
-      sh -c '
-        echo "[kubearmor] Waiting for kubearmor-init to complete..."
+  {{- if eq (printf "%.3s" .DockerComposeVersion) "v1." }}
+    entrypoint:
+      - sh
+      - -c
+      - |
+          echo "[kubearmor] Waiting for kubearmor-init..."
 
-        while true; do
-          status=$$(docker inspect -f "{{`{{.State.Status}}`}}" kubearmor-init 2>/dev/null || true)
-          exitcode=$$(docker inspect -f "{{`{{.State.ExitCode}}`}}" kubearmor-init 2>/dev/null || true)
+          timeout=120
+          elapsed=0
 
-          if [ "$$status" = "exited" ]; then
-            if [ "$$exitcode" = "0" ]; then
-              echo "[kubearmor] Init completed successfully"
-              break
-            else
-              echo "[kubearmor] Init failed with exit code $$exitcode"
+          while [ ! -f /opt/kubearmor/BPF/init.status ]; do
+            sleep 2
+            elapsed=$$((elapsed+2))
+
+            if [ $$elapsed -ge $$timeout ]; then
+              echo "[kubearmor] Timeout waiting for init"
               exit 1
             fi
+          done
+
+          status=$$(cat /opt/kubearmor/BPF/init.status)
+
+          if [ "$$status" != "0" ]; then
+            echo "[kubearmor] Init failed"
+            exit 1
           fi
-          sleep 2
-        done
 
-        exec /KubeArmor/kubearmor "$$@"
-      ' --
-    {{- end }}
-
+          echo "[kubearmor] Init completed successfully"
+          echo "[kubearmor] Starting kubearmor..."
+          exec /KubeArmor/kubearmor "$$@"
+      - --
+  {{- end }}
   kubearmor-vm-adapter:
     profiles:
       - "kubearmor-only"
       - "kubearmor"
     depends_on:
-    {{- if .SpireEnabled }}
-      {{- if hasPrefix .DockerComposeVersion "v2." }}
-      wait-for-it:
-        condition: service_completed_successfully
-      {{- else }}
-      - wait-for-it
-      {{- end }}
-    {{- end }}
       kubearmor:
         condition: service_started
+    {{- if .SpireEnabled }}
+    {{- if eq (printf "%.3s" .DockerComposeVersion) "v1." }}
+      wait-for-it:
+        condition: service_started
+    {{- else }}
+      wait-for-it:
+        condition: service_completed_successfully
+    {{- end }}
+    {{- end }}
     container_name: kubearmor-vm-adapter
     image: "{{.KubeArmorVMAdapterImage}}"
     pull_policy: "{{.ImagePullPolicy}}"
@@ -269,12 +298,17 @@ services:
     profiles:
       - "accuknox-agents"
     depends_on:
-      {{- if .SpireEnabled }}
-      wait-for-it:
-        condition: service_completed_successfully
-      {{- end }}
       kubearmor-vm-adapter:
         condition: service_started
+    {{- if .SpireEnabled }}
+    {{- if eq (printf "%.3s" .DockerComposeVersion) "v1." }}
+      wait-for-it:
+        condition: service_started
+    {{- else }}
+      wait-for-it:
+        condition: service_completed_successfully
+    {{- end }}
+    {{- end }}
     container_name: summary-engine
     image: "{{.SumEngineImage}}"
     pull_policy: "{{.ImagePullPolicy}}"

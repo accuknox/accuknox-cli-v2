@@ -128,6 +128,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		DockerLogDriver:        GetDockerLogDriver(),
 		DockerLogRotateMaxSize: ic.LogRotateMaxSize,
 		DockerLogRotateMaxFile: fmt.Sprintf("%d", ic.LogRotateMaxFile),
+		DockerComposeVersion:   ic.composeVersion,
 
 		SecureContainers: ic.SecureContainers,
 
@@ -239,6 +240,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	ic.TCArgs.EnableHardeningAgent = ic.EnableHardeningAgent
+	ic.TCArgs.DockerComposeVersion = strings.TrimSpace(ic.composeVersion)
 
 	// initialize sprig for templating
 	sprigFuncs := sprig.GenericFuncMap()

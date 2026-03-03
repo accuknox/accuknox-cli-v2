@@ -257,7 +257,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 			return err
 		}
 	}
-
+	jc.TCArgs.DockerComposeVersion = strings.TrimSpace(jc.composeVersion)
 	// write compose file
 	composeFilePath, err := copyOrGenerateFile(jc.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, workerNodeComposeFileTemplate, jc.TCArgs)
 	if err != nil {

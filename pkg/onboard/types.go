@@ -302,6 +302,7 @@ type TemplateConfigArgs struct {
 	DockerLogDriver        string `json:"docker_log_driver,omitempty"`
 	DockerLogRotateMaxSize string `json:"docker_log_rotate_max_size,omitempty"`
 	DockerLogRotateMaxFile string `json:"docker_log_rotate_max_file,omitempty"`
+	DockerComposeVersion   string `json:"docker_compose_version,omitempty"`
 
 	// kmux config paths for agents
 	PoliciesKmuxConfig   string `json:"policies_kmux_config,omitempty"`
