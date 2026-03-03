@@ -447,6 +447,10 @@ func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadD
 		downloadDir = cm.DownloadDir
 	}
 
+	if err := os.MkdirAll(downloadDir, 0750); err != nil {
+		return "", err
+	}
+
 	fileName := path.Join(downloadDir, agentName+"_"+agentTag+".tar.gz")
 
 	// 1. Connect to a remote repository

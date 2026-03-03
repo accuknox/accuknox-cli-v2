@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -270,7 +269,7 @@ func dumpPolicy(name, namespace, policy string) error {
 		return fmt.Errorf("err: %v", err)
 	}
 
-	if err := ioutil.WriteFile(filePath, []byte(policy), 0600); err != nil {
+	if err := os.WriteFile(filePath, []byte(policy), 0600); err != nil {
 		return fmt.Errorf("failed to write file: %v", err)
 	}
 
