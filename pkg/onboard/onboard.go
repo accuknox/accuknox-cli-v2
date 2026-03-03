@@ -249,11 +249,13 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 
 	cc.SkipDownload = skipDownload
 
-	fromPath, err := resolveSource(fromSource)
-	if err != nil {
-		return nil, err
+	if fromSource != "" {
+		path, err := resolveSource(fromSource)
+		if err != nil {
+			return nil, err
+		}
+		cc.FromSource = path
 	}
-	cc.FromSource = fromPath
 
 	return cc, nil
 }
