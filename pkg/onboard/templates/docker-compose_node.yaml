@@ -7,7 +7,6 @@ volumes:
   {{- end }}
 
 services:
-# DEBUG: DockerComposeVersion = {{ .DockerComposeVersion }}
   {{- if .SpireEnabled }}
   spire-agent:
     profiles:

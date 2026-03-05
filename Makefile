@@ -61,14 +61,19 @@ endif
 	cd $(CURDIR); golint ./...
 
 .PHONY: gosec
-gosec: prebuild
-ifeq (, $(shell ls ~/.bin/gosec))
+gosec:prebuild
+ifeq (, $(shell which gosec))
 	@{ \
 	set -e ;\
-	curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b  ~/.bin ;\
+	GOSEC_TMP_DIR=$$(mktemp -d) ;\
+	cd $$GOSEC_TMP_DIR ;\
+	go mod init tmp ;\
+	go get github.com/securego/gosec/v2/cmd/gosec ;\
+	go install github.com/securego/gosec/v2/cmd/gosec ;\
+	rm -rf $$GOSEC_TMP_DIR ;\
 	}
 endif
-	cd $(CURDIR); ~/.bin/gosec -exclude-dir=pkg/vm/RRA ./... 
+	cd $(CURDIR);gosec -exclude-dir=pkg/vm/RRA ./... 
 
 .PHONY: test 
 test: prebuild
