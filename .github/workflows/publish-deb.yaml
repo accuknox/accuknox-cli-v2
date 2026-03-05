@@ -116,9 +116,14 @@ jobs:
 
             echo "Uploading $OUTPUT_DEB to Nexus APT repo"
 
-            curl --fail -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
-              --upload-file "${OUTPUT_DEB}" \
-              "https://nexus.accuknox.com/repository/knoxctl/pool/k/knoxctl/${OUTPUT_DEB}"
+
+            curl --fail --show-error -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+              -X POST "https://nexus.accuknox.com/service/rest/v1/components?repository=knoxctl" \
+              -F "apt.asset=@${OUTPUT_DEB}" \
+              -F "apt.asset.filename=${OUTPUT_DEB}" \
+              -F "apt.distribution=stable" \
+              -F "apt.component=main" \
+              -F "apt.architecture=${DEB_ARCH}"
 
             
             echo "Rebuilding APT metadata"
