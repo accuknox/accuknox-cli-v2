@@ -87,7 +87,7 @@ services:
       - CRON_SCHEDULE={{.Schedule}}
       - PROFILE={{.Profile}}
       - BENCHMARK={{.Benchmark}}
-      - AUTH_TOKEN={{.AuthToken}}
+      - AUTH_TOKEN={{.ArtifactToken}}
       - URL={{.Url}}
       - TENANT_ID={{.TenantID}}
       - CLUSTER_NAME={{.ClusterName}}
