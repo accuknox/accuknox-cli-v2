@@ -86,6 +86,8 @@ services:
       - "/sys/kernel/security:/sys/kernel/security:ro"
       - "/sys/kernel/debug:/sys/kernel/debug:ro"
       - "/media/root/etc/os-release:/media/root/etc/os-release:ro"
+      - "/usr/src:/usr/src:ro,z"
+
     restart: on-failure
     privileged: true
     networks:
