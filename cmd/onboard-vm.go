@@ -6,23 +6,13 @@ import (
 )
 
 var (
-	clusterType onboard.ClusterType
-	vmMode      onboard.VMMode
-	tls         onboard.TLS
-	splunk      onboard.SplunkConfig
+	clusterType    onboard.ClusterType
+	vmMode         onboard.VMMode
+	tls            onboard.TLS
+	splunk         onboard.SplunkConfig
+	releaseVersion string
 
-	kubearmorVersion string
-	releaseVersion   string
-
-	// for systemd mode
-	vmAdapterTag string
-	rraTag       string
-
-	kubeArmorImage          string
-	kubeArmorInitImage      string
-	kubeArmorVMAdapterImage string
-	imagePullPolicy         string
-	rraImage                string
+	imagePullPolicy string
 
 	preserveUpstream bool
 
@@ -114,10 +104,10 @@ func init() {
 	onboardVMCmd.PersistentFlags().BoolVar(&skipBTF, "skip-btf-check", false, "to install even if BTF is not present")
 	onboardVMCmd.PersistentFlags().StringVar(&systemMonitorPath, "system-monitor-path", "", "path to system monitor, must be specified is BTF not present")
 
-	onboardVMCmd.PersistentFlags().StringVar(&vmAdapterTag, "vm-adapter-tag", "", "version tag for vm adapter")
-	onboardVMCmd.PersistentFlags().StringVar(&kubeArmorImage, "kubearmor-image", "", "KubeArmor image to use")
-	onboardVMCmd.PersistentFlags().StringVar(&kubeArmorInitImage, "kubearmor-init-image", "", "KubeArmor init image to use")
-	onboardVMCmd.PersistentFlags().StringVar(&kubeArmorVMAdapterImage, "kubearmor-vm-adapter-image", "", "KubeArmor vm-adapter image to use")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.VmAdapterTag, "vm-adapter-tag", "", "version tag for vm adapter")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.KubearmorImage, "kubearmor-image", "", "KubeArmor image to use")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.KubearmorInitImage, "kubearmor-init-image", "", "KubeArmor init image to use")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.VmAdapterImage, "kubearmor-vm-adapter-image", "", "KubeArmor vm-adapter image to use")
 
 	onboardVMCmd.PersistentFlags().BoolVarP(&preserveUpstream, "preserve-upstream-repo", "", true, "to keep upstream repo name e.g \"accuknox\" from accuknox/shared-informer-agent")
 
@@ -148,8 +138,8 @@ func init() {
 
 	onboardVMCmd.PersistentFlags().StringVar(&cidr, "network-cidr", "172.20.32.0/27", "CIDR for accuknox network")
 
-	onboardVMCmd.PersistentFlags().StringVar(&sumEngineImage, "sumengine-image", "", "summary-engine image to use")
-	onboardVMCmd.PersistentFlags().StringVar(&sumEngineVersionTag, "sumengine-version", "", "summary-engine version to use")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.SumEngineImage, "sumengine-image", "", "summary-engine image to use")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.SumEngineTag, "sumengine-version", "", "summary-engine version to use")
 
 	onboardVMCmd.PersistentFlags().StringVar(&sumEngineCronTime, "sumengine-cron-time", "15m", "cron time for summary-engine in minutes (default: 15m)")
 
@@ -177,8 +167,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().IntVar(&logRotateMaxFile, "log-rotate-max-file", 1, "maximum number of log files that can be present. A positive integer. Default: 1")
 
 	// flags for RRA
-	onboardVMCmd.PersistentFlags().StringVar(&rraTag, "rra-tag", "", "version tag for RRA( rapid risk assessment tool)")
-	onboardVMCmd.PersistentFlags().StringVar(&rraImage, "rra-image", "", "RRA(Rapid Risk assessment tool) image to use")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.RRAImageTag, "rra-tag", "", "version tag for RRA( rapid risk assessment tool)")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.RRAImage, "rra-image", "", "RRA(Rapid Risk assessment tool) image to use")
 	onboardVMCmd.PersistentFlags().BoolVarP(&enableVMScan, "enable-vmscan", "", false, " Set to true to install RRA along with other kubearmor and accuknox-agents ")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&profile), "profile", "", "ubuntu,rhel")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&benchmark), "benchmark", "", "security benchmark (stig,soc2)")
@@ -210,8 +200,8 @@ func init() {
 
 	onboardVMCmd.PersistentFlags().StringVar(&vmName, "vm-name", "", "vm name for onboarding")
 
-	onboardVMCmd.PersistentFlags().StringVar(&spireAgentImage, "spire-agent-image", "", "spire-agent image to use")
-	onboardVMCmd.PersistentFlags().StringVar(&waitForItImage, "wait-for-it-image", "", "wait-for-it image to use")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.SpireImage, "spire-agent-image", "", "spire-agent image to use")
+	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.WaitForItImage, "wait-for-it-image", "", "wait-for-it image to use")
 
 	onboardVMCmd.PersistentFlags().IntVar(&parallel, "parallel", 0, "number of images to pull in parallel (0 for unlimited, 1 for sequential, >1 for limited parallelism)")
 

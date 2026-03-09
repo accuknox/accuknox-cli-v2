@@ -73,7 +73,7 @@ var onboardVmScanCmd = &cobra.Command{
 			cc.LogRotateMaxSize = strings.ToUpper(cc.LogRotateMaxSize)
 		}
 
-		err = cc.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream, agentsDeployed, spireAgentImage, spireHost, spireDir, knoxGateway)
+		err = cc.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, agentsDeployed, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
 		if err != nil {
 			logger.Error(" failed to initialize RRA config:%s", err.Error())
 			return err

@@ -101,11 +101,8 @@ var joinNodeCmd = &cobra.Command{
 			}
 		}
 
-		vmConfigs, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, vmMode,
-			vmAdapterTag, kubeArmorRelayServerTag, peaVersionTag, siaVersionTag,
-			feederVersionTag, sumEngineVersionTag, discoverVersionTag, hardeningAgentVersionTag, kubearmorVersion, releaseVersion, kubeArmorImage,
-			kubeArmorInitImage, kubeArmorVMAdapterImage, kubeArmorRelayServerImage, siaImage,
-			peaImage, feederImage, rmqImage, sumEngineImage, hardeningAgentImage, spireAgentImage, waitForItImage, discoverImage, nodeAddr, dryRun,
+		vmConfigs, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, vmMode, imageVersions, releaseVersion,
+			nodeAddr, dryRun,
 			true, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
 			alertThrottling, maxAlertPerSec, throttleSec,
 			cidr, secureContainers, skipBTF, systemMonitorPath, rmqAddress, deploySumEngine, registry, registryConfigPath, insecure, plainHTTP, preserveUpstream, topicPrefix, rmqConnectionName, sumEngineCronTime, tls, enableHostPolicyDiscovery, splunk, nodeStateRefreshTime, spireEnabled, spireCert, logRotate, parallel, enableHardeningAgent, releaseFile, proxy, deployDiscovery, skipDownload, fromSource)
@@ -178,7 +175,7 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 		if enableVMScan {
-			err := joinConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, rraImage, rraTag, releaseVersion, preserveUpstream, true, spireAgentImage, spireHost, spireDir, knoxGateway)
+			err := joinConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, true, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
 			if err != nil {
 				logger.Print("error creating RRA config in %s mode", vmMode)
 			} else {

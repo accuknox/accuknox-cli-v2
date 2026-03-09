@@ -701,8 +701,6 @@ github.com/accuknox/kubesheild v0.3.3 h1:st1SIxvPRbbz+/Bi1bMKSQCrpOcHCx8CMCm0BAL
 github.com/accuknox/kubesheild v0.3.3/go.mod h1:7K+OvQNmoWVz02/l8b8p53gb75HGK8mohgOZ+KYcyyw=
 github.com/accuknox/registry-scanning/common v0.0.0-20250513065108-b8f4ebc6e184 h1:SosoWCeLygJJF+0rRM6hepu1TjjAdAx7hKPS4u7PtvA=
 github.com/accuknox/registry-scanning/common v0.0.0-20250513065108-b8f4ebc6e184/go.mod h1:5d4T8cT58DJfaid5PE5N7+7qZ5/LBeFTAAjB2DBIGwM=
-github.com/accuknox/spire v1.0.6-0.20260121134154-51c2f5f630d1 h1:L1TSM7YWDBKr5Sk7fQjR113i4Pzf0wQzP6JDKpO1+pY=
-github.com/accuknox/spire v1.0.6-0.20260121134154-51c2f5f630d1/go.mod h1:SVpecf+qKY68vBPvB6yCXRiRTPrEkz4agr0NWVdUEmw=
 github.com/accuknox/spire v1.0.6-0.20260217070521-ee6837429c27 h1:kdcFKGSSoeH+oRuTP10e/qmWqBMAGOtnRUeT93fxvuk=
 github.com/accuknox/spire v1.0.6-0.20260217070521-ee6837429c27/go.mod h1:SVpecf+qKY68vBPvB6yCXRiRTPrEkz4agr0NWVdUEmw=
 github.com/accuknox/spire-plugin-sdk v0.0.0-20230228130247-7f63972dff88 h1:7HxrhzYBpLwXzFhvjOfCAbrWotiC3RNeNOe/B4Pb00g=

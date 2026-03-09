@@ -497,3 +497,30 @@ type ResourceConfig struct {
 	MemoryMax  int64
 	MemoryHigh int64
 }
+
+type ImageVersions struct {
+	KubearmorImage           string `json:"KubearmorImage,omitempty"`
+	KubearmorVersion         string `json:"KubearmorVersion,omitempty"`
+	KubearmorInitImage       string `json:"KubearmorInitImage,omitempty"`
+	VmAdapterImage           string `json:"VmAdapterImage,omitempty"`
+	VmAdapterTag             string `json:"VmAdapterTag,omitempty"`
+	RelayServerImage         string `json:"RelayServerImage,omitempty"`
+	KubeArmorRelayServerTag  string `json:"KubeArmorRelayServerTag,omitempty"`
+	SIAImage                 string `json:"SIAImage,omitempty"`
+	SIAVersionTag            string `json:"SIAVersionTag,omitempty"`
+	PEAImage                 string `json:"PEAImage,omitempty"`
+	PEAVersionTag            string `json:"PEAVersionTag,omitempty"`
+	FeederImage              string `json:"FeederImage,omitempty"`
+	FeederVersionTag         string `json:"FeederVersionTag,omitempty"`
+	WaitForItImage           string `json:"WaitForItImage,omitempty"`
+	DiscoverImage            string `json:"DiscoverImage,omitempty"`
+	DiscoverVersionTag       string `json:"DiscoverVersionTag,omitempty"`
+	SumEngineImage           string `json:"SumEngineImage,omitempty"`
+	SumEngineTag             string `json:"SumEngineTag,omitempty"`
+	HardeningAgentImage      string `json:"HardeningAgentImage,omitempty"`
+	HardeningAgentVersionTag string `json:"HardeningAgentVersionTag,omitempty"`
+	RMQImage                 string `json:"RMQImage,omitempty"`
+	SpireImage               string `json:"SpireImage,omitempty"`
+	RRAImage                 string `json:"RRAImage,omitempty"`
+	RRAImageTag              string `json:"RRAImageTag,omitempty"`
+}

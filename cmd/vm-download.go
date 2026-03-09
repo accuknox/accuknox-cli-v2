@@ -57,6 +57,8 @@ var vmDownload = &cobra.Command{
 
 		downloadOpts.Debug = debug
 
+		downloadOpts.ImageVersions = imageVersions
+
 		return downloadOpts.Download()
 	},
 }
@@ -86,4 +88,32 @@ func init() {
 	vmDownload.PersistentFlags().BoolVarP(&preserveUpstream, "preserve-upstream-repo", "", true, "to keep upstream repo name e.g \"accuknox\" from accuknox/shared-informer-agent")
 
 	vmDownload.PersistentFlags().BoolVar(&debug, "debug", false, "debug mode")
+
+	// image versions to use
+	vmDownload.PersistentFlags().StringVar(&imageVersions.RelayServerImage, "kubearmor-relay-server", "", "KubeArmor relay-server image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.SIAImage, "sia-image", "", "sia image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.PEAImage, "pea-image", "", "pea image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.FeederImage, "feeder-image", "", "feeder-service image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.KubeArmorRelayServerTag, "relayserver-version", "", "relay server version to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.SIAVersionTag, "sia-version", "", "sia version to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.PEAVersionTag, "pea-version", "", "pea version to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.FeederVersionTag, "feeder-version", "", "feeder version to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.DiscoverImage, "discover-image", "", "discover image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.DiscoverVersionTag, "discover-version", "", "discover version to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.HardeningAgentImage, "hardening-agent-image", "", "hardening-agent image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.HardeningAgentVersionTag, "hardening-agent-version", "", "hardening-agent version to use")
+
+	vmDownload.PersistentFlags().StringVar(&imageVersions.RMQImage, "rmq-image", "", "RabbitMQ image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.VmAdapterTag, "vm-adapter-tag", "", "version tag for vm adapter")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.KubearmorImage, "kubearmor-image", "", "KubeArmor image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.KubearmorInitImage, "kubearmor-init-image", "", "KubeArmor init image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.VmAdapterImage, "kubearmor-vm-adapter-image", "", "KubeArmor vm-adapter image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.SumEngineImage, "sumengine-image", "", "summary-engine image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.SumEngineTag, "sumengine-version", "", "summary-engine version to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.RRAImageTag, "rra-tag", "", "version tag for RRA( rapid risk assessment tool)")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.RRAImage, "rra-image", "", "RRA(Rapid Risk assessment tool) image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.SpireImage, "spire-agent-image", "", "spire-agent image to use")
+	vmDownload.PersistentFlags().StringVar(&imageVersions.WaitForItImage, "wait-for-it-image", "", "wait-for-it image to use")
+	vmDownload.PersistentFlags().StringVarP(&imageVersions.KubearmorVersion, "kubearmor-version", "", "", "version of KubeArmor to use")
+
 }

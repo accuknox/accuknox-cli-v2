@@ -33,7 +33,7 @@ var onboardCmd = &cobra.Command{
 
 func init() {
 	// local configuration
-	onboardCmd.PersistentFlags().StringVarP(&kubearmorVersion, "kubearmor-version", "", "", "version of KubeArmor to use")
+	onboardCmd.PersistentFlags().StringVarP(&imageVersions.KubearmorVersion, "kubearmor-version", "", "", "version of KubeArmor to use")
 
 	onboardCmd.PersistentFlags().StringVarP(&userConfigPath, "config-path", "", "", "path to read configuration files from")
 	err := onboardCmd.MarkPersistentFlagDirname("config-path")

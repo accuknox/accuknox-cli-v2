@@ -35,6 +35,7 @@ type DownloadOptions struct {
 	InsecureRegistryConnection bool
 	HttpRegistryConnection     bool
 	Debug                      bool
+	ImageVersions              *onboard.ImageVersions
 }
 
 func (o *DownloadOptions) Download() error {
@@ -235,7 +236,7 @@ func (o *DownloadOptions) getImageDetails(arch string, releaseInfo cm.ReleaseMet
 	tagSuffix := "_" + runtime.GOOS + "-" + arch
 
 	err := cc.PopulateImageDetails(releaseInfo,
-		map[string]string{},
+		o.ImageVersions,
 		o.Registry,
 		o.RegistryConfigPath,
 		tagSuffix,
