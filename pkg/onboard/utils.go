@@ -546,7 +546,7 @@ func CheckRRASystemdInstallation() (bool, error) {
 	files := []string{"accuknox-rra.service", "accuknox-rra.timer"}
 
 	for _, file := range files {
-		filePath := filepath.Join(cm.SpireConfigPath, file)
+		filePath := filepath.Join(cm.SystemdPath, file)
 		if _, err := os.Stat(filePath); err == nil {
 			// found service or timer file means we have RRA installation as systemd
 			return true, nil
@@ -727,7 +727,7 @@ func CheckImagescanSystemdInstallation() (bool, error) {
 	files := []string{cm.Imagescan + ".service", cm.Imagescan + ".timer"}
 
 	for _, file := range files {
-		filePath := filepath.Join(cm.SpireConfigPath, file)
+		filePath := filepath.Join(cm.SystemdPath, file)
 		if _, err := os.Stat(filePath); err == nil {
 			// found service or timer file means we have imagescanner installation as systemd
 			return true, nil
