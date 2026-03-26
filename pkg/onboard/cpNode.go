@@ -302,7 +302,14 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	// Diagnose if necessary and run compose command
-	return ic.runComposeCommand(composeFilePath)
+	err = ic.runComposeCommand(composeFilePath)
+	if err != nil {
+		return err
+	}
+
+	logger.Info1("writing release version to %s", ic.AgentsVersionFile)
+
+	return os.WriteFile(ic.AgentsVersionFile, []byte(ic.AgentsVersion), os.FileMode(os.O_CREATE))
 }
 
 func (ic *InitConfig) populateCommonArgs() {

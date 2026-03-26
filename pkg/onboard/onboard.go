@@ -3,6 +3,7 @@ package onboard
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -18,6 +19,8 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/mholt/archives"
 )
+
+const AgentsVersionFile = "agents-version"
 
 // TODO: THIS FUNCTION IS UNUSABLE!!!
 func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode VMMode,
@@ -137,6 +140,24 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	} else {
 		logger.Info1("%v", msg)
 	}
+	sourceVersion := ""
+	if fromSource != "" {
+		path, version, err := resolveSource(fromSource, releaseVersion)
+		if err != nil {
+			return nil, err
+		}
+		cc.FromSource = path
+
+		sourceVersion = version
+	}
+
+	if releaseVersion != "" && sourceVersion != "" && releaseVersion != sourceVersion {
+		return nil, fmt.Errorf("release version %s and source version %s do not match", releaseVersion, sourceVersion)
+	}
+
+	if releaseVersion == "" && sourceVersion != "" {
+		releaseVersion = sourceVersion
+	}
 
 	releaseInfo, ok := cm.ReleaseInfo[releaseVersion]
 	if !ok && releaseVersion != "" {
@@ -223,13 +244,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 
 	cc.SkipDownload = skipDownload
 
-	if fromSource != "" {
-		path, err := resolveSource(fromSource)
-		if err != nil {
-			return nil, err
-		}
-		cc.FromSource = path
-	}
+	cc.AgentsVersionFile = filepath.Join(path, AgentsVersionFile)
 
 	return cc, nil
 }
@@ -563,19 +578,51 @@ func (cc *ClusterConfig) PopulateImageDetails(releaseInfo cm.ReleaseMetadata, im
 	return nil
 }
 
-func resolveSource(source string) (string, error) {
+func resolveSource(source, version string) (string, string, error) {
 	if isURL(source) {
 		fmt.Println("Source detected as URL, downloading...")
-		return downloadToTemp(source)
+		folder, err := downloadToTemp(source)
+		if err != nil {
+			return "", "", err
+		}
+		source = folder
 	}
 
 	if _, err := os.Stat(source); err != nil {
-		return "", fmt.Errorf("file does not exist: %s", source)
+		return "", "", fmt.Errorf("file does not exist: %s", source)
 	}
+
+	releaseVersion := version
 
 	err := filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+
+		if info.Name() == "release.json" {
+
+			// #nosec G306,G304  -- parameters are controlled
+			data, err := os.ReadFile(filepath.Join(source, info.Name()))
+			if err != nil {
+				return fmt.Errorf("failed to get release.json: %w", err)
+			}
+			var releaseData map[string]any
+			if err := json.Unmarshal(data, &releaseData); err != nil {
+				return err
+			}
+
+			if version == "" {
+				v, ok := releaseData["version"].(string)
+				if !ok {
+					return fmt.Errorf("failed to get version from release.json")
+				}
+				releaseVersion = v
+			} else {
+				if releaseData["version"] != version {
+					return fmt.Errorf("version mismatch: %v != %v", releaseData["version"], version)
+				}
+			}
+
 		}
 
 		if info.IsDir() {
@@ -592,10 +639,10 @@ func resolveSource(source string) (string, error) {
 	})
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return source, nil
+	return source, releaseVersion, nil
 }
 
 func isURL(input string) bool {

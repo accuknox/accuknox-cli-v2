@@ -1,6 +1,7 @@
 package onboard
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/Masterminds/sprig"
@@ -15,16 +16,29 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 	jc.TemplateFuncs = sprig.GenericFuncMap()
 
 	if jc.FromSource != "" {
-		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
-		defer p.Stop()
+		for _, obj := range jc.ClusterConfig.SystemdServiceObjects {
+			if obj.ServiceName == "" {
+				continue
+			}
+			err := StopSystemdService(obj.ServiceName, true, true)
+			if err != nil {
+				logger.Error("[source] error stopping %s: %s", obj.ServiceName, err)
+				return err
+			}
+		}
+		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
+
 		if err := extractAllAgents(jc.FromSource, p); err != nil {
 			return err
 		}
+		_, _ = p.Stop()
 		jc.SkipDownload = true
 	}
 
+	if !jc.SkipDownload {
+		logger.Info2("Downloading agents...")
+	}
 	// Download and install agents
-	logger.Info2("Downloading agents...")
 	err := jc.SystemdInstall()
 	if err != nil {
 		logger.Error("Installation failed!! Error: %s.\nCleaning up downloaded assets...", err.Error())
@@ -64,6 +78,8 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 	}
 
 	jc.TCArgs.ReleaseVersion = jc.AgentsVersion
+
+	jc.TCArgs.AgentsVersionFile = jc.AgentsVersionFile
 
 	// config services
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
@@ -161,6 +177,13 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		}
 	}
 	logger.PrintSuccess("\nAll services enabled successfully.")
+
+	logger.Info1("writing release version to %s", jc.AgentsVersionFile)
+
+	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), os.FileMode(os.O_CREATE))
+	if err != nil {
+		return err
+	}
 
 	logger.Info1("\nCleaning up downloaded assets...")
 	Deletedir(cm.DownloadDir)

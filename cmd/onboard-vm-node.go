@@ -159,14 +159,14 @@ var joinNodeCmd = &cobra.Command{
 
 		case onboard.VMMode_Systemd:
 			if err := joinConfig.JoinSystemdNode(); err != nil {
-				logger.Error("failed to join worker node: %s", err.Error())
+				logger.Error("[systemd] failed to join worker node: %s", err.Error())
 				return err
 			}
 
 		case onboard.VMMode_Docker:
 			err = joinConfig.JoinWorkerNode()
 			if err != nil {
-				logger.Error("failed to join worker node: %s", err.Error())
+				logger.Error("[docker] failed to join worker node: %s", err.Error())
 				return err
 			}
 

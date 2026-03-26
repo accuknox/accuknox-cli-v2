@@ -6,6 +6,10 @@ relay-server-addr: {{.RelayServerURL}}
 node-state-refresh: {{.NodeStateRefreshTime}}
 {{- end }}
 
+{{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.0" }}
+agents-version-file: {{.AgentsVersionFile}}
+{{- end }}
+
 {{- if .TlsEnabled }}
 tls: {{.TlsEnabled}}
 policy-topic: {{.PoliciesTopic}}

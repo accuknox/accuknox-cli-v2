@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -58,7 +59,7 @@ func (o *DownloadOptions) Download() error {
 
 	for _, mode := range o.VMMode {
 		for _, arch := range o.Arch {
-			dir, err := makeDirPaths(basePath, string(mode), arch)
+			dir, err := makeDirPaths(basePath, o.Version, string(mode), arch)
 			if err != nil {
 				return err
 			}
@@ -84,12 +85,26 @@ func (o *DownloadOptions) Download() error {
 			tableData = append(tableData, pterm.TableData{data}...)
 
 			outFileName := fmt.Sprintf("%v-%v.tar.gz", string(mode), arch)
-			if err := compressDirectory(basePath, dir, outFileName); err != nil {
+			if err := compressDirectory(filepath.Join(basePath, o.Version), dir, outFileName); err != nil {
 				return err
 			}
 
 		}
 	}
+
+	releaseData := map[string]any{
+		"version": o.Version,
+		"details": releaseInfo,
+	}
+	data, err := json.Marshal(releaseData)
+	if err != nil {
+		return err
+	}
+	// #nosec G306 -- file is required to be read by all
+	if err := os.WriteFile(filepath.Join(basePath, o.Version, "release.json"), data, 0644); err != nil {
+		return err
+	}
+
 	pterm.Println()
 
 	// #nosec G104 - false positive
@@ -109,8 +124,8 @@ func (o *DownloadOptions) Download() error {
 	return nil
 }
 
-func makeDirPaths(basePath, mode, arch string) (string, error) {
-	dir := filepath.Join(basePath, string(mode), arch)
+func makeDirPaths(basePath, version, mode, arch string) (string, error) {
+	dir := filepath.Join(basePath, version, string(mode), arch)
 	return dir, os.MkdirAll(dir, 0750)
 }
 

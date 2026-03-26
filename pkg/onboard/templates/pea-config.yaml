@@ -16,6 +16,7 @@ spire:
 endpoint:
   urlendpoint: /pps/api/v1/policy-provider/fetch-policy
   baseurlendpoint: https://{{.PPSHost}}
+  fetch-policy-status: /pps/api/v2/policy-provider/policy-status
 
 statusendpoint:
   endpoint: https://{{.PPSHost}}/pps/api/v1/policy-provider/change-status-policy

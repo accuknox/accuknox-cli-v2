@@ -230,6 +230,8 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	jc.TCArgs.SumEngineImage = jc.SumEngineImage
 	jc.TCArgs.TlsEnabled = jc.Tls.Enabled
 
+	jc.TCArgs.AgentsVersionFile = jc.AgentsVersionFile
+
 	jc.TCArgs.RMQUsername,
 		jc.TCArgs.RMQPassword,
 		err = getRMQUserPass(jc.Tls.RMQCredentials)
@@ -363,6 +365,13 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 			return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosisResult)
 		}
 
+		return err
+	}
+
+	logger.Info1("writing release version to %s", jc.AgentsVersionFile)
+
+	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), os.FileMode(os.O_CREATE))
+	if err != nil {
 		return err
 	}
 

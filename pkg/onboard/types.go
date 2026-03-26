@@ -169,9 +169,10 @@ type ClusterConfig struct {
 	DeployDiscover bool `json:"deploy_discover,omitempty"`
 	SkipDownload   bool `json:"skip_download,omitempty"`
 
-	FromSource      string          `json:"from_source,omitempty"`
-	ImageScanConfig ImageScanConfig `json:"imagescan_config,omitempty"`
-	DeployImagescan bool            `json:"deploy_imagescan,omitempty"`
+	FromSource        string          `json:"from_source,omitempty"`
+	ImageScanConfig   ImageScanConfig `json:"imagescan_config,omitempty"`
+	DeployImagescan   bool            `json:"deploy_imagescan,omitempty"`
+	AgentsVersionFile string          `json:"agents_version_file,omitempty"`
 }
 
 type ImageScanConfig struct {
@@ -378,7 +379,8 @@ type TemplateConfigArgs struct {
 	ProxySaaSAddr  string   `json:"proxy_saas_addr,omitempty"`
 	ProxyExtraArgs []string `json:"proxy_extra_env,omitempty"`
 
-	DeployDiscover bool `json:"deploy_discover,omitempty"`
+	DeployDiscover    bool   `json:"deploy_discover,omitempty"`
+	AgentsVersionFile string `json:"agents_version_file,omitempty"`
 }
 
 type KmuxConfigTemplateArgs struct {

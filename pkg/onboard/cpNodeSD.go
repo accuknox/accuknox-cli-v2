@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -33,6 +34,8 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	ic.TCArgs.VmMode = ic.Mode
 
 	ic.TCArgs.NodeStateRefreshTime = ic.NodeStateRefreshTime
+
+	ic.TCArgs.AgentsVersionFile = ic.AgentsVersionFile
 
 	var err error
 	if ic.Tls.Enabled {
@@ -103,15 +106,30 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	}
 
 	if ic.FromSource != "" {
-		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
-		defer p.Stop()
+
+		for _, obj := range ic.ClusterConfig.SystemdServiceObjects {
+			if obj.ServiceName == "" {
+				continue
+			}
+			err := StopSystemdService(obj.ServiceName, true, true)
+			if err != nil {
+				logger.Error("[source] error stopping %s: %s", obj.ServiceName, err)
+				return err
+			}
+		}
+		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
+
 		if err = extractAllAgents(ic.FromSource, p); err != nil {
 			return err
 		}
 		ic.SkipDownload = true
+		_, _ = p.Stop()
+	}
+
+	if !ic.SkipDownload {
+		logger.Info2(("Downloading agents..."))
 	}
 	// download and extract systemd packages
-	logger.Info2(("Downloading agents..."))
 	err = ic.SystemdInstall()
 	if err != nil {
 		logger.Error("Installation failed!! Cleaning up downloaded assets...")
@@ -201,6 +219,12 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 			return err
 		}
 
+	}
+
+	logger.Info1("writing release version to %s", ic.AgentsVersionFile)
+
+	if err := os.WriteFile(ic.AgentsVersionFile, []byte(ic.AgentsVersion), os.FileMode(os.O_CREATE)); err != nil {
+		return err
 	}
 
 	// Clean Up
