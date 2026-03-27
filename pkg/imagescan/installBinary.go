@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 )
 
-var defaultInstallationPath = filepath.Join(os.Getenv("HOME"), ".accuknox-config", "container-scanner")
+var defaultInstallationPath = "/opt/accuknox-scanner/bin/"
 
 // Download and install the provided binary
 func DownloadAndInstallBinary(url, targetDir string) error {

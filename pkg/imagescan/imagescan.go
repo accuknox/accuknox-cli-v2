@@ -64,7 +64,7 @@ func DiscoverAndScan(conf kubesheildScanner.ScanConfig, hostName, runtime string
 	conf.ArtifactConfig.AdditionalData["registry_type"] = "vm"
 
 	// Passing nil kubernetes.Clientset, because it won't be required incase of VM container Image scanning
-	imageScanner := kubesheildScanner.New(conf, nil)
+	imageScanner := kubesheildScanner.New(conf, nil, kubesheildScanner.TrivyConfig{})
 	imageScanner.ScannerHttpClient = httpclient.NewClient(true, nil)
 
 	// Scans the provided images and sends the result back to saas through the artifact API
@@ -128,7 +128,7 @@ func getImages(runtime string, criPath []string, logger *zap.SugaredLogger) []v1
 func getContainers(runtime string, criPath []string, onlyRunningContainers bool, logger *zap.SugaredLogger) []v1beta1.Image {
 	var conatainers = []v1beta1.Image{}
 	for _, path := range criPath {
-		containerList, err := kubesheildDiscovery.ListContainers(runtime, path, kubesheildDiscovery.VM, onlyRunningContainers)
+		containerList, err := kubesheildDiscovery.ListContainers(runtime, path, kubesheildDiscovery.VM, onlyRunningContainers, false)
 		if err != nil {
 			logger.Errorf("error while listing the container images for runtime %s: %v", runtime, err)
 			continue

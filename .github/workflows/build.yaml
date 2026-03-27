@@ -9,6 +9,8 @@ jobs:
 
   build-knoxctl:
     runs-on: ubuntu-latest
+    env:
+      GOEXPERIMENT: jsonv2
     steps:
 
       - name: Checkout Source

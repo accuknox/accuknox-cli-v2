@@ -2,9 +2,9 @@
 # Copyright 2022 Authors of KubeArmor
 CURDIR     := $(shell pwd)
 INSTALLDIR := $(shell go env GOPATH)/bin/
-
 GOOS   ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
+export GOEXPERIMENT=jsonv2
 
 # Compile RRA submodule beforehand for embeding in Knoxctl
 RRADIR := $(CURDIR)/pkg/vm
