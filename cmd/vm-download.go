@@ -116,4 +116,6 @@ func init() {
 	vmDownload.PersistentFlags().StringVar(&imageVersions.WaitForItImage, "wait-for-it-image", "", "wait-for-it image to use")
 	vmDownload.PersistentFlags().StringVarP(&imageVersions.KubearmorVersion, "kubearmor-version", "", "", "version of KubeArmor to use")
 
+	vmDownload.PersistentFlags().BoolVar(&downloadOpts.Worker, "worker", false, "download only worker node images/binaries")
+
 }

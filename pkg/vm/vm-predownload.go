@@ -37,6 +37,13 @@ type DownloadOptions struct {
 	HttpRegistryConnection     bool
 	Debug                      bool
 	ImageVersions              *onboard.ImageVersions
+	Worker                     bool
+}
+
+var workerAgents = map[string]bool{
+	"kubearmor":            true,
+	"summary-engine":       true,
+	"kubearmor-vm-adapter": true,
 }
 
 func (o *DownloadOptions) Download() error {
@@ -75,10 +82,10 @@ func (o *DownloadOptions) Download() error {
 			var data []string
 			switch mode {
 			case onboard.VMMode_Systemd:
-				downloaded, skipped := downloadSystemdAgents(cc, dir, arch, images)
+				downloaded, skipped := downloadSystemdAgents(cc, dir, arch, images, o.Worker)
 				data = []string{string(mode), arch, fmt.Sprintf("%d", downloaded), fmt.Sprintf("%d", skipped), o.Version}
 			case onboard.VMMode_Docker:
-				downloaded, skipped := downloadDockerAgents(arch, dir, images)
+				downloaded, skipped := downloadDockerAgents(arch, dir, images, o.Worker)
 				data = []string{string(mode), arch, fmt.Sprintf("%d", downloaded), fmt.Sprintf("%d", skipped), o.Version}
 			}
 
@@ -285,14 +292,23 @@ func downloadSystemdAgents(
 	cc onboard.ClusterConfig,
 	dir, arch string,
 	images map[string]string,
+	worker bool,
 ) (int, int) {
 
 	skipped := 0
 	downloaded := 0
 
-	p, _ := pterm.DefaultProgressbar.WithTotal(len(images)).WithTitle("Downloading binaries").WithRemoveWhenDone(true).Start()
+	imageLen := len(images)
+	if worker {
+		imageLen = len(workerAgents)
+	}
+
+	p, _ := pterm.DefaultProgressbar.WithTotal(imageLen).WithTitle("Downloading binaries").WithRemoveWhenDone(true).Start()
 
 	for image, binaryImage := range images {
+		if worker && !workerAgents[image] {
+			continue
+		}
 
 		p.UpdateTitle(fmt.Sprintf("Downloading %s [%s] binary", image, arch))
 
@@ -329,13 +345,22 @@ func downloadSystemdAgents(
 func downloadDockerAgents(
 	arch, dir string,
 	images map[string]string,
+	worker bool,
 ) (int, int) {
+
+	imageLen := len(images)
+	if worker {
+		imageLen = len(workerAgents)
+	}
 
 	skipped := 0
 	downloaded := 0
-	p, _ := pterm.DefaultProgressbar.WithTotal(len(images)).WithTitle("Downloading images").WithRemoveWhenDone(true).Start()
+	p, _ := pterm.DefaultProgressbar.WithTotal(imageLen).WithTitle("Downloading images").WithRemoveWhenDone(true).Start()
 
 	for image, dockerImage := range images {
+		if worker && !workerAgents[image] {
+			continue
+		}
 
 		p.UpdateTitle(fmt.Sprintf("Downloading %s [%s] image", image, arch))
 

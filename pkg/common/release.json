@@ -2128,7 +2128,7 @@
       "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
       "pea_tag": "v0.9.4",
       "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
-      "feeder_service_tag": "v0.10.8",
+      "feeder_service_tag": "v0.10.7",
       "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
       "discover_tag": "v0.3.23",
       "discover_image": "public.ecr.aws/k9v9d5v2/discovery-engine-discover",
