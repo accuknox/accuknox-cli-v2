@@ -44,6 +44,7 @@ var workerAgents = map[string]bool{
 	"kubearmor":            true,
 	"summary-engine":       true,
 	"kubearmor-vm-adapter": true,
+	"kubearmor-init":       true,
 }
 
 func (o *DownloadOptions) Download() error {
