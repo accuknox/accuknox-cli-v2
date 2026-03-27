@@ -2120,7 +2120,7 @@
     },
     "v0.12.1": {
       "creation_time": "1774509374",
-      "kubearmor_tag": "v1.6.5",
+      "kubearmor_tag": "v1.6.15",
       "kubearmor_relay_tag": "v0.0.4",
       "kubearmor_vm_adapter_tag": "v0.1.22",
       "spire_agent_tag": "v2.0.14",
