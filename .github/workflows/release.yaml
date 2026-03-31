@@ -17,6 +17,7 @@ jobs:
       GOPRIVATE: github.com/accuknox/
       GH_ACCESS_TOKEN: ${{ secrets.GH_ORG_TOKEN }}
       GIT_KEY: ${{ secrets.GIT_KEY }}
+      GOEXPERIMENT: jsonv2
     steps:
       -
         name: Checkout
