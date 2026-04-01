@@ -158,6 +158,14 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		}
 	}
 
+	logger.Info1("writing release version to %s", jc.AgentsVersionFile)
+
+	// #nosec - G306 -- permissions are controlled
+	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), 0644)
+	if err != nil {
+		return err
+	}
+
 	// Start services
 	logger.Info2("\nEnabling services...")
 	for _, obj := range jc.SystemdServiceObjects {
@@ -177,14 +185,6 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		}
 	}
 	logger.PrintSuccess("\nAll services enabled successfully.")
-
-	logger.Info1("writing release version to %s", jc.AgentsVersionFile)
-
-	// #nosec - G306 -- permissions are controlled
-	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), 0644)
-	if err != nil {
-		return err
-	}
 
 	logger.Info1("\nCleaning up downloaded assets...")
 	Deletedir(cm.DownloadDir)

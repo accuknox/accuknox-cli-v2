@@ -349,6 +349,14 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		diagnosis = false
 	}
 
+	logger.Info1("writing release version to %s", jc.AgentsVersionFile)
+
+	// #nosec - G306 -- permissions are controlled
+	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), 0644)
+	if err != nil {
+		return err
+	}
+
 	// run compose command
 	_, err = ExecComposeCommand(true, jc.DryRun, jc.composeCmd, args...)
 	if err != nil {
@@ -366,14 +374,6 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 			return fmt.Errorf("Error: %s.\n\nDIAGNOSIS:\n%s", err.Error(), diagnosisResult)
 		}
 
-		return err
-	}
-
-	logger.Info1("writing release version to %s", jc.AgentsVersionFile)
-
-	// #nosec - G306 -- permissions are controlled
-	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), 0644)
-	if err != nil {
 		return err
 	}
 

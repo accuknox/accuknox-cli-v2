@@ -302,16 +302,17 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		ic.SkipDownload = true
 	}
 
-	// Diagnose if necessary and run compose command
-	err = ic.runComposeCommand(composeFilePath)
+	logger.Info1("writing release version to %s", ic.AgentsVersionFile)
+
+	// #nosec - G306 -- permissions are controlled
+	err = os.WriteFile(ic.AgentsVersionFile, []byte(ic.AgentsVersion), 0644)
 	if err != nil {
 		return err
 	}
 
-	logger.Info1("writing release version to %s", ic.AgentsVersionFile)
+	// Diagnose if necessary and run compose command
+	return ic.runComposeCommand(composeFilePath)
 
-	// #nosec - G306 -- permissions are controlled
-	return os.WriteFile(ic.AgentsVersionFile, []byte(ic.AgentsVersion), 0644)
 }
 
 func (ic *InitConfig) populateCommonArgs() {
