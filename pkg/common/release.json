@@ -2122,7 +2122,7 @@
       "creation_time": "1774509374",
       "kubearmor_tag": "v1.6.15",
       "kubearmor_relay_tag": "v0.0.4",
-      "kubearmor_vm_adapter_tag": "v0.1.22",
+      "kubearmor_vm_adapter_tag": "v0.1.23",
       "spire_agent_tag": "v2.0.14",
       "sia_tag": "v0.8.13",
       "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",

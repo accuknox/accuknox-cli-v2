@@ -211,7 +211,12 @@ func pullAndSave(dockerImage, arch, outFileName string) error {
 		return fmt.Errorf("reading pull output failed: %w", err)
 	}
 
-	saveReader, err := dClient.ImageSave(ctx, []string{digestRef})
+	err = dClient.ImageTag(ctx, digestRef, dockerImage)
+	if err != nil {
+		return err
+	}
+
+	saveReader, err := dClient.ImageSave(ctx, []string{dockerImage})
 	if err != nil {
 		return err
 	}

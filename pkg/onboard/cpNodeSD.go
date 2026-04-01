@@ -223,7 +223,8 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	logger.Info1("writing release version to %s", ic.AgentsVersionFile)
 
-	if err := os.WriteFile(ic.AgentsVersionFile, []byte(ic.AgentsVersion), os.FileMode(os.O_CREATE)); err != nil {
+	// #nosec - G306 -- permissions are controlled
+	if err := os.WriteFile(ic.AgentsVersionFile, []byte(ic.AgentsVersion), 0644); err != nil {
 		return err
 	}
 

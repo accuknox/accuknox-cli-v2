@@ -249,7 +249,7 @@ services:
       - "--node-state-refresh={{.NodeStateRefreshTime}}"
       {{- end }}
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.0" }}
-      - "--agents-version-file={{.AgentsVersionFile}}"
+      - "--agents-version-file=/opt/agents-version"
       {{- end }}
       {{- if .SpireEnabled }}
       - "--spire"

@@ -318,6 +318,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		if err = loadDockerImagesFromPath(jc.FromSource, p); err != nil {
 			return err
 		}
+		jc.SkipDownload = true
 	}
 
 	diagnosis := true
@@ -337,7 +338,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	args = append(args, "up", "-d")
 
 	if jc.SkipDownload {
-		logger.Debug("Skipping image download\n")
+		logger.Debug("\nSkipping image download\n")
 		args = append(args, "--pull", "never")
 	}
 
@@ -370,7 +371,8 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 
 	logger.Info1("writing release version to %s", jc.AgentsVersionFile)
 
-	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), os.FileMode(os.O_CREATE))
+	// #nosec - G306 -- permissions are controlled
+	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), 0644)
 	if err != nil {
 		return err
 	}

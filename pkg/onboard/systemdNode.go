@@ -180,7 +180,8 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 
 	logger.Info1("writing release version to %s", jc.AgentsVersionFile)
 
-	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), os.FileMode(os.O_CREATE))
+	// #nosec - G306 -- permissions are controlled
+	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), 0644)
 	if err != nil {
 		return err
 	}

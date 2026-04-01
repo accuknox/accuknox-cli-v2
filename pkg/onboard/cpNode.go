@@ -299,6 +299,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		if err = loadDockerImagesFromPath(ic.FromSource, p); err != nil {
 			return err
 		}
+		ic.SkipDownload = true
 	}
 
 	// Diagnose if necessary and run compose command
@@ -309,7 +310,8 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	logger.Info1("writing release version to %s", ic.AgentsVersionFile)
 
-	return os.WriteFile(ic.AgentsVersionFile, []byte(ic.AgentsVersion), os.FileMode(os.O_CREATE))
+	// #nosec - G306 -- permissions are controlled
+	return os.WriteFile(ic.AgentsVersionFile, []byte(ic.AgentsVersion), 0644)
 }
 
 func (ic *InitConfig) populateCommonArgs() {
@@ -415,7 +417,7 @@ func (ic *InitConfig) runComposeCommand(composeFilePath string) error {
 	}
 
 	if ic.SkipDownload {
-		logger.Debug("Skipping image download\n")
+		logger.Debug("\nSkipping image download\n")
 		args = append(args, "--pull", "never")
 	}
 
