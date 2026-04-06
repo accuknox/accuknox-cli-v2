@@ -347,8 +347,9 @@ func (cc *ClusterConfig) PopulateAccessKeyConfig(url, key, clusterName, vmName, 
 		Url:         url,
 		Insecure:    insecure,
 		Mode:        mode,
-		ClusterName: vmName,
+		ClusterName: clusterName,
 		Endpoint:    endpoint,
+		NodeName:    vmName,
 	}
 
 	var (
@@ -362,7 +363,7 @@ func (cc *ClusterConfig) PopulateAccessKeyConfig(url, key, clusterName, vmName, 
 			return "", err
 		}
 	}
-	if cc.Mode == VMMode_Docker {
+	if vmName == "" {
 		if hostname, err := os.Hostname(); err == nil {
 			cc.AccessKey.NodeName = fmt.Sprintf("%v-%v", hostname, time.Now().Unix())
 		}

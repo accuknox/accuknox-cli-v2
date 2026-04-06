@@ -135,7 +135,17 @@ var joinNodeCmd = &cobra.Command{
 		}
 
 		if accessKey != "" {
-			if joinToken, err = vmConfigs.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "Node", insecure); err != nil {
+
+			cn := topicPrefix
+			if clusterName != "" && cn == "" {
+				cn = clusterName
+			}
+
+			if cn == "" {
+				return fmt.Errorf("cluster name is required")
+			}
+
+			if joinToken, err = vmConfigs.PopulateAccessKeyConfig(tokenURL, accessKey, cn, vmName, tokenEndpoint, "Node", insecure); err != nil {
 				return err
 			}
 		}
