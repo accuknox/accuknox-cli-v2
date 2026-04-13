@@ -4,6 +4,20 @@ Description=Spire Agent
 PartOf=rra.service
 {{- end }}
 
+{{- if ge .SystemdVersion 230 }}
+# limit to 4 restarts in 60 seconds
+# for newer systemd versions
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#StartLimitIntervalSec=interval
+StartLimitIntervalSec=60
+StartLimitBurst=4
+{{- else if ge .SystemdVersion 220 }}
+# limit to 4 restarts in 60 seconds
+# for newer systemd versions
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#StartLimitIntervalSec=interval
+StartLimitInterval=60
+StartLimitBurst=4
+{{- end }}
+
 [Service]
 User=root
 KillMode=control-group
@@ -30,7 +44,18 @@ MemoryHigh={{ .MemoryHigh | default "80M" }}
 CPUWeight=50
 {{- end }}
 
-OOMPolicy=kill
+{{- if ge .SystemdVersion 240 }}
+OOMPolicy=stop
+{{- end }}
+
+{{- if lt .SystemdVersion 220 }}
+# limit to 4 restarts in 60 seconds 
+# for older systemd versions
+# https://www.freedesktop.org/software/systemd/man/systemd.service.html
+StartLimitInterval=60
+StartLimitBurst=4
+{{- end }}
+
 
 [Install]
 WantedBy=multi-user.target

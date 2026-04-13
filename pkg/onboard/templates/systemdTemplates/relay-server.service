@@ -28,7 +28,9 @@ MemoryHigh={{ .MemoryHigh | default "80M" }}
 CPUWeight=50
 {{- end }}
 
-OOMPolicy=kill
+{{- if ge .SystemdVersion 240 }}
+OOMPolicy=stop
+{{- end }}
 
 [Install]
 WantedBy=multi-user.target

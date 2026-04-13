@@ -2,6 +2,20 @@
 Description=accuknox-policy-enforcement-agent
 After=kubearmor.service kubearmor-vm-adapter.service spire-agent.service
 
+{{- if ge .SystemdVersion 230 }}
+# limit to 4 restarts in 60 seconds
+# for newer systemd versions
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#StartLimitIntervalSec=interval
+StartLimitIntervalSec=90
+StartLimitBurst=3
+{{- else if ge .SystemdVersion 220 }}
+# limit to 4 restarts in 60 seconds
+# for newer systemd versions
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#StartLimitIntervalSec=interval
+StartLimitInterval=90
+StartLimitBurst=3
+{{- end }}
+
 [Service]
 User=root
 KillMode=control-group
@@ -35,7 +49,17 @@ MemoryHigh={{ .MemoryHigh | default "80M" }}
 CPUWeight=50
 {{- end }}
 
-OOMPolicy=kill
+{{- if ge .SystemdVersion 240 }}
+OOMPolicy=stop
+{{- end }}
+
+{{- if lt .SystemdVersion 220 }}
+# limit to 4 restarts in 60 seconds 
+# for older systemd versions
+# https://www.freedesktop.org/software/systemd/man/systemd.service.html
+StartLimitInterval=90
+StartLimitBurst=3
+{{- end }}
 
 [Install]
 WantedBy=multi-user.target
