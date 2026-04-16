@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
@@ -740,7 +741,7 @@ func StartSystemdService(serviceName string) error {
 	}
 
 	// Start the service
-	ch := make(chan string)
+	ch := make(chan string, 1)
 	if _, err := conn.RestartUnitContext(ctx, serviceName, "replace", ch); err != nil {
 		return fmt.Errorf("failed to start %s: %v", serviceName, err)
 	}
@@ -757,7 +758,7 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 	}
 	defer conn.Close()
 
-	stopChan := make(chan string)
+	stopChan := make(chan string, 1)
 
 	property, err := conn.GetUnitPropertyContext(ctx, serviceName, "ActiveState")
 	if err != nil {
@@ -826,10 +827,10 @@ func DeboardSystemd(nodeType NodeType) error {
 		if obj.ServiceName == "" {
 			continue
 		}
-		err := StopSystemdService(obj.ServiceName, false, true)
+		err := StopSystemdService(obj.ServiceName, true, true)
 		if err != nil {
 			logger.Error("error stopping %s: %s", obj.ServiceName, err)
-			return err
+			continue
 		}
 
 		Deletedir(obj.AgentDir)
@@ -1108,4 +1109,61 @@ func GetSystemdServiceStatus(name string) (string, error) {
 	}
 
 	return status, nil
+}
+
+func ResetRestartCount(exclude map[string]bool) error {
+	pseudoCC := new(ClusterConfig)
+	pseudoCC.CreateSystemdServiceObjects()
+
+	for _, obj := range pseudoCC.SystemdServiceObjects {
+		if obj.ServiceName == "" || exclude[obj.ServiceName] {
+			continue
+		}
+		if err := ResetRestartCounter(obj.ServiceName); err != nil {
+			fmt.Printf("failed to reset restart counter for %v : %v\n", obj.ServiceName, err)
+		}
+	}
+
+	return nil
+}
+
+func ResetRestartCounter(service string) error {
+	if service == "" {
+		return nil
+	}
+	ctx := context.Background()
+
+	dConn, err := dbus.NewWithContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to connect to systemd: %v", err)
+	}
+	defer dConn.Close()
+
+	err = dConn.ResetFailedUnitContext(ctx, service)
+	if err != nil {
+		fmt.Printf("failed to reset restart counter for %s: %v\n", service, err)
+		return nil
+	}
+
+	err = dConn.ReloadContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to reload systemd configuration: %v", err)
+	}
+
+	ch := make(chan string, 1)
+	_, err = dConn.StartUnitContext(ctx, service, "replace", ch)
+	if err != nil {
+		return fmt.Errorf("failed to start %s: %v", service, err)
+	}
+
+	select {
+	case msg := <-ch:
+		if msg != "done" {
+			return fmt.Errorf("failed to start %s: %v", service, err)
+		}
+	case <-time.After(20 * time.Second):
+		return fmt.Errorf("timeout waiting for %s to start", service)
+	}
+
+	return nil
 }

@@ -25,7 +25,13 @@ StandardError=file:/opt/{{.AgentName}}/{{.AgentName}}-err.log
 {{- end }}
 
 CPUQuota={{ .CPUQuota | default "5%" }}
+{{- if gt .SystemdVersion 229 }}
 MemoryMax={{ .MemoryMax | default "100M" }}
+{{- end }}
+
+{{- if lt .SystemdVersion 230 }} 
+MemoryLimit={{ .MemoryMax | default "100M" }}
+{{- end }}
 
 {{- if gt .SystemdVersion 241 }}
 MemoryHigh={{ .MemoryHigh | default "80M" }}
