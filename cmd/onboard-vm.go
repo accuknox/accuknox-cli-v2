@@ -179,7 +179,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterID), "cluster-id", "", "cluster id")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&url), "url", "", "url")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&label), "label", "", "label")
-	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "url", "tenant-id", "cluster-name")
+
+	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "url", "tenant-id")
 	onboardVMCmd.MarkFlagsRequiredTogether("auth-token", "label", "schedule")
 
 	// splunk flags

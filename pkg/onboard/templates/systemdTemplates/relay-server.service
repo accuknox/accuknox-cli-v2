@@ -35,7 +35,7 @@ CPUWeight=50
 {{- end }}
 
 {{- if ge .SystemdVersion 240 }}
-OOMPolicy=stop
+OOMPolicy=kill
 {{- end }}
 
 [Install]

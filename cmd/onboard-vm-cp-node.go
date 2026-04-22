@@ -80,6 +80,14 @@ var cpNodeCmd = &cobra.Command{
 			return fmt.Errorf("SPIRE host is required")
 		}
 
+		if topicPrefix == "" && clusterName == "" {
+			return fmt.Errorf("--cp-name or --cluster-name is required")
+		}
+
+		if clusterName != "" && topicPrefix == "" {
+			topicPrefix = clusterName
+		}
+
 		var configDumpPath string
 		switch vmMode {
 		case onboard.VMMode_Systemd:
@@ -137,16 +145,12 @@ var cpNodeCmd = &cobra.Command{
 		}
 
 		if accessKey != "" {
-			cn := topicPrefix
-			if clusterName != "" && cn == "" {
-				cn = clusterName
-			}
 
-			if cn == "" {
+			if topicPrefix == "" {
 				return fmt.Errorf("cluster name is required")
 			}
 
-			if joinToken, err = vmConfig.PopulateAccessKeyConfig(tokenURL, accessKey, cn, vmName, tokenEndpoint, "vm", insecure); err != nil {
+			if joinToken, err = vmConfig.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "vm", insecure); err != nil {
 				return err
 			}
 		}

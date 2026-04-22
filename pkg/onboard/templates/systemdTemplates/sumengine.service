@@ -61,7 +61,7 @@ CPUWeight=50
 {{- end }}
 
 {{- if ge .SystemdVersion 240 }}
-OOMPolicy=stop
+OOMPolicy=kill
 {{- end }}
 
 {{- if lt .SystemdVersion 220 }}

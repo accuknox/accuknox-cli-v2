@@ -101,6 +101,14 @@ var joinNodeCmd = &cobra.Command{
 			}
 		}
 
+		if topicPrefix == "" && clusterName == "" {
+			return fmt.Errorf("--cp-name or --cluster-name is required")
+		}
+
+		if clusterName != "" && topicPrefix == "" {
+			topicPrefix = clusterName
+		}
+
 		vmConfigs, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, vmMode, imageVersions, releaseVersion,
 			nodeAddr, dryRun,
 			true, deployRMQ, imagePullPolicy, visibility, hostVisibility, sumEngineVisibility, audit, block, hostAudit, hostBlock,
@@ -136,16 +144,11 @@ var joinNodeCmd = &cobra.Command{
 
 		if accessKey != "" {
 
-			cn := topicPrefix
-			if clusterName != "" && cn == "" {
-				cn = clusterName
-			}
-
-			if cn == "" {
+			if topicPrefix == "" {
 				return fmt.Errorf("cluster name is required")
 			}
 
-			if joinToken, err = vmConfigs.PopulateAccessKeyConfig(tokenURL, accessKey, cn, vmName, tokenEndpoint, "Node", insecure); err != nil {
+			if joinToken, err = vmConfigs.PopulateAccessKeyConfig(tokenURL, accessKey, topicPrefix, vmName, tokenEndpoint, "Node", insecure); err != nil {
 				return err
 			}
 		}
