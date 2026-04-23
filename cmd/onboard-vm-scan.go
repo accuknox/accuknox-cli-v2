@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"net"
 	"slices"
 	"strings"
@@ -18,6 +19,10 @@ var onboardVmScanCmd = &cobra.Command{
 	Short: "sub-command for onboarding RRA(risk assessment tool) and container image scanning",
 	Long:  "sub-command for onboarding RRA(risk assessment tool) and container image scanning",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if clusterName == "" {
+			return fmt.Errorf("cluster name is required")
+		}
 
 		// create cluster config
 		var cc onboard.ClusterConfig

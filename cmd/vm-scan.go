@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
@@ -17,6 +18,10 @@ var vmScanCmd = &cobra.Command{
 	Short: "RRA scan for vms",
 	Long:  "RRA scan for vms",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if clusterName == "" {
+			return fmt.Errorf("cluster name is required")
+		}
 
 		var err error
 		rracmdArgs := vm.PrepareRRACommand(profile, benchmark, authToken, label, url, tenantID, clusterName, clusterID)
