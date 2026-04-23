@@ -34,6 +34,8 @@ services:
       accuknox-net:
         aliases:
           - spire-agent
+    extra_hosts:
+      - "kubearmor:host-gateway"
     restart: always
     ports:
       - "9091:9091"
@@ -68,6 +70,8 @@ services:
       accuknox-net:
         aliases:
           - wait-for-it
+    extra_hosts:
+      - "kubearmor:host-gateway"
   {{- end }}
   kubearmor-init:
     profiles:
@@ -94,6 +98,8 @@ services:
       accuknox-net:
         aliases:
           - kubearmor-init
+    extra_hosts:
+      - "kubearmor:host-gateway"
   {{- if eq (printf "%.3s" .DockerComposeVersion) "v1." }}
     entrypoint:
       - sh
@@ -164,13 +170,9 @@ services:
       - "/usr/share/kubearmor:/usr/share/kubearmor:rw"
       - "/var/run/kubearmor:/var/run/kubearmor:rw"
     restart: always
-    ports:
-      - "{{.KubeArmorPort}}:32767"
-    networks:
-      accuknox-net:
-        aliases:
-          - kubearmor
+    network_mode: "host"
     pid: "host"
+    stop_grace_period: 20s
     privileged: true
     logging:
       driver: {{.DockerLogDriver}}
