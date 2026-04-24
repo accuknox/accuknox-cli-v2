@@ -101,10 +101,6 @@ var joinNodeCmd = &cobra.Command{
 			}
 		}
 
-		if topicPrefix == "" && clusterName == "" {
-			return fmt.Errorf("--cp-name or --cluster-name is required")
-		}
-
 		if clusterName != "" && topicPrefix == "" {
 			topicPrefix = clusterName
 		}

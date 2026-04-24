@@ -80,10 +80,6 @@ var cpNodeCmd = &cobra.Command{
 			return fmt.Errorf("SPIRE host is required")
 		}
 
-		if topicPrefix == "" && clusterName == "" {
-			return fmt.Errorf("--cp-name or --cluster-name is required")
-		}
-
 		if clusterName != "" && topicPrefix == "" {
 			topicPrefix = clusterName
 		}
