@@ -75,10 +75,11 @@ var (
 
 	deployDiscovery bool
 
-	skipDownload bool
-	imageScan    bool
-	allImages    bool
-	fromSource   string
+	skipDownload  bool
+	imageScan     bool
+	allImages     bool
+	fromSource    string
+	forceRecreate bool
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -195,7 +196,7 @@ func init() {
 
 	onboardVMCmd.PersistentFlags().StringVar(&rmqConnectionName, "rmq-connection-name", "", "Rabbitmq connection name")
 
-	onboardVMCmd.PersistentFlags().IntVar(&nodeStateRefreshTime, "node-state-refresh-time", 10, "Refresh time for node state (default 10 minutes)")
+	onboardVMCmd.PersistentFlags().IntVar(&nodeStateRefreshTime, "node-state-refresh-time", 4, "Refresh time for node state (default 4 minutes)")
 
 	onboardVMCmd.PersistentFlags().StringVar(&spireHost, "spire-host", "", "address of spire-host to connect for authenticating with accuknox SaaS")
 
@@ -237,6 +238,10 @@ func init() {
 	// Enable image scanning
 	onboardVMCmd.PersistentFlags().BoolVar(&imageScan, "image-scan", false, "deploy container image scanner")
 	onboardVMCmd.PersistentFlags().BoolVar(&allImages, "all-image", false, "if flag set, all the images in the VM will be scanned")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&tls.RMQEnabled, "rmq", false, "enable rabbitmq based connection instead of gRPC")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&forceRecreate, "force-recreate", false, "force recreate docker containers when re-onboarding")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

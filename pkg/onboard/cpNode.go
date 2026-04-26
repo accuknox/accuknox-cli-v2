@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -184,6 +185,11 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	ic.TCArgs.KubeArmorURL = "kubearmor:32767"
 	ic.TCArgs.KubeArmorPort = "32767"
 
+	ic.TCArgs.KubeArmorAddr = "kubearmor"
+	if ic.Mode == VMMode_Systemd {
+		ic.TCArgs.KubeArmorAddr = "localhost"
+	}
+
 	ic.TCArgs.RelayServerURL = "kubearmor-relay-server:32768"
 	ic.TCArgs.RelayServerAddr = "kubearmor-relay-server"
 	ic.TCArgs.RelayServerPort = "32768"
@@ -198,6 +204,13 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	ic.TCArgs.ConfigPath = configPath
 
 	ic.TCArgs.AccessKey = ic.AccessKey
+
+	ic.TCArgs.RMQUsername,
+		ic.TCArgs.RMQPassword,
+		err = getRMQUserPass(ic.Tls.RMQCredentials)
+	if err != nil {
+		return err
+	}
 
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
 		ReleaseVersion: ic.AgentsVersion,
@@ -218,6 +231,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	} else if ic.RMQServer == "" && !ic.DeployRMQ {
 		return fmt.Errorf("RabbitMQ address must be specified if deployment is skipped")
 	}
+	ic.TCArgs.RMQEnabled = ic.Tls.RMQEnabled
 	if ic.Tls.Enabled {
 		ic.TCArgs.TlsEnabled = ic.Tls.Enabled
 		ic.TCArgs.TlsCertFile = fmt.Sprintf("%s%s%s/%s", ic.UserConfigPath, configPath, common.DefaultCACertDir, common.DefaultEncodedFileName)
@@ -294,9 +308,30 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	if ic.FromSource != "" {
-		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
+		agents := []string{
+			"feeder-service",
+			"kubearmor-init",
+			"kubearmor-relay-server",
+			"kubearmor",
+			"kubearmor-vm-adapter",
+			"policy-enforcement-agent",
+			"rabbitMQ",
+			"rra",
+			"shared-informer-agent",
+			"spire-agent",
+			"summary-engine",
+			"wait-for-it",
+		}
+
+		if ic.DeployDiscover {
+			agents = append(agents, "discover-agent")
+		}
+		if ic.EnableHardeningAgent {
+			agents = append(agents, "hardening-agent")
+		}
+		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading images").WithRemoveWhenDone(true).Start()
 		defer p.Stop()
-		if err = loadDockerImagesFromPath(ic.FromSource, p); err != nil {
+		if err = loadDockerImagesFromPath(ic.FromSource, agents, p); err != nil {
 			return err
 		}
 		ic.SkipDownload = true
@@ -356,7 +391,14 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 	kmuxConfigArgs.ConsumerTag = agentName
 	kmuxConfigArgs.QueueDurability = getQueueDurability(kmuxFile)
 	kmuxConfigArgs.TlsCertFile = fmt.Sprintf("/opt%s/%s", common.DefaultCACertDir, common.DefaultEncodedFileName)
-	if kmuxFile == common.KmuxPoliciesFileName || kmuxFile == common.KmuxAnnotationFileName {
+
+	if slices.ContainsFunc([]string{
+		common.KmuxPoliciesFileName,
+		common.KmuxAnnotationFileName,
+	}, func(s string) bool {
+		return strings.Contains(kmuxFile, s)
+	}) {
+
 		kmuxConfigArgs.ExchangeType = "fanout"
 		kmuxConfigArgs.ExchangeName = fmt.Sprintf("%s-fanout", prefix)
 	} else {
@@ -368,11 +410,24 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 		kmuxConfigArgs.QueueName = fmt.Sprintf("%s-%s", prefix, qn)
 	}
 
-	if (kmuxFile == common.KmuxStateEventFileName || kmuxFile == common.KmuxSummaryFileName) && agentName != common.VMAdapter {
+	if slices.ContainsFunc([]string{
+		common.KmuxStateEventFileName,
+		common.KmuxSummaryFileName,
+	}, func(s string) bool {
+		return strings.Contains(kmuxFile, s)
+	}) && !strings.Contains(agentName, common.VMAdapter) {
+
 		kmuxConfigArgs.QueueName = fmt.Sprintf("%s-%s", kmuxConfigArgs.QueueName, agentName)
 	}
 
-	if agentName == common.VMAdapter && (kmuxFile == common.KmuxPoliciesFileName || kmuxFile == common.KmuxAnnotationFileName) {
+	if strings.Contains(agentName, common.VMAdapter) &&
+		slices.ContainsFunc([]string{
+			common.KmuxPoliciesFileName,
+			common.KmuxAnnotationFileName,
+		}, func(s string) bool {
+			return strings.Contains(kmuxFile, s)
+		}) {
+
 		if hostname == "" {
 			var err error
 			hostname, err = os.Hostname()
@@ -420,6 +475,11 @@ func (ic *InitConfig) runComposeCommand(composeFilePath string) error {
 	if ic.SkipDownload {
 		logger.Debug("\nSkipping image download\n")
 		args = append(args, "--pull", "never")
+	}
+
+	if ic.ForceRecreate {
+		logger.Debug("\nForce recreating containers\n")
+		args = append(args, "--force-recreate")
 	}
 
 	// run compose command
@@ -515,7 +575,6 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 			kmuxConfigTemplateString: kmuxConfig,
 			kmuxConfigFileName:       common.KmuxConfigFileName,
 		},
-
 		{
 			agentName:                "feeder-service",
 			configDir:                "feeder-service",
@@ -550,7 +609,43 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 			kmuxConfigTemplateString: kmuxConfig,
 			kmuxConfigFileName:       common.KmuxConfigFileName,
 		},
+		{
+			agentName:                "vm-adapter",
+			configDir:                "kubearmor-vm-adapter",
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "kubearmor-vm-adapter", common.KmuxAlertsFileName),
+			kmuxConfigTemplateString: kmuxPublisherConfig,
+			kmuxConfigFileName:       common.KmuxAlertsFileName,
+		},
+		{
+			agentName:                "vm-adapter",
+			configDir:                "kubearmor-vm-adapter",
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "kubearmor-vm-adapter", common.KmuxLogsFileName),
+			kmuxConfigTemplateString: kmuxPublisherConfig,
+			kmuxConfigFileName:       common.KmuxLogsFileName,
+		},
+		{
+			agentName:                "vm-adapter",
+			configDir:                "kubearmor-vm-adapter",
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "kubearmor-vm-adapter", common.KmuxStateEventFileName),
+			kmuxConfigTemplateString: kmuxPublisherConfig,
+			kmuxConfigFileName:       common.KmuxStateEventFileName,
+		},
+		{
+			agentName:                "vm-adapter",
+			configDir:                "kubearmor-vm-adapter",
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "kubearmor-vm-adapter", common.KmuxPoliciesFileName),
+			kmuxConfigTemplateString: kmuxConsumerConfig,
+			kmuxConfigFileName:       common.KmuxPoliciesFileName,
+		},
+		{
+			agentName:                "vm-adapter",
+			configDir:                "kubearmor-vm-adapter",
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "kubearmor-vm-adapter", common.KmuxPoliciesFileName),
+			kmuxConfigTemplateString: kmuxConsumerConfig,
+			kmuxConfigFileName:       common.KmuxAnnotationFileName,
+		},
 	}
+
 	if tlsEnabled {
 		agentMeta = append(agentMeta, []agentConfigMeta{
 			{
@@ -564,41 +659,6 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 				configDir:            "rabbitmq",
 				configFilePath:       "definitions.json",
 				configTemplateString: rabbitmqDefinitions,
-			},
-			{
-				agentName:                "vm-adapter",
-				configDir:                "vm-adapter",
-				kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "vm-adapter", common.KmuxAlertsFileName),
-				kmuxConfigTemplateString: kmuxPublisherConfig,
-				kmuxConfigFileName:       common.KmuxAlertsFileName,
-			},
-			{
-				agentName:                "vm-adapter",
-				configDir:                "vm-adapter",
-				kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "vm-adapter", common.KmuxLogsFileName),
-				kmuxConfigTemplateString: kmuxPublisherConfig,
-				kmuxConfigFileName:       common.KmuxLogsFileName,
-			},
-			{
-				agentName:                "vm-adapter",
-				configDir:                "vm-adapter",
-				kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "vm-adapter", common.KmuxStateEventFileName),
-				kmuxConfigTemplateString: kmuxPublisherConfig,
-				kmuxConfigFileName:       common.KmuxStateEventFileName,
-			},
-			{
-				agentName:                "vm-adapter",
-				configDir:                "vm-adapter",
-				kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "vm-adapter", common.KmuxPoliciesFileName),
-				kmuxConfigTemplateString: kmuxConsumerConfig,
-				kmuxConfigFileName:       common.KmuxPoliciesFileName,
-			},
-			{
-				agentName:                "vm-adapter",
-				configDir:                "vm-adapter",
-				kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "vm-adapter", common.KmuxPoliciesFileName),
-				kmuxConfigTemplateString: kmuxConsumerConfig,
-				kmuxConfigFileName:       common.KmuxAnnotationFileName,
 			},
 		}...)
 	}
@@ -649,6 +709,13 @@ func getAgentsKmuxConfigs() []agentConfigMeta {
 			agentName:                "pea",
 			configDir:                "pea",
 			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "pea", common.KmuxStateEventFileName),
+			kmuxConfigTemplateString: kmuxConsumerConfig,
+			kmuxConfigFileName:       common.KmuxStateEventFileName,
+		},
+		{
+			agentName:                "sia",
+			configDir:                "sia",
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "sia", common.KmuxStateEventFileName),
 			kmuxConfigTemplateString: kmuxConsumerConfig,
 			kmuxConfigFileName:       common.KmuxStateEventFileName,
 		},

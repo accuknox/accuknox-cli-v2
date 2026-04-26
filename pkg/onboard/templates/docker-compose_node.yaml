@@ -235,6 +235,7 @@ services:
     {{- end }}
     container_name: kubearmor-vm-adapter
     image: "{{.KubeArmorVMAdapterImage}}"
+    user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
     environment:
     - "test=true"
@@ -258,7 +259,7 @@ services:
       - "--spire-agent=unix:///var/run/spire/agent.sock"
       - "--spire-cert={{.SpireCert}}"
       {{- end }}
-      {{- if .TlsEnabled }}
+      {{- if or .TlsEnabled  .RMQEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"
       - "--state-topic={{.StateEventTopic}}"
@@ -279,7 +280,7 @@ services:
       - "--annotation-enable=true"
       {{- end }}
     volumes:
-      - "{{.ConfigPath}}:/opt"
+      - "{{.ConfigPath}}:/opt:rw"
       {{- if .SpireEnabled }}
       # for spire socket
       - "/var/run:/var/run:ro"

@@ -301,7 +301,7 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			AgentName:                cm.PEAAgent,
 			AgentDir:                 cm.PEAconfigPath,
 			KmuxConfigPath:           filepath.Join(cm.PEAconfigPath, cm.KmuxPoliciesFileName),
-			KmuxConfigTemplateString: kmuxConsumerConfig,
+			KmuxConfigTemplateString: kmuxPublisherConfig,
 			KmuxConfigFileName:       cm.KmuxPoliciesFileName,
 			AgentImage:               cc.PEAImage,
 		},
@@ -309,7 +309,7 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			AgentName:                cm.PEAAgent,
 			AgentDir:                 cm.PEAconfigPath,
 			KmuxConfigPath:           filepath.Join(cm.PEAconfigPath, cm.KmuxStateEventFileName),
-			KmuxConfigTemplateString: kmuxPublisherConfig,
+			KmuxConfigTemplateString: kmuxConsumerConfig,
 			KmuxConfigFileName:       cm.KmuxStateEventFileName,
 			AgentImage:               cc.PEAImage,
 		},
@@ -344,6 +344,14 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			KmuxConfigTemplateString: kmuxConsumerConfig,
 			KmuxConfigFileName:       cm.KmuxPolicyFileName,
 			AgentImage:               cc.FeederImage,
+		},
+		{
+			AgentName:                cm.SIAAgent,
+			AgentDir:                 cm.SIAconfigPath,
+			KmuxConfigPath:           filepath.Join(cm.SIAconfigPath, cm.KmuxStateEventFileName),
+			KmuxConfigTemplateString: kmuxConsumerConfig,
+			KmuxConfigFileName:       cm.KmuxStateEventFileName,
+			AgentImage:               cc.SIAImage,
 		},
 	}
 }

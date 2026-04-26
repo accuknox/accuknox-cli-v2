@@ -270,7 +270,7 @@ func (cc *ClusterConfig) PrintJoinCommand() {
 	if cc.CaCert != "" {
 		command = fmt.Sprintf("%s --tls --ca-cert=\"%s\" --auth=\"%s\"", command, cc.CaCert, cc.RMQCredentials)
 	}
-	if cc.Tls.Enabled {
+	if cc.Tls.Enabled || cc.Tls.RMQEnabled {
 		command = fmt.Sprintf("%s --deploy-summary-engine", command)
 	}
 

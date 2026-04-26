@@ -268,7 +268,7 @@ services:
       discover:
         condition: service_started
       {{- end }}
-      {{- if .TlsEnabled }}
+      {{- if or .TlsEnabled .RMQEnabled }}
       shared-informer-agent:
         condition: service_started
       policy-enforcement-agent:
@@ -276,6 +276,7 @@ services:
       {{- end }}
     container_name: kubearmor-vm-adapter
     image: "{{.KubeArmorVMAdapterImage}}"
+    user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
@@ -285,7 +286,7 @@ services:
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.0" }}
       - "--agents-version-file=/opt/agents-version"
       {{- end }}
-      {{- if .TlsEnabled }}
+      {{- if or .TlsEnabled .RMQEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"
       - "--state-topic={{.StateEventTopic}}"
@@ -310,7 +311,7 @@ services:
       app: kubearmor-vm-adapter
     restart: always
     volumes:
-      - "{{.ConfigPath}}:/opt"
+      - "{{.ConfigPath}}:/opt:rw"
     networks:
       accuknox-net:
         aliases:
@@ -343,7 +344,7 @@ services:
       {{- end }}
       kubearmor:
         condition: service_started
-      {{- if not .TlsEnabled }}
+      {{- if not (or .TlsEnabled  .RMQEnabled) }}
       kubearmor-vm-adapter:
         condition: service_started
       {{- end }}
@@ -406,7 +407,7 @@ services:
       discover:
         condition: service_started
       {{- end }}
-      {{- if and (not .TlsEnabled) ( .EnableHardeningAgent ) }}
+      {{- if and (not ( or .TlsEnabled .RMQEnabled )) ( .EnableHardeningAgent ) }}
       hardening-agent:
         condition: service_started
       {{- end }}
@@ -448,9 +449,9 @@ services:
       {{- range .ProxyExtraArgs }}
       - {{ . }}
       {{- end }}
-      - "TLS_ENABLED={{.TlsEnabled}}"
+      - "TLS_ENABLED={{ or .TlsEnabled .RMQEnabled }}"
       - "TLS_CERT_FILE=/opt/cert/encoded.pem"
-      - "RABBITMQ_ENABLED={{.TlsEnabled}}"
+      - "RABBITMQ_ENABLED={{ or .TlsEnabled .RMQEnabled }}"
       - "RABBITMQ_ALERTS_TOPIC={{.AlertsTopic}}"
       - "RABBITMQ_LOGS_TOPIC={{.LogsTopic}}"
       - "POLICY_TOPIC={{.PolicyV1Topic}}"
@@ -458,7 +459,7 @@ services:
       - "DEPLOY_MODE=vm"
       - "RABBITMQ_ALERTS_KMUX_CONFIG=/opt/feeder-service/{{.AlertsKmuxConfig}}"
       - "RABBITMQ_LOGS_KMUX_CONFIG=/opt/feeder-service/{{.LogsKmuxConfig}}"
-      - "DISCOVERYENGINE_POLICY_ENABLED=true"
+      - "DISCOVERYENGINE_POLICY_ENABLED={{.DeployDiscover}}"
       - "KMUX_CONFIG_POLICY=/opt/feeder-service/{{.PolicyKmuxConfig}}"
       - "KMUX_CONFIG_SUMMARY=/opt/feeder-service/{{.SummaryKmuxConfig}}"
       - "HEALTH_ENABLED=true"
@@ -501,12 +502,13 @@ services:
         condition: service_started
     container_name: policy-enforcement-agent
     image: "{{.PEAImage}}"
+    user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
     command: ["-config-path", "/opt/pea/"]
     labels:
       app: policy-enforcement-agent
     volumes:
-      - "{{.ConfigPath}}:/opt"
+      - "{{.ConfigPath}}:/opt:rw"
       # for spire socket
       - "/var/run:/var/run:ro"
     environment:

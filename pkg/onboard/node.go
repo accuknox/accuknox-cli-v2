@@ -87,7 +87,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	}
 
 	// RMQServer that would be used by summary engine
-	if jc.Tls.Enabled {
+	if jc.Tls.Enabled || jc.Tls.RMQEnabled {
 		if jc.RMQServer == "" && jc.CPNodeAddr != "" {
 			cpNodeServerAddr, cpNodePort, err := parseURL(jc.CPNodeAddr)
 			if err != nil {
@@ -170,6 +170,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		ProxyEnabled:         jc.Proxy.Enabled,
 		ProxyAddress:         jc.Proxy.Address,
 		ProxySaaSAddr:        jc.Proxy.SaaSAddr,
+		RMQEnabled:           jc.Tls.RMQEnabled,
 	}
 
 	jc.TCArgs.PoliciesKmuxConfig = common.KmuxPoliciesFileName
@@ -277,6 +278,17 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		ProxyAddress:   jc.Proxy.Address,
 	}
 
+	if jc.RMQServer != "" {
+		jc.TCArgs.RMQAddr = jc.RMQServer
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
+	} else if jc.CPNodeAddr != "" {
+		jc.TCArgs.RMQAddr = jc.CPNodeAddr + ":5672"
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
+	} else {
+		jc.TCArgs.RMQAddr = "0.0.0.0:5672"
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
+	}
+
 	if jc.Proxy.Address != "" {
 		kmuxConfigArgs.ProxyEnabled = true
 	}
@@ -313,9 +325,20 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	if jc.FromSource != "" {
-		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
+		agents := []string{
+			"kubearmor",
+			"kubearmor-init",
+			"vm-adapter",
+		}
+		if jc.SpireEnabled {
+			agents = append(agents, "spire-agent")
+		}
+		if jc.DeploySumengine {
+			agents = append(agents, "summary-engine")
+		}
+		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading images").WithRemoveWhenDone(true).Start()
 		defer p.Stop()
-		if err = loadDockerImagesFromPath(jc.FromSource, p); err != nil {
+		if err = loadDockerImagesFromPath(jc.FromSource, agents, p); err != nil {
 			return err
 		}
 		jc.SkipDownload = true
@@ -355,6 +378,11 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), 0644)
 	if err != nil {
 		return err
+	}
+
+	if jc.ForceRecreate {
+		logger.Debug("\nForce recreating containers\n")
+		args = append(args, "--force-recreate")
 	}
 
 	// run compose command

@@ -10,8 +10,8 @@ node-state-refresh: {{.NodeStateRefreshTime}}
 agents-version-file: {{.AgentsVersionFile}}
 {{- end }}
 
-{{- if .TlsEnabled }}
-tls: {{.TlsEnabled}}
+{{- if or .TlsEnabled .RMQEnabled }} 
+tls: {{ or .TlsEnabled .RMQEnabled }}
 policy-topic: {{.PoliciesTopic}}
 state-topic: {{.StateEventTopic}}
 alert-topic: {{.AlertsTopic}}

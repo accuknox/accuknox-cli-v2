@@ -21,6 +21,9 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	ic.TCArgs.KubeArmorURL = "0.0.0.0:32767"
 	ic.TCArgs.KubeArmorPort = "32767"
 
+	ic.TCArgs.KubeArmorAddr = "0.0.0.0"
+	ic.TCArgs.KubeArmorPort = "32767"
+
 	ic.TCArgs.RelayServerURL = "0.0.0.0:32768"
 	ic.TCArgs.RelayServerAddr = "0.0.0.0"
 	ic.TCArgs.RelayServerPort = "32768"
@@ -36,6 +39,8 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	ic.TCArgs.NodeStateRefreshTime = ic.NodeStateRefreshTime
 
 	ic.TCArgs.AgentsVersionFile = ic.AgentsVersionFile
+
+	ic.TCArgs.RMQEnabled = ic.Tls.RMQEnabled
 
 	var err error
 	if ic.Tls.Enabled {
@@ -107,8 +112,17 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	if ic.FromSource != "" {
 
+		agents := make([]string, 0)
 		for _, obj := range ic.ClusterConfig.SystemdServiceObjects {
-			if obj.ServiceName == "" {
+
+			if ic.WorkerNode && !obj.InstallOnWorkerNode {
+				continue
+			}
+			if obj.AgentImage == "" || obj.PackageName == "" || obj.ServiceName == "" {
+				continue
+			}
+
+			if ic.Proxy.Enabled && obj.AgentName == cm.SpireAgent {
 				continue
 			}
 			err := StopSystemdService(obj.ServiceName, true, true)
@@ -116,14 +130,19 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 				logger.Error("[source] error stopping %s: %s", obj.ServiceName, err)
 				return err
 			}
-		}
-		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
 
-		if err = extractAllAgents(ic.FromSource, p); err != nil {
+			agents = append(agents, obj.AgentName)
+		}
+
+		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
+
+		loadedCount, err := extractAgentsFromPath(ic.FromSource, agents, p)
+		if err != nil {
 			return err
 		}
 		ic.SkipDownload = true
 		_, _ = p.Stop()
+		logger.Info1("successfully loaded %v binaries", loadedCount)
 	}
 
 	if !ic.SkipDownload {

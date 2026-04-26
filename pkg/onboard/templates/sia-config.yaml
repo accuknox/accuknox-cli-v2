@@ -30,8 +30,9 @@ k8s:
   enable: false
 
 tls:
-  enabled: {{.TlsEnabled}}
+  enabled: {{ or .TlsEnabled .RMQEnabled }}
   state-topic: {{.StateEventTopic}}
+  state-kmux-config: {{.StateKmuxConfig}}
 
 deployMode: "vm"
 
