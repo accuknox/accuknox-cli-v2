@@ -18,7 +18,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed tools.yaml
 var embeddedConfig []byte
 
 // Load parses the embedded tools.yaml.
