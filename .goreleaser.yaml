@@ -2,18 +2,6 @@ version: 2
 
 project_name: knoxctl
 
-before:
-  hooks:
-    # Generate an ephemeral ECDSA P-256 signing key pair for this release.
-    # The private key signs all release artifacts below; the public key is
-    # published in the release so consumers can verify signatures offline:
-    #   knoxctl sign verify --file <artifact> --sig <artifact>.sig --pub release-signing.pub
-    - ./knoxctl sign keygen --key-out release-signing
-    # Generate a Software Bill of Materials from the knoxctl source tree using
-    # cdxgen (via knoxctl sbomgen).  The SBOM is included in the release and
-    # its signature is produced by the `signs` block below.
-    - ./knoxctl sbomgen -t go -o "knoxctl_{{ .Version }}_sbom.cdx.json" .
-
 builds:
   - binary: knoxctl
     goos:
@@ -48,19 +36,13 @@ release:
     - glob: "release-signing.pub"
 
 signs:
-  # Sign every release artifact (binaries, archives, checksums, SBOM, public
-  # key) with the key pair generated in before.hooks.
-  # Consumers can verify any artifact with:
-  #   knoxctl sign verify --file <artifact> --sig <artifact>.sig --pub release-signing.pub
-  - cmd: ./knoxctl
+  - cmd: cosign
+    certificate: '${artifact}.cert'
     args:
-      - sign
-      - artifact
-      - --file
+      -  sign-blob
+      - '--output-certificate=${certificate}'
+      - '--output-signature=${signature}'
       - '${artifact}'
-      - --key
-      - release-signing.key
-      - --sig-out
-      - '${signature}'
+      - --yes
     artifacts: all
     output: true
