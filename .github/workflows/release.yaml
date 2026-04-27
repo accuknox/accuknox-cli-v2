@@ -46,7 +46,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
-          version: latest
+          version: "~>v2"
           # parallel builds causes race conditions while building the RRA
           # binary.
           args: release --parallelism 1
