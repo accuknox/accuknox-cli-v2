@@ -16,6 +16,7 @@ builds:
         goarch: arm64
     env:
       - CGO_ENABLED=0
+      - GOEXPERIMENT=jsonv2
     ldflags:
       - -s -w -X github.com/accuknox/accuknox-cli-v2/pkg/version.GitSummary={{.Version}} -X github.com/accuknox/accuknox-cli-v2/pkg/version.BuildDate={{.Date}}
     flags:
@@ -23,17 +24,8 @@ builds:
     hooks:
       pre:
         - make prebuild GOOS={{ .Os }} GOARCH={{ .Arch }}
-        - go run ./scripts/download-tools --os {{ .Os }} --arch {{ .Arch }} --output pkg/tools/bins
       post:
-        - bash -c "find pkg/tools/bins -type f ! -name '.gitkeep' ! -name 'placeholder' -delete"
         - rm -f pkg/vm/rra-agent
-
-release:
-  # Include the SBOM and the release signing public key alongside the regular
-  # archives and checksums.
-  extra_files:
-    - glob: "knoxctl_*_sbom.cdx.json"
-    - glob: "release-signing.pub"
 
 signs:
   - cmd: cosign
