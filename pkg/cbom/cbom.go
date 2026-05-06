@@ -25,23 +25,53 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/sign"
 )
 
-// GenerateFromSource scans Go source files under opts.Path and returns a
-// CycloneDX BOM containing all detected cryptographic components.
+// GenerateFromSource scans a local directory and returns a CycloneDX BOM.
+// It runs language-specific import detection (Go, Python, …) and the embedded
+// cbomkit-theia binary scanner, then merges the results.
 func GenerateFromSource(opts *Options) (*cdx.BOM, error) {
 	if opts.Path == "" {
 		return nil, fmt.Errorf("--path is required for source scanning")
 	}
 
-	components, err := ScanSource(opts.Path)
+	// Language-specific import scanning (Go, Python, …).
+	langComponents, err := ScanSource(opts.Path)
 	if err != nil {
 		return nil, err
 	}
+
+	// Embedded binary scanner (certificates, secrets, OpenSSL config, …).
+	binBOM, binErr := ScanDir(opts)
 
 	name := opts.Name
 	if name == "" {
 		name = opts.Path
 	}
-	return newBOM(components, name, "", opts), nil
+
+	// Merge: start from the binary scanner BOM (if available) and append
+	// language-detected components that are not already present.
+	if binErr == nil && binBOM != nil {
+		existing := map[string]bool{}
+		if binBOM.Components != nil {
+			for _, c := range *binBOM.Components {
+				existing[c.BOMRef] = true
+			}
+		}
+		merged := make([]cdx.Component, 0)
+		if binBOM.Components != nil {
+			merged = append(merged, *binBOM.Components...)
+		}
+		for _, c := range langComponents {
+			if !existing[c.BOMRef] {
+				merged = append(merged, c)
+			}
+		}
+		binBOM.Components = &merged
+		sanitizeBOM(binBOM, opts.Path, "", opts)
+		return binBOM, nil
+	}
+
+	// Binary scanner unavailable — build BOM from language scan only.
+	return newBOM(langComponents, name, "", opts), nil
 }
 
 // GenerateFromImage scans a container image and returns a CycloneDX BOM.

@@ -22,9 +22,9 @@ found in source code or a container image.`,
 
 var cbomSourceCmd = &cobra.Command{
 	Use:   "source",
-	Short: "Generate CBOM from Go source code",
-	Long: `Walk a Go source tree and detect usage of cryptographic packages
-(stdlib crypto/* and golang.org/x/crypto/*). Produces a CycloneDX 1.6 CBOM.
+	Short: "Generate CBOM from source code",
+	Long: `Scan a source code directory for cryptographic assets (algorithms,
+protocols, certificates). Produces a CycloneDX 1.6 CBOM.
 
 Example:
   knoxctl cbom source --path ./myapp

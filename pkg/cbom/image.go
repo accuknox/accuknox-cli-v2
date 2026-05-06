@@ -1,5 +1,3 @@
-//go:build !windows
-
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2024 Authors of KubeArmor
 
@@ -11,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	_ "embed"
 	"os/exec"
@@ -60,6 +59,9 @@ func extractBinary() (path string, cleanup func(), err error) {
 	}
 
 	path = filepath.Join(tmpDir, scannerBin)
+	if runtime.GOOS == "windows" {
+		path += ".exe"
+	}
 	if err = os.WriteFile(path, cbomkitBinary, 0o700); err != nil { // #nosec G306 — needs execute permission
 		cleanup()
 		return "", nil, fmt.Errorf("writing image scanner binary: %w", err)
