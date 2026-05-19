@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/deboard"
@@ -17,16 +18,10 @@ var deboardCpNodeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if vmMode == "" {
-			installedSystemdServices, err := onboard.CheckInstalledSystemdServices()
-			if err != nil {
-				logger.Error("error checking systemd files: %s", err.Error())
-				return err
-			}
-
-			if len(installedSystemdServices) > 0 {
+			vmMode = onboard.VMMode_Docker
+			if onboard.IsKubeArmorRunning(onboard.VMMode_Systemd) {
+				fmt.Println("running in systemd")
 				vmMode = onboard.VMMode_Systemd
-			} else {
-				vmMode = onboard.VMMode_Docker
 			}
 		}
 

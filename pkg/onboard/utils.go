@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -736,4 +737,36 @@ func CheckImagescanSystemdInstallation() (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func IsKubeArmorRunning(mode VMMode) bool {
+	if mode == VMMode_Docker {
+		client, err := CreateDockerClient()
+		if err != nil {
+			return false
+		}
+		resp, err := client.ContainerInspect(context.Background(), "kubearmor")
+		if err != nil {
+			return false
+		}
+		return resp.State.Running
+	}
+
+	status, err := GetSystemdServiceStatus("kubearmor.service")
+	if err != nil {
+		return false
+	}
+
+	portStatus := IsPortOpen("localhost:32767")
+
+	return portStatus && status == "active"
+}
+
+func IsPortOpen(addr string) bool {
+	conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
 }

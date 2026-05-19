@@ -88,15 +88,15 @@ func GenerateFromBedrock(opts *BedrockOptions) (*cdx.BOM, error) {
 		}
 		d := out.ModelDetails
 		models = []types.FoundationModelSummary{{
-			ModelId:                     d.ModelId,
-			ModelName:                   d.ModelName,
-			ProviderName:                d.ProviderName,
-			InputModalities:             d.InputModalities,
-			OutputModalities:            d.OutputModalities,
-			CustomizationsSupported:     d.CustomizationsSupported,
-			InferenceTypesSupported:     d.InferenceTypesSupported,
-			ResponseStreamingSupported:  d.ResponseStreamingSupported,
-			ModelLifecycle:              d.ModelLifecycle,
+			ModelId:                    d.ModelId,
+			ModelName:                  d.ModelName,
+			ProviderName:               d.ProviderName,
+			InputModalities:            d.InputModalities,
+			OutputModalities:           d.OutputModalities,
+			CustomizationsSupported:    d.CustomizationsSupported,
+			InferenceTypesSupported:    d.InferenceTypesSupported,
+			ResponseStreamingSupported: d.ResponseStreamingSupported,
+			ModelLifecycle:             d.ModelLifecycle,
 		}}
 	} else {
 		// All models — use ListFoundationModels.

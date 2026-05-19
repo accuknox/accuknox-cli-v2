@@ -20,16 +20,10 @@ var deboardNodeCmd = &cobra.Command{
 
 		if vmMode == "" {
 			// look for systemd and docker mode
-			installedSystemdServices, err := onboard.CheckInstalledSystemdServices()
-			if err != nil {
-				logger.Error("error checking systemd files: %s", err.Error())
-				return err
-			}
-
-			if len(installedSystemdServices) > 0 {
+			vmMode = onboard.VMMode_Docker
+			if onboard.IsKubeArmorRunning(onboard.VMMode_Systemd) {
+				fmt.Println("running in systemd")
 				vmMode = onboard.VMMode_Systemd
-			} else {
-				vmMode = onboard.VMMode_Docker
 			}
 		}
 
