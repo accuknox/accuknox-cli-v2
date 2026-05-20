@@ -20,10 +20,9 @@ var deboardNodeCmd = &cobra.Command{
 
 		if vmMode == "" {
 			// look for systemd and docker mode
-			vmMode = onboard.VMMode_Docker
-			if onboard.IsKubeArmorRunning(onboard.VMMode_Systemd) {
-				fmt.Println("running in systemd")
-				vmMode = onboard.VMMode_Systemd
+			vmMode = onboard.VMMode_Systemd
+			if onboard.IsDeployed(onboard.VMMode_Docker) {
+				vmMode = onboard.VMMode_Docker
 			}
 		}
 
