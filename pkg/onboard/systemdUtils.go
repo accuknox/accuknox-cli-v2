@@ -1126,7 +1126,6 @@ func ResetRestartCount(exclude map[string]bool) error {
 
 	return nil
 }
-
 func ResetRestartCounter(service string) error {
 	if service == "" {
 		return nil

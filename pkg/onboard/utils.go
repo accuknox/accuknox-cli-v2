@@ -21,13 +21,27 @@ import (
 	"time"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	se_splunk "github.com/accuknox/dev2/sumengine/pkg/sumengine/kubearmor"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/golang-jwt/jwt"
 	"github.com/pterm/pterm"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/mod/semver"
 )
+
+var containerImages = []string{
+	"spire-agent",
+	"kubearmor",
+	"kubearmor-vm-adapter",
+	"shared-informer-agent",
+	"feeder-service",
+	"policy-enforcement-agent",
+	"discover",
+	"summary-engine",
+	"hardening-agent",
+}
 
 func DumpConfig(config interface{}, path string) error {
 	byteData, err := json.Marshal(config)
@@ -736,4 +750,48 @@ func CheckImagescanSystemdInstallation() (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func IsDeployed(mode VMMode) bool {
+
+	switch mode {
+	case VMMode_Docker:
+		client, err := CreateDockerClient()
+		if err != nil {
+			return false
+		}
+		containers, err := client.ContainerList(context.Background(), container.ListOptions{})
+		if err != nil {
+			return false
+		}
+		targetSet := make(map[string]struct{}, len(containerImages))
+		for _, img := range containerImages {
+			targetSet[img] = struct{}{}
+		}
+
+		for _, c := range containers {
+			if c.State != container.StateRunning {
+				continue
+			}
+
+			for _, imgName := range c.Names {
+				img := strings.TrimPrefix(imgName, "/")
+				if _, ok := targetSet[img]; ok {
+					return true
+				}
+			}
+		}
+	case VMMode_Systemd:
+		services, err := CheckInstalledSystemdServices()
+		if err != nil {
+			logger.Error("failed to check systemd service", err)
+			return false
+		}
+
+		if len(services) > 0 {
+			return true
+		}
+	}
+
+	return false
 }
