@@ -79,9 +79,13 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 
-		var configDumpPath string
+		var (
+			configDumpPath string
+			mode           onboard.VMMode
+		)
 		switch vmMode {
 		case onboard.VMMode_Systemd:
+			mode = onboard.VMMode_Docker
 			err := os.Mkdir(common.SystemdKnoxctlDir, 0o755) // #nosec G301 need for archiving and file operations
 			if err != nil && !os.IsExist(err) {
 				return err
@@ -94,6 +98,8 @@ var joinNodeCmd = &cobra.Command{
 			}
 			logger.Debug("===\n%s - Running %s", time.Now().Format(time.RFC3339), strings.Join(os.Args, " "))
 		case onboard.VMMode_Docker:
+
+			mode = onboard.VMMode_Systemd
 			// TODO
 			defaultConfigPath, err := common.GetDefaultConfigPath()
 			if err == nil {
@@ -103,6 +109,10 @@ var joinNodeCmd = &cobra.Command{
 
 		if clusterName != "" && topicPrefix == "" {
 			topicPrefix = clusterName
+		}
+
+		if onboard.IsDeployed(mode) {
+			return fmt.Errorf("KubeArmor is already running in %v mode on this node", mode)
 		}
 
 		vmConfigs, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, vmMode, imageVersions, releaseVersion,
@@ -119,6 +129,9 @@ var joinNodeCmd = &cobra.Command{
 			logger.Error("failed to create VM config: %s", err.Error())
 			return err
 		}
+
+		vmConfigs.ForceRecreate = forceRecreate
+
 		vmConfigs.KaResource = kaResource
 		vmConfigs.AgentsResource = agentsResource
 

@@ -35,11 +35,13 @@ non-k8s:
   enable: true
   policy-server-port: 32770
 tls:
-  enabled: {{.TlsEnabled}}
+  enabled: {{ or .TlsEnabled .RMQEnabled }}
   policy:
     topic: {{.PoliciesTopic}}
     kmux-config: {{.PoliciesKmuxConfig}}
+    enabled: {{ or .TlsEnabled .RMQEnabled }}
   state:
+    enabled: false
     topic: {{.StateEventTopic}}
     kmux-config: {{.StateKmuxConfig}}
 
