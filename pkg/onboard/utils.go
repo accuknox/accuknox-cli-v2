@@ -82,6 +82,7 @@ func createDefaultConfigPath() (string, error) {
 // parseURL with/without scheme and return host, port or error
 func parseURL(address string) (string, string, error) {
 
+	port := "80"
 	addr, err := url.Parse(address)
 	if err != nil || addr.Host == "" {
 		// URL without scheme
@@ -93,7 +94,10 @@ func parseURL(address string) (string, string, error) {
 		addr = u
 	}
 
-	return addr.Hostname(), addr.Port(), nil
+	if addr.Port() != "" {
+		port = addr.Port()
+	}
+	return addr.Hostname(), port, nil
 }
 
 // copyOrGenerateFile copies a a config file from userConfigDir to the given path or writes file with the given template at the given path
