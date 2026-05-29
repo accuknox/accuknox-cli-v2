@@ -737,7 +737,7 @@ func DeboardSystemd(nodeType NodeType) error {
 		if obj.ServiceName == "" {
 			continue
 		}
-		err := StopSystemdService(obj.ServiceName, true, true)
+		err := StopSystemdService(obj.ServiceName, false, true)
 		if err != nil {
 			logger.Error("error stopping %s: %s", obj.ServiceName, err)
 			continue
