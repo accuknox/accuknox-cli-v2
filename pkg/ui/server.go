@@ -492,9 +492,9 @@ func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
 
 	// Count top-level components (works for cyclonedx-json, pkgscan-json, and spdx).
 	var parsed struct {
-		Components *[]json.RawMessage `json:"components"`     // CycloneDX
-		Artifacts  *[]json.RawMessage `json:"artifacts"`      // pkgscan native
-		Packages   *[]json.RawMessage `json:"packages"`       // SPDX
+		Components *[]json.RawMessage `json:"components"` // CycloneDX
+		Artifacts  *[]json.RawMessage `json:"artifacts"`  // pkgscan native
+		Packages   *[]json.RawMessage `json:"packages"`   // SPDX
 	}
 	count := 0
 	if json.Unmarshal(bomJSON, &parsed) == nil {

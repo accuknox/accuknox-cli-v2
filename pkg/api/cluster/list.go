@@ -34,6 +34,7 @@ Node json object example for filtering:
 "result": [
       {
         "AlertsCount": 0,
+        "agents_version": "v0.12.1",
         "ClusterID": 188,
         "ContainerCount": 0,
         "ID": 2788,
@@ -80,10 +81,12 @@ type nodeInfo struct {
 	Total_Record float64 `json:"total_record"`
 	Result       []node  `json:"result"`
 }
+
 type node struct {
-	ID       float64 `json:"ID"`
-	NodeName string  `json:"NodeName"`
-	Status   string  `json:"Status"`
+	ID            float64 `json:"ID"`
+	NodeName      string  `json:"NodeName"`
+	Status        string  `json:"Status"`
+	AgentsVersion string  `json:"agents_version"`
 }
 
 var ClusterInfo Cluster
@@ -164,7 +167,7 @@ func FetchClusterInfo(options CLusterListOptions) {
 	if options.ShowNodes {
 		if !options.JsonFormat {
 			tableNode = tablewriter.NewWriter(os.Stdout)
-			tableNode.SetHeader([]string{"Node-ID", "Cluster-Name", "Node-Name", "Status"})
+			tableNode.SetHeader([]string{"Node-ID", "Cluster-Name", "Node-Name", "Status", "Agents-Version"})
 		}
 		for _, cluster := range clustersData {
 			node := fetchNodes(cluster, options, tableNode)
@@ -323,7 +326,13 @@ func fetchNodes(ClusterInfo Cluster, options CLusterListOptions, tableNode *tabl
 
 				fmt.Printf("\rTotal nodes found : %v, fetching nodes from: %d to next: %d for cluster %s", record, pagePrevious, pageNext, ClusterInfo.ClusterName)
 
-				tableNode.Append([]string{strconv.FormatFloat(nodeInfo.ID, 'f', -1, 64), ClusterInfo.ClusterName, nodeInfo.NodeName, nodeInfo.Status})
+				tableNode.Append([]string{
+					strconv.FormatFloat(nodeInfo.ID, 'f', -1, 64),
+					ClusterInfo.ClusterName,
+					nodeInfo.NodeName,
+					nodeInfo.Status,
+					nodeInfo.AgentsVersion,
+				})
 				tableNode.SetRowLine(true)
 			}
 		}

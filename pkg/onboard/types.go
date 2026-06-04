@@ -173,6 +173,7 @@ type ClusterConfig struct {
 	ImageScanConfig   ImageScanConfig `json:"imagescan_config,omitempty"`
 	DeployImagescan   bool            `json:"deploy_imagescan,omitempty"`
 	AgentsVersionFile string          `json:"agents_version_file,omitempty"`
+	ForceRecreate     bool            `json:"force_recreate,omitempty"`
 }
 
 type ImageScanConfig struct {
@@ -381,6 +382,7 @@ type TemplateConfigArgs struct {
 
 	DeployDiscover    bool   `json:"deploy_discover,omitempty"`
 	AgentsVersionFile string `json:"agents_version_file,omitempty"`
+	RMQEnabled        bool   `json:"rmq_enabled,omitempty"`
 }
 
 type KmuxConfigTemplateArgs struct {
@@ -401,6 +403,7 @@ type KmuxConfigTemplateArgs struct {
 	UseCaFile       bool   `json:"use_ca_file,omitempty"`
 	ProxyEnabled    bool   `json:"proxy_enabled,omitempty"`
 	ProxyAddress    string `json:"proxy_address,omitempty"`
+	RMQEnabled      bool   `json:"rmq_enabled,omitempty"`
 }
 
 type TokenResponse struct {
@@ -481,6 +484,7 @@ type TLS struct {
 	CommonName     string   `json:"common_name,omitempty"`
 	IPs            []string `json:"ips,omitempty"`
 	DNS            []string `json:"dns,omitempty"`
+	RMQEnabled     bool
 }
 
 type SplunkConfig struct {

@@ -26,9 +26,9 @@ watcher:
       - 53
     relay:
       enabled: true
-  {{- if .WorkerNode }}
+  {{- if or .WorkerNode .RMQEnabled }}
       name: kubearmor
-      url: {{.KubeArmorAddr}}
+      url: {{.KubeArmorAddr }}
       port: {{.KubeArmorPort}}
   {{- else }}
       name: relay-1
