@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 	"github.com/spf13/cobra"
 )
@@ -242,6 +244,9 @@ func init() {
 	onboardVMCmd.PersistentFlags().BoolVar(&tls.RMQEnabled, "rmq", false, "enable rabbitmq based connection instead of gRPC")
 
 	onboardVMCmd.PersistentFlags().BoolVar(&forceRecreate, "force-recreate", false, "force recreate docker containers when re-onboarding")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&policiesListEnabled, "enable-policies-list", true, "enable policies list")
+	onboardVMCmd.PersistentFlags().DurationVar(&policiesListRefreshTime, "policies-list-refresh-time", 5*time.Minute, "policies list refresh time")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

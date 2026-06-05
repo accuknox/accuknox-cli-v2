@@ -246,6 +246,8 @@ services:
       - "--spire-agent=unix:///var/run/spire/agent.sock"
       - "--spire-cert={{.SpireCert}}"
       {{- end }}
+      - "--policy-list-enable={{.EnablePoliciesList}}"
+      - "--policy-list-relay-frequency={{.PoliciesListRefresh}}"
       {{- if or .TlsEnabled  .RMQEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"
@@ -256,6 +258,10 @@ services:
       - "--kmux-config-state=/opt/kubearmor-vm-adapter/{{.StateKmuxConfig}}"
       - "--kmux-config-alerts=/opt/kubearmor-vm-adapter/{{.AlertsKmuxConfig}}"
       - "--kmux-config-logs=/opt/kubearmor-vm-adapter/{{.LogsKmuxConfig}}"
+      {{- if .EnablePoliciesList }}
+      - "--kmux-policy-list=/opt/kubearmor-vm-adapter/{{.PoliciesListKmuxConfig}}"
+      - "--policy-list-topic={{.PoliciesListTopic}}"
+      {{- end }}
       {{- else }}
       - "--sia-addr={{.SIAAddr}}"
       - "--pea-addr={{.PEAAddr}}"

@@ -329,6 +329,10 @@ type TemplateConfigArgs struct {
 	SummaryKmuxConfig    string `json:"summary_kmux_config,omitempty"`
 	AnnotationKmuxConfig string `json:"annotation_kmux_config,omitempty"`
 
+	PoliciesListKmuxConfig string        `json:"policies_list_kmux_config,omitempty"`
+	EnablePoliciesList     bool          `json:"enable_policies_list,omitempty"`
+	PoliciesListRefresh    time.Duration `json:"policies_list_refresh,omitempty"`
+
 	// container security
 	SecureContainers bool `json:"secure_containers,omitempty"`
 	// host policy discovery
@@ -352,13 +356,14 @@ type TemplateConfigArgs struct {
 	TlsCertFile string `json:"tls_cert_file,omitempty"`
 
 	// topic config
-	PoliciesTopic   string `json:"policies_topic,omitempty"`
-	StateEventTopic string `json:"state_event_topic,omitempty"`
-	LogsTopic       string `json:"logs_topic,omitempty"`
-	AlertsTopic     string `json:"alerts_topic,omitempty"`
-	PolicyV1Topic   string `json:"policyv1_topic,omitempty"`
-	SummaryV2Topic  string `json:"summaryv2_topic,omitempty"`
-	AnnotationTopic string `json:"annotation_topic,omitempty"`
+	PoliciesTopic     string `json:"policies_topic,omitempty"`
+	StateEventTopic   string `json:"state_event_topic,omitempty"`
+	LogsTopic         string `json:"logs_topic,omitempty"`
+	AlertsTopic       string `json:"alerts_topic,omitempty"`
+	PolicyV1Topic     string `json:"policyv1_topic,omitempty"`
+	SummaryV2Topic    string `json:"summaryv2_topic,omitempty"`
+	AnnotationTopic   string `json:"annotation_topic,omitempty"`
+	PoliciesListTopic string `json:"policies_list_topic,omitempty"`
 
 	// rra configs
 	RRAConfigObject RRAConfig `json:"-"`

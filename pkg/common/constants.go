@@ -196,27 +196,29 @@ var (
 )
 
 const (
-	KmuxStateEventFileName = "state-kmux-config.yaml"
-	KmuxAlertsFileName     = "alerts-kmux-config.yaml"
-	KmuxLogsFileName       = "logs-kmux-config.yaml"
-	KmuxPoliciesFileName   = "policies-kmux-config.yaml"
-	KmuxSummaryFileName    = "summary-kmux-config.yaml"
-	KmuxPolicyFileName     = "policy-kmux-config.yaml"
-	KmuxSinkStream         = "publisher"
-	KmuxSourceStream       = "consumer"
-	KmuxAnnotationFileName = "annotation-kmux-config.yaml"
+	KmuxStateEventFileName   = "state-kmux-config.yaml"
+	KmuxAlertsFileName       = "alerts-kmux-config.yaml"
+	KmuxLogsFileName         = "logs-kmux-config.yaml"
+	KmuxPoliciesFileName     = "policies-kmux-config.yaml"
+	KmuxSummaryFileName      = "summary-kmux-config.yaml"
+	KmuxPolicyFileName       = "policy-kmux-config.yaml"
+	KmuxSinkStream           = "publisher"
+	KmuxSourceStream         = "consumer"
+	KmuxAnnotationFileName   = "annotation-kmux-config.yaml"
+	KmuxPoliciesListFileName = "policies-list-kmux-config.yaml"
 
 	MaxQueueLength = 255
 )
 
 var QueueName = map[string]string{
-	KmuxStateEventFileName: "state-event",
-	KmuxAlertsFileName:     "alerts",
-	KmuxLogsFileName:       "logs",
-	KmuxPoliciesFileName:   "policies",
-	KmuxSummaryFileName:    "summary-v2",
-	KmuxPolicyFileName:     "policy-v1",
-	KmuxAnnotationFileName: "annotation",
+	KmuxStateEventFileName:   "state-event",
+	KmuxAlertsFileName:       "alerts",
+	KmuxLogsFileName:         "logs",
+	KmuxPoliciesFileName:     "policies",
+	KmuxSummaryFileName:      "summary-v2",
+	KmuxPolicyFileName:       "policy-v1",
+	KmuxAnnotationFileName:   "annotation",
+	KmuxPoliciesListFileName: "policies-list",
 }
 
 var QueueDurability = map[string]bool{

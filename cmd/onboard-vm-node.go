@@ -26,6 +26,9 @@ var (
 	// spire config - to use spire and spire cert for tls
 	spireEnabled bool
 	spireCert    bool
+
+	policiesListRefreshTime time.Duration
+	policiesListEnabled     bool
 )
 
 // joinNodeCmd represents the join command
@@ -176,6 +179,9 @@ var joinNodeCmd = &cobra.Command{
 			logger.Error("failed to create VM config: %s", err.Error())
 			return err
 		}
+
+		joinConfig.TCArgs.PoliciesListRefresh = policiesListRefreshTime
+		joinConfig.TCArgs.EnablePoliciesList = policiesListEnabled
 
 		switch vmMode {
 

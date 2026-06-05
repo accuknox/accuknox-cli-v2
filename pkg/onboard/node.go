@@ -157,6 +157,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		PolicyV1Topic:               getTopicName(jc.RMQTopicPrefix, "policy-v1"),
 		SummaryV2Topic:              getTopicName(jc.RMQTopicPrefix, "summary-v2"),
 		AnnotationTopic:             getTopicName(jc.RMQTopicPrefix, "annotation"),
+		PoliciesListTopic:           getTopicName(jc.RMQTopicPrefix, "policies-list"),
 
 		EnableHostPolicyDiscovery: jc.EnableHostPolicyDiscovery,
 
@@ -181,6 +182,8 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	jc.TCArgs.SummaryKmuxConfig = common.KmuxSummaryFileName
 	jc.TCArgs.PolicyKmuxConfig = common.KmuxPolicyFileName
 	jc.TCArgs.AnnotationKmuxConfig = common.KmuxAnnotationFileName
+
+	jc.TCArgs.PoliciesListKmuxConfig = common.KmuxPoliciesListFileName
 
 	if jc.EnableVMScan {
 		jc.TCArgs.RRAConfigObject = jc.RRAConfigObject
@@ -311,13 +314,14 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	kmuxConfigFileTemplateMap := map[string]string{
-		"sumengine/" + common.KmuxConfigFileName:                kmuxPublisherConfig,
-		"sumengine/" + common.KmuxSummaryFileName:               kmuxPublisherConfig,
-		"kubearmor-vm-adapter/" + common.KmuxStateEventFileName: kmuxPublisherConfig,
-		"kubearmor-vm-adapter/" + common.KmuxAlertsFileName:     kmuxPublisherConfig,
-		"kubearmor-vm-adapter/" + common.KmuxLogsFileName:       kmuxPublisherConfig,
-		"kubearmor-vm-adapter/" + common.KmuxPoliciesFileName:   kmuxConsumerConfig,
-		"kubearmor-vm-adapter/" + common.KmuxAnnotationFileName: kmuxConsumerConfig,
+		"sumengine/" + common.KmuxConfigFileName:                  kmuxPublisherConfig,
+		"sumengine/" + common.KmuxSummaryFileName:                 kmuxPublisherConfig,
+		"kubearmor-vm-adapter/" + common.KmuxStateEventFileName:   kmuxPublisherConfig,
+		"kubearmor-vm-adapter/" + common.KmuxAlertsFileName:       kmuxPublisherConfig,
+		"kubearmor-vm-adapter/" + common.KmuxLogsFileName:         kmuxPublisherConfig,
+		"kubearmor-vm-adapter/" + common.KmuxPoliciesFileName:     kmuxConsumerConfig,
+		"kubearmor-vm-adapter/" + common.KmuxAnnotationFileName:   kmuxConsumerConfig,
+		"kubearmor-vm-adapter/" + common.KmuxPoliciesListFileName: kmuxPublisherConfig,
 	}
 	// Generate or copy kmux config files
 	for filePath, templateString := range kmuxConfigFileTemplateMap {

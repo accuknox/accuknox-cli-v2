@@ -242,6 +242,14 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			AgentImage:               cc.KubeArmorVMAdapterImage,
 		},
 		{
+			AgentName:                cm.VMAdapter,
+			AgentDir:                 cm.VmAdapterConfigPath,
+			KmuxConfigPath:           filepath.Join(cm.VmAdapterConfigPath, cm.KmuxPoliciesListFileName),
+			KmuxConfigTemplateString: kmuxPublisherConfig,
+			KmuxConfigFileName:       cm.KmuxPoliciesListFileName,
+			AgentImage:               cc.KubeArmorVMAdapterImage,
+		},
+		{
 			AgentName:                cm.SummaryEngine,
 			AgentDir:                 cm.SumEngineConfigPath,
 			KmuxConfigPath:           filepath.Join(cm.SumEngineConfigPath, cm.KmuxSummaryFileName),
@@ -311,6 +319,14 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			KmuxConfigPath:           filepath.Join(cm.PEAconfigPath, cm.KmuxStateEventFileName),
 			KmuxConfigTemplateString: kmuxConsumerConfig,
 			KmuxConfigFileName:       cm.KmuxStateEventFileName,
+			AgentImage:               cc.PEAImage,
+		},
+		{
+			AgentName:                cm.PEAAgent,
+			AgentDir:                 cm.PEAconfigPath,
+			KmuxConfigPath:           filepath.Join(cm.PEAconfigPath, cm.KmuxPoliciesListFileName),
+			KmuxConfigTemplateString: kmuxConsumerConfig,
+			KmuxConfigFileName:       cm.KmuxPoliciesListFileName,
 			AgentImage:               cc.PEAImage,
 		},
 		{

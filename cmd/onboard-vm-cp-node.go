@@ -177,6 +177,9 @@ var cpNodeCmd = &cobra.Command{
 			return err
 		}
 
+		onboardConfig.TCArgs.PoliciesListRefresh = policiesListRefreshTime
+		onboardConfig.TCArgs.EnablePoliciesList = policiesListEnabled
+
 		switch vmMode {
 
 		case onboard.VMMode_Systemd:

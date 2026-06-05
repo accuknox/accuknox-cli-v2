@@ -358,6 +358,7 @@ func (ic *InitConfig) populateCommonArgs() {
 	ic.TCArgs.SummaryKmuxConfig = common.KmuxSummaryFileName
 	ic.TCArgs.PolicyKmuxConfig = common.KmuxPolicyFileName
 	ic.TCArgs.AnnotationKmuxConfig = common.KmuxAnnotationFileName
+	ic.TCArgs.PoliciesListKmuxConfig = common.KmuxPoliciesListFileName
 
 	ic.TCArgs.DiscoverRules = combineVisibilities(ic.Visibility, ic.HostVisibility)
 
@@ -369,6 +370,7 @@ func (ic *InitConfig) populateCommonArgs() {
 	ic.TCArgs.PolicyV1Topic = getTopicName(ic.RMQTopicPrefix, "policy-v1")
 	ic.TCArgs.SummaryV2Topic = getTopicName(ic.RMQTopicPrefix, "summary-v2")
 	ic.TCArgs.AnnotationTopic = getTopicName(ic.RMQTopicPrefix, "annotation")
+	ic.TCArgs.PoliciesListKmuxConfig = getTopicName(ic.RMQTopicPrefix, "policies-list")
 
 	ic.TCArgs.SplunkConfigObject = ic.Splunk
 }
@@ -381,6 +383,7 @@ func populateAgentArgs(tcArgs *TemplateConfigArgs, configDir string) {
 	tcArgs.SummaryKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxSummaryFileName)
 	tcArgs.PolicyKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxPolicyFileName)
 	tcArgs.AnnotationKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxAnnotationFileName)
+	tcArgs.PoliciesListKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxPoliciesListFileName)
 }
 
 func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFile, prefix, hostname, connName string) {
@@ -640,7 +643,7 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 		{
 			agentName:                "vm-adapter",
 			configDir:                "kubearmor-vm-adapter",
-			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "kubearmor-vm-adapter", common.KmuxPoliciesFileName),
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "kubearmor-vm-adapter", common.KmuxAnnotationFileName),
 			kmuxConfigTemplateString: kmuxConsumerConfig,
 			kmuxConfigFileName:       common.KmuxAnnotationFileName,
 		},
@@ -649,6 +652,13 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 			configDir:            "kubearmor",
 			configFilePath:       "kubearmor_config.yaml",
 			configTemplateString: kubeArmorConfig,
+		},
+		{
+			agentName:                "vm-adapter",
+			configDir:                "kubearmor-vm-adapter",
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "kubearmor-vm-adapter", common.KmuxPoliciesListFileName),
+			kmuxConfigTemplateString: kmuxPublisherConfig,
+			kmuxConfigFileName:       common.KmuxPoliciesListFileName,
 		},
 	}
 
@@ -717,6 +727,13 @@ func getAgentsKmuxConfigs() []agentConfigMeta {
 			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "pea", common.KmuxStateEventFileName),
 			kmuxConfigTemplateString: kmuxConsumerConfig,
 			kmuxConfigFileName:       common.KmuxStateEventFileName,
+		},
+		{
+			agentName:                "pea",
+			configDir:                "pea",
+			kmuxConfigPath:           filepath.Join(common.InContainerConfigDir, "pea", common.KmuxPoliciesListFileName),
+			kmuxConfigTemplateString: kmuxConsumerConfig,
+			kmuxConfigFileName:       common.KmuxPoliciesListFileName,
 		},
 		{
 			agentName:                "sia",
