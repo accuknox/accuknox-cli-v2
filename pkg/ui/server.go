@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/aibom"
+	"github.com/accuknox/accuknox-cli-v2/pkg/bomgen"
 	"github.com/accuknox/accuknox-cli-v2/pkg/cbom"
 	"github.com/accuknox/accuknox-cli-v2/pkg/sign"
 	"gopkg.in/yaml.v3"
@@ -42,7 +43,16 @@ type Server struct {
 // ~/.knoxctl-cfg.yaml (Linux/macOS) or knoxctl-cfg.yaml (Windows).
 type AppConfig struct {
 	BOM       BOMSettings    `yaml:"bom"       json:"bom"`
+	Git       GitSettings    `yaml:"git"       json:"git"`
 	Dashboard DashboardStats `yaml:"dashboard" json:"dashboard"`
+	Jobs      []ScheduledJob `yaml:"jobs"      json:"jobs"`
+}
+
+// GitSettings holds personal access tokens for cloning private Git repositories
+// (github.com / gitlab.com and self-hosted instances) as a BOM source.
+type GitSettings struct {
+	GitHubToken string `yaml:"github_token" json:"githubToken"`
+	GitLabToken string `yaml:"gitlab_token" json:"gitlabToken"`
 }
 
 // BOMSettings holds the AccuKnox control-plane connection parameters used to
@@ -168,6 +178,9 @@ func (s *Server) registerRoutes() {
 
 	// API — generic CLI runner (image-scan, probe, vm, sbom)
 	s.mux.HandleFunc("/api/run", cors(s.handleRun))
+
+	// API — scheduled BOM jobs (list / save / delete / pause / run-now)
+	s.registerScheduleRoutes()
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -212,6 +225,9 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, "invalid request: "+err.Error())
 			return
 		}
+		// Scheduled jobs are managed exclusively through the /api/schedule/*
+		// endpoints; never let a settings/counters save clobber them.
+		cfg.Jobs = loadAppConfig().Jobs
 		if err := saveAppConfig(cfg); err != nil {
 			writeErr(w, "failed to save config: "+err.Error())
 			return
@@ -317,38 +333,50 @@ func (s *Server) handlePublishBOM(w http.ResponseWriter, r *http.Request, bomTyp
 		return
 	}
 
-	cfg := loadAppConfig()
-	bs := cfg.BOM
-	if bs.ControlPlane == "" || bs.Project == "" || bs.Label == "" || bs.Token == "" {
-		writeErr(w, "BOM settings are incomplete — configure them in Settings")
+	bs := loadAppConfig().BOM
+	code, body, err := publishBOMBytes(r.Context(), bs, bomType, []byte(req.BOM))
+	if err != nil {
+		writeErr(w, err.Error())
 		return
 	}
+	writeJSON(w, map[string]interface{}{
+		"status": "published",
+		"code":   code,
+		"body":   body,
+	})
+}
 
-	// Build multipart body: field name "file", filename "<type>.json".
+// publishBOMBytes uploads a BOM document to the AccuKnox control plane using the
+// given settings. It is shared by the interactive publish handler and scheduled
+// jobs. Returns the HTTP status code and response body, or an error.
+func publishBOMBytes(ctx context.Context, bs BOMSettings, bomType string, data []byte) (int, string, error) {
+	if bs.ControlPlane == "" || bs.Project == "" || bs.Label == "" || bs.Token == "" {
+		return 0, "", fmt.Errorf("BOM/publish settings are incomplete (control plane, project, label, token)")
+	}
+	if len(data) == 0 {
+		return 0, "", fmt.Errorf("bom payload is empty")
+	}
+
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
 	fw, err := mw.CreateFormFile("file", bomType+".json")
 	if err != nil {
-		writeErr(w, "failed to create multipart field: "+err.Error())
-		return
+		return 0, "", fmt.Errorf("failed to create multipart field: %w", err)
 	}
-	if _, err := fw.Write([]byte(req.BOM)); err != nil {
-		writeErr(w, "failed to write BOM data: "+err.Error())
-		return
+	if _, err := fw.Write(data); err != nil {
+		return 0, "", fmt.Errorf("failed to write BOM data: %w", err)
 	}
 	mw.Close()
 
-	// All BOM types use the same upload endpoint.
 	apiURL := strings.TrimRight(bs.ControlPlane, "/") +
 		"/api/v1/sbom/bomfiles/upload" +
 		"?project_id=" + url.QueryEscape(bs.Project) +
 		"&label_id=" + url.QueryEscape(bs.Label) +
 		"&save_to_s3=true"
 
-	httpReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, apiURL, &buf) // #nosec G107
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, &buf) // #nosec G107
 	if err != nil {
-		writeErr(w, "failed to build request: "+err.Error())
-		return
+		return 0, "", fmt.Errorf("failed to build request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", mw.FormDataContentType())
 	httpReq.Header.Set("Authorization", "Bearer "+bs.Token)
@@ -357,21 +385,14 @@ func (s *Server) handlePublishBOM(w http.ResponseWriter, r *http.Request, bomTyp
 	client := &http.Client{Timeout: 2 * time.Minute}
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		writeErr(w, "publish request failed: "+err.Error())
-		return
+		return 0, "", fmt.Errorf("publish request failed: %w", err)
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
-
 	if resp.StatusCode >= 400 {
-		writeErr(w, fmt.Sprintf("control plane returned HTTP %d: %s", resp.StatusCode, string(body)))
-		return
+		return resp.StatusCode, string(body), fmt.Errorf("control plane returned HTTP %d: %s", resp.StatusCode, string(body))
 	}
-	writeJSON(w, map[string]interface{}{
-		"status": "published",
-		"code":   resp.StatusCode,
-		"body":   string(body),
-	})
+	return resp.StatusCode, string(body), nil
 }
 
 func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
@@ -384,6 +405,8 @@ func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
 		Scheme  string `json:"scheme"`
 		Format  string `json:"format"`
 		Exclude string `json:"exclude"`
+		Depth   bool   `json:"depth"`
+		Git     gitReq `json:"git"`
 		signReq
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -408,7 +431,6 @@ func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// pkgscan writes output via "-o format=file".
 	tmpDir, err := os.MkdirTemp("", "knoxctl-sbom-*")
 	if err != nil {
 		send("error", errMsg(err))
@@ -422,36 +444,37 @@ func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
 	}()
 	outFile := filepath.Join(tmpDir, "sbom.json")
 
-	// Prefix source with scheme when explicitly chosen.
-	source := req.Source
-	if req.Scheme != "" {
-		source = req.Scheme + ":" + source
-	}
-
-	args := []string{"pkgscan", "scan", source, "-o", req.Format + "=" + outFile}
-
-	// Use basename as the SBOM source name when the input looks like a filesystem path,
-	// so the output doesn't embed full local directory paths.
-	scheme := req.Scheme
-	if scheme == "" {
-		scheme = "dir" // default when no scheme is set
-	}
-	if scheme == "dir" || scheme == "file" || scheme == "oci-dir" || scheme == "oci-archive" {
-		if name := filepath.Base(req.Source); name != "" && name != "." {
-			args = append(args, "--source-name", name)
-		}
-	}
-	for _, pat := range strings.Split(req.Exclude, ",") {
-		if pat = strings.TrimSpace(pat); pat != "" {
-			args = append(args, "--exclude", pat)
-		}
-	}
-
-	send("progress", progress(20, "Scanning "+source+" for packages…"))
-	flush()
-
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Minute)
 	defer cancel()
+
+	params := bomgen.SBOMParams{
+		Source:  req.Source,
+		Scheme:  req.Scheme,
+		Format:  req.Format,
+		Exclude: req.Exclude,
+		Depth:   req.Depth,
+	}
+
+	// Git source: clone the repository (with stored/entered credentials) and
+	// scan the working copy instead of a local path or image reference.
+	if req.Scheme == "git" {
+		send("progress", progress(15, "Cloning repository…"))
+		flush()
+		logw := &lineWriter{send: send, flush: flush, event: "log"}
+		cloneDir, err := cloneGitSource(ctx, req.Source, req.Git, tmpDir, logw)
+		if err != nil {
+			send("error", errMsg(err))
+			flush()
+			return
+		}
+		params.Source = cloneDir
+		params.Scheme = ""
+	}
+
+	args := bomgen.SBOMArgs(params, outFile)
+
+	send("progress", progress(25, "Generating Software BOM…"))
+	flush()
 
 	cmd := exec.CommandContext(ctx, resolveKnoxctl(), args...) // #nosec G204
 	cmd.Stdout = &lineWriter{send: send, flush: flush, event: "log"}
@@ -485,31 +508,21 @@ func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
 
 	bomJSON, err := os.ReadFile(outFile) // #nosec G304 — path inside os.MkdirTemp dir
 	if err != nil {
-		send("error", errMsg(fmt.Errorf("pkgscan produced no output file: %w", err)))
+		send("error", errMsg(fmt.Errorf("BOM generation produced no output file: %w", err)))
 		flush()
 		return
 	}
 
-	// Count top-level components (works for cyclonedx-json, pkgscan-json, and spdx).
-	var parsed struct {
-		Components *[]json.RawMessage `json:"components"` // CycloneDX
-		Artifacts  *[]json.RawMessage `json:"artifacts"`  // pkgscan native
-		Packages   *[]json.RawMessage `json:"packages"`   // SPDX
-	}
-	count := 0
-	if json.Unmarshal(bomJSON, &parsed) == nil {
-		switch {
-		case parsed.Components != nil:
-			count = len(*parsed.Components)
-		case parsed.Artifacts != nil:
-			count = len(*parsed.Artifacts)
-		case parsed.Packages != nil:
-			count = len(*parsed.Packages)
-		}
-	}
+	count := bomgen.CountComponents(bomJSON)
 
-	// Rebrand tool metadata: replace syft/Anchore references with knoxctl/AccuKnox.
-	bomJSON = rebrandSBOM(bomJSON)
+	// Strip scanner-engine branding so the underlying tool is never surfaced.
+	// Depth-scan output is rebranded per format; the standard package scan keeps
+	// its existing syft/Anchore → knoxctl/AccuKnox rebranding.
+	if params.UsesDepth() {
+		bomJSON = bomgen.StripDepthBranding(bomJSON, req.Format)
+	} else {
+		bomJSON = rebrandSBOM(bomJSON)
+	}
 
 	send("complete", buildComplete(count, bomJSON, req.signReq))
 	flush()
@@ -1037,9 +1050,26 @@ func portFrom(addr string) string {
 	return addr
 }
 
-// resolveKnoxctl returns the path to the knoxctl binary.
-// It checks the current working directory first, then falls back to PATH.
+// resolveKnoxctl returns the path to the knoxctl binary used to run
+// sub-commands on behalf of the UI.
+//
+// It first re-uses the *currently running* executable (via os.Executable).
+// The UI is served by knoxctl itself, so the running binary is always a valid
+// knoxctl regardless of how it was named (e.g. knoxctl-windows-amd64.exe) or
+// whether it lives on PATH. This avoids the "knoxctl.exe: executable file not
+// found in %PATH%" failure that occurs when the binary is renamed or launched
+// from a directory that isn't on PATH.
+//
+// Only if os.Executable fails does it fall back to the conventional name in the
+// current working directory and then on PATH.
 func resolveKnoxctl() string {
+	if exe, err := os.Executable(); err == nil {
+		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+			return resolved
+		}
+		return exe
+	}
+
 	binary := "knoxctl"
 	if runtime.GOOS == "windows" {
 		binary = "knoxctl.exe"

@@ -287,6 +287,10 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     BOM Settings
   </div>
+  <div class="sb-item" data-section="schedule" onclick="nav(this)">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+    Schedules
+  </div>
 
   <div class="sb-section">Infrastructure</div>
   <div class="sb-item" data-section="vm" onclick="nav(this)">
@@ -402,9 +406,10 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
         </div>
         <div class="field">
           <label>Source Scheme</label>
-          <select id="sbom-scheme">
+          <select id="sbom-scheme" onchange="onSbomSchemeChange()">
             <option value="">Auto-detect</option>
             <option value="dir">dir — local directory</option>
+            <option value="git">git — Git repository (GitHub / GitLab)</option>
             <option value="registry">registry — container registry</option>
             <option value="docker">docker — Docker daemon</option>
             <option value="file">file — single file / archive</option>
@@ -427,6 +432,37 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
           <small>Comma-separated glob patterns to exclude from scanning</small>
         </div>
       </div>
+
+      <!-- Git repository source fields (shown when Source Scheme = git) -->
+      <div class="form-grid" id="sbom-git-fields" style="display:none">
+        <div class="field">
+          <label>Git Provider</label>
+          <select id="sbom-git-provider">
+            <option value="github">GitHub (github.com or self-hosted)</option>
+            <option value="gitlab">GitLab (gitlab.com or self-hosted)</option>
+          </select>
+          <small>Set the repository URL (e.g. https://github.com/org/repo) in the Source field above</small>
+        </div>
+        <div class="field">
+          <label>Branch / Tag <span style="font-weight:400;text-transform:none">(optional)</span></label>
+          <input type="text" id="sbom-git-ref" placeholder="main"/>
+          <small>Leave blank for the default branch</small>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Access Token <span style="font-weight:400;text-transform:none">(optional override)</span></label>
+          <input type="password" id="sbom-git-token" placeholder="Leave blank to use the token saved in BOM Settings"/>
+          <small>Personal access token for private repositories. Saved tokens live in BOM Settings.</small>
+        </div>
+      </div>
+
+      <!-- Dependency Depth toggle -->
+      <div class="sign-toggle">
+        <label class="sign-check"><input type="checkbox" id="sbom-depth" checked onchange="renderActivePreview()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--brand)"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M5 8v8"/><path d="M7 6h6a4 4 0 0 1 4 4v0"/><path d="M7 18h6a4 4 0 0 0 4-4"/><circle cx="19" cy="10" r="2"/><circle cx="19" cy="14" r="2"/></svg>
+          Dependency Depth <span style="font-weight:400;text-transform:none;color:var(--text-muted)">— include the full dependency graph (deep filesystem scan)</span>
+        </label>
+      </div>
+
       <div class="sign-toggle">
         <label class="sign-check"><input type="checkbox" id="sbom-sign" onchange="toggleSignOpts('sbom')">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--brand)"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
@@ -965,6 +1001,155 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
       </div>
       <div id="settings-status" style="margin-top:10px;font-size:13px"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="16" height="16" fill="none" stroke="var(--brand)" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        Git Repository Access
+      </div>
+      <div class="card-sub">Personal access tokens for cloning private repositories (github.com / gitlab.com and self-hosted). Stored locally with your other settings.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>GitHub Token</label>
+          <input type="password" id="cfg-github-token" placeholder="ghp_…"/>
+          <small>Used for github.com and self-hosted GitHub Enterprise</small>
+        </div>
+        <div class="field">
+          <label>GitLab Token</label>
+          <input type="password" id="cfg-gitlab-token" placeholder="glpat-…"/>
+          <small>Used for gitlab.com and self-hosted GitLab</small>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveSettings()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Schedules ──────────────────────────────────────────────────────────── -->
+  <section id="sec-schedule" class="section">
+    <div class="page-title">Scheduled BOM Jobs</div>
+    <div class="page-sub">Generate and publish Bill of Materials on a recurring schedule. Jobs run via the host scheduler (cron on Linux, Task Scheduler on Windows) even when this UI is closed.</div>
+
+    <div class="card">
+      <div class="card-title" id="job-form-title">Create Scheduled Job</div>
+      <div class="card-sub">A job generates a Software BOM from a source and publishes it to the control plane.</div>
+      <input type="hidden" id="job-id"/>
+      <div class="form-grid">
+        <div class="field">
+          <label>Job Name</label>
+          <input type="text" id="job-name" placeholder="Nightly SBOM — my-service"/>
+        </div>
+        <div class="field">
+          <label>Source</label>
+          <input type="text" id="job-source" placeholder="/path/to/project  or  https://github.com/org/repo"/>
+        </div>
+        <div class="field">
+          <label>Source Scheme</label>
+          <select id="job-scheme" onchange="onJobSchemeChange()">
+            <option value="dir">dir — local directory</option>
+            <option value="git">git — Git repository</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Output Format</label>
+          <select id="job-format">
+            <option value="cyclonedx-json">CycloneDX JSON</option>
+            <option value="spdx-json">SPDX JSON</option>
+            <option value="syft-json">pkgscan JSON</option>
+            <option value="spdx-tag-value">SPDX Tag-Value</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Exclude Patterns <span style="font-weight:400;text-transform:none">(optional)</span></label>
+          <input type="text" id="job-exclude" placeholder="**/*.test, vendor/**"/>
+        </div>
+        <div class="field" style="display:flex;align-items:flex-end">
+          <label class="sign-check" style="margin:0"><input type="checkbox" id="job-depth" checked> Dependency Depth (full dependency graph)</label>
+        </div>
+      </div>
+
+      <!-- Git fields for the job (shown when scheme = git) -->
+      <div class="form-grid" id="job-git-fields" style="display:none">
+        <div class="field">
+          <label>Git Provider</label>
+          <select id="job-git-provider">
+            <option value="github">GitHub</option>
+            <option value="gitlab">GitLab</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Branch / Tag <span style="font-weight:400;text-transform:none">(optional)</span></label>
+          <input type="text" id="job-git-ref" placeholder="main"/>
+        </div>
+        <div class="field">
+          <label>Access Token <span style="font-weight:400;text-transform:none">(optional)</span></label>
+          <input type="password" id="job-git-token" placeholder="Defaults to token saved in BOM Settings"/>
+        </div>
+      </div>
+
+      <div class="card-title" style="font-size:14px;margin-top:14px">Schedule</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Frequency</label>
+          <select id="job-freq" onchange="onJobFreqChange()">
+            <option value="hourly">Hourly</option>
+            <option value="daily" selected>Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </div>
+        <div class="field" id="job-time-field">
+          <label>Time (24h)</label>
+          <input type="time" id="job-time" value="02:00"/>
+        </div>
+        <div class="field" id="job-weekday-field" style="display:none">
+          <label>Weekday</label>
+          <select id="job-weekday">
+            <option value="MON">Monday</option><option value="TUE">Tuesday</option>
+            <option value="WED">Wednesday</option><option value="THU">Thursday</option>
+            <option value="FRI">Friday</option><option value="SAT">Saturday</option>
+            <option value="SUN">Sunday</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card-title" style="font-size:14px;margin-top:14px">Publish Target
+        <button class="btn btn-ghost btn-sm" style="margin-left:8px;font-size:11px;padding:2px 8px" onclick="jobUseSavedSettings()">Use saved BOM Settings</button>
+      </div>
+      <div class="card-sub">Each job publishes with its own configuration — fill these per job.</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1">
+          <label>Control Plane URL</label>
+          <input type="url" id="job-cp" placeholder="https://your-tenant.accuknox.com"/>
+        </div>
+        <div class="field">
+          <label>Project ID</label>
+          <input type="text" id="job-project" placeholder="project UUID"/>
+        </div>
+        <div class="field">
+          <label>Label</label>
+          <input type="text" id="job-label" placeholder="label name"/>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>API Token</label>
+          <input type="password" id="job-token" placeholder="Bearer token"/>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="job-save-btn" onclick="saveJob()">Save Job</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetJobForm()">Clear</button>
+      </div>
+      <div id="job-status" style="margin-top:10px;font-size:13px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Existing Jobs</div>
+      <div id="jobs-list"><div class="card-sub">Loading…</div></div>
+    </div>
   </section>
 
   <!-- ── VM Onboarding ───────────────────────────────────────────────────── -->
@@ -1212,13 +1397,14 @@ function nav(el, sectionId) {
   if (item) item.classList.add('active');
   const sec = document.getElementById(`sec-${id}`);
   if (sec) sec.classList.add('active');
-  const titles = {dashboard:'Dashboard',sbom:'Software BOM',cbom:'Cryptography BOM',aibom:'AI / ML BOM','bom-settings':'BOM Settings',vm:'VM Onboarding',probe:'Security Probe',imgscan:'Container Security'};
+  const titles = {dashboard:'Dashboard',sbom:'Software BOM',cbom:'Cryptography BOM',aibom:'AI / ML BOM','bom-settings':'BOM Settings',schedule:'Schedules',vm:'VM Onboarding',probe:'Security Probe',imgscan:'Container Security'};
   document.getElementById('pageTitle').textContent = titles[id] || id;
   // Auto-load project/label lists when navigating to settings (if credentials are saved).
   if (id === 'bom-settings' && _bomSettings.control_plane && _bomSettings.token) {
     loadProjects();
     loadLabels();
   }
+  if (id === 'schedule') loadJobs();
 }
 
 /* ── Dark Mode ─────────────────────────────────────────────────────────────── */
@@ -1536,6 +1722,12 @@ function runSBOM() {
     scheme:  v('sbom-scheme'),
     format:  v('sbom-format') || 'cyclonedx-json',
     exclude: v('sbom-exclude'),
+    depth:   !!document.getElementById('sbom-depth')?.checked,
+    git: {
+      provider: v('sbom-git-provider') || 'github',
+      token:    v('sbom-git-token'),
+      ref:      v('sbom-git-ref'),
+    },
     ...getSignParams('sbom'),
   },
   'sbom',
@@ -1831,19 +2023,62 @@ function fmtCmd(parts) {
   return filtered[0] + ' \\\n  ' + filtered.slice(1).join(' \\\n  ');
 }
 
-function buildCmdSBOM() {
+// Map a UI output format to its deep-scan (dependency-depth) equivalent, or ''.
+const _depthFormats = { 'cyclonedx-json':'cyclonedx', 'spdx-json':'spdx-json', 'spdx-tag-value':'spdx' };
+
+function onSbomSchemeChange() {
   const scheme = v('sbom-scheme');
-  const source = v('sbom-source') || '.';
-  const target = scheme ? scheme + ':' + source : source;
-  const fmt    = v('sbom-format') || 'cyclonedx-json';
-  const ext    = fmt.startsWith('cyclonedx') ? 'cdx.json' : fmt.startsWith('spdx') ? 'spdx.json' : 'sbom.json';
-  const parts  = ['knoxctl pkgscan scan'];
-  parts.push(shellQ(target));
-  parts.push('-o ' + fmt + '=sbom.' + ext);
-  const excl = v('sbom-exclude');
-  if (excl) excl.split(',').map(p => p.trim()).filter(Boolean).forEach(p => parts.push('--exclude ' + shellQ(p)));
-  buildSignParts('sbom').forEach(p => parts.push(p));
-  return fmtCmd(parts);
+  const git = document.getElementById('sbom-git-fields');
+  if (git) git.style.display = (scheme === 'git') ? '' : 'none';
+  const src = document.getElementById('sbom-source');
+  if (src) src.placeholder = (scheme === 'git') ? 'https://github.com/org/repo' : './  or  nginx:latest';
+  renderActivePreview();
+}
+
+function renderActivePreview() {
+  if (!_cmdLocked['sbom']) updatePreview('sbom', buildCmdSBOM());
+}
+
+function buildCmdSBOM() {
+  const scheme  = v('sbom-scheme');
+  const source  = v('sbom-source') || '.';
+  const fmt     = v('sbom-format') || 'cyclonedx-json';
+  const depthOn = !!document.getElementById('sbom-depth')?.checked;
+  const depthFmt = _depthFormats[fmt];
+  const useDepth = depthOn && !!depthFmt;
+  const ext     = fmt.startsWith('cyclonedx') ? 'cdx.json' : fmt.startsWith('spdx') ? 'spdx.json' : 'sbom.json';
+  const excl    = v('sbom-exclude');
+  const exclArr = excl ? excl.split(',').map(p => p.trim()).filter(Boolean) : [];
+
+  // Resolve the scan target — Git sources are cloned first, then scanned.
+  let pre = [];
+  let scanTarget;
+  if (scheme === 'git') {
+    const ref = v('sbom-git-ref');
+    scanTarget = 'repo';
+    pre.push('# Clone the repository, then generate the SBOM from the working copy');
+    pre.push('git clone --depth 1' + (ref ? ' --branch ' + shellQ(ref) : '') + ' ' + shellQ(source) + ' repo');
+  } else {
+    scanTarget = scheme ? scheme + ':' + source : source;
+  }
+
+  let cmd;
+  if (useDepth) {
+    const parts = ['knoxctl imgscan fs'];
+    parts.push('--format ' + depthFmt);
+    parts.push('--output sbom.' + ext);
+    parts.push(shellQ(scheme === 'git' ? scanTarget : source));
+    exclArr.forEach(p => parts.push('--skip-dirs ' + shellQ(p)));
+    cmd = fmtCmd(parts);
+  } else {
+    const parts = ['knoxctl pkgscan scan'];
+    parts.push(shellQ(scanTarget));
+    parts.push('-o ' + fmt + '=sbom.' + ext);
+    exclArr.forEach(p => parts.push('--exclude ' + shellQ(p)));
+    buildSignParts('sbom').forEach(p => parts.push(p));
+    cmd = fmtCmd(parts);
+  }
+  return pre.length ? pre.join('\n') + '\n' + cmd : cmd;
 }
 
 function buildCmdCBOMSrc() {
@@ -2010,6 +2245,134 @@ function runEditedCmd(startId, stopId, progPrefix, cmdStr) {
   );
 }
 
+/* ── Scheduled Jobs ────────────────────────────────────────────────────────── */
+function onJobSchemeChange() {
+  const git = document.getElementById('job-git-fields');
+  if (git) git.style.display = (v('job-scheme') === 'git') ? '' : 'none';
+}
+function onJobFreqChange() {
+  const f = v('job-freq');
+  const timeF = document.getElementById('job-time-field');
+  const wdF = document.getElementById('job-weekday-field');
+  if (timeF) timeF.style.display = (f === 'hourly') ? 'none' : '';
+  if (wdF)   wdF.style.display   = (f === 'weekly') ? '' : 'none';
+}
+function jobUseSavedSettings() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('job-cp', _bomSettings.control_plane);
+  set('job-project', _bomSettings.project);
+  set('job-label', _bomSettings.label);
+  set('job-token', _bomSettings.token);
+}
+function resetJobForm() {
+  ['job-id','job-name','job-source','job-exclude','job-git-ref','job-git-token','job-cp','job-project','job-label','job-token'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('job-scheme').value = 'dir';
+  document.getElementById('job-format').value = 'cyclonedx-json';
+  document.getElementById('job-depth').checked = true;
+  document.getElementById('job-freq').value = 'daily';
+  document.getElementById('job-time').value = '02:00';
+  document.getElementById('job-git-provider').value = 'github';
+  document.getElementById('job-form-title').textContent = 'Create Scheduled Job';
+  onJobSchemeChange(); onJobFreqChange();
+  const st = document.getElementById('job-status'); if (st) st.textContent = '';
+}
+function saveJob() {
+  const job = {
+    id:   v('job-id'),
+    name: v('job-name'),
+    type: 'sbom',
+    schedule: { frequency: v('job-freq'), time: v('job-time'), weekday: v('job-weekday') },
+    sbom: {
+      source:  v('job-source'),
+      scheme:  v('job-scheme'),
+      format:  v('job-format') || 'cyclonedx-json',
+      exclude: v('job-exclude'),
+      depth:   !!document.getElementById('job-depth')?.checked,
+    },
+    git: { provider: v('job-git-provider') || 'github', token: v('job-git-token'), ref: v('job-git-ref') },
+    publish: { control_plane: v('job-cp'), project: v('job-project'), label: v('job-label'), token: v('job-token') },
+  };
+  const st = document.getElementById('job-status');
+  const btn = document.getElementById('job-save-btn');
+  if (btn) btn.disabled = true;
+  fetch('/api/schedule/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(job) })
+    .then(r => r.json())
+    .then(res => {
+      if (res.error) { if (st) { st.textContent = '⚠ ' + res.error; st.style.color = 'var(--error)'; } return; }
+      if (st) { st.textContent = '✓ Job saved and scheduled'; st.style.color = 'var(--success)'; }
+      resetJobForm();
+      loadJobs();
+    })
+    .catch(e => { if (st) { st.textContent = '⚠ ' + e; st.style.color = 'var(--error)'; } })
+    .finally(() => { if (btn) btn.disabled = false; });
+}
+function loadJobs() {
+  const wrap = document.getElementById('jobs-list');
+  if (!wrap) return;
+  fetch('/api/schedule/jobs').then(r => r.json()).then(res => {
+    const jobs = (res && res.jobs) || [];
+    if (!jobs.length) { wrap.innerHTML = '<div class="card-sub">No scheduled jobs yet.</div>'; return; }
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="text-align:left;color:var(--text-muted)">'
+      + '<th style="padding:6px 8px">Name</th><th style="padding:6px 8px">Format</th><th style="padding:6px 8px">Schedule</th><th style="padding:6px 8px">Status</th><th style="padding:6px 8px">Last Run</th><th style="padding:6px 8px"></th></tr></thead><tbody>';
+    jobs.forEach(j => {
+      const sched = j.schedule.frequency === 'hourly' ? 'Hourly'
+                  : j.schedule.frequency === 'daily'  ? 'Daily ' + (j.schedule.time||'')
+                  : 'Weekly ' + (j.schedule.weekday||'') + ' ' + (j.schedule.time||'');
+      const state = j.paused ? '<span style="color:var(--text-muted)">Paused</span>' : '<span style="color:var(--success)">Active</span>';
+      const last = j.lastRun ? (j.lastRun + (j.lastStatus ? ' (' + j.lastStatus + ')' : '')) : '—';
+      const pauseLbl = j.paused ? 'Resume' : 'Pause';
+      html += '<tr style="border-top:1px solid var(--border)">'
+        + '<td style="padding:6px 8px">' + esc(j.name) + '</td>'
+        + '<td style="padding:6px 8px">' + esc(j.sbom.format) + (j.sbom.depth ? ' +depth' : '') + '</td>'
+        + '<td style="padding:6px 8px">' + esc(sched) + '</td>'
+        + '<td style="padding:6px 8px">' + state + '</td>'
+        + '<td style="padding:6px 8px">' + esc(last) + '</td>'
+        + '<td style="padding:6px 8px;white-space:nowrap;text-align:right">'
+        + '<button class="btn btn-ghost btn-sm" onclick="runJobNow(\'' + j.id + '\')">Run now</button> '
+        + '<button class="btn btn-ghost btn-sm" onclick="toggleJobPause(\'' + j.id + '\',' + (!j.paused) + ')">' + pauseLbl + '</button> '
+        + '<button class="btn btn-ghost btn-sm" onclick="editJob(\'' + j.id + '\')">Edit</button> '
+        + '<button class="btn btn-ghost btn-sm" onclick="deleteJob(\'' + j.id + '\')">Delete</button>'
+        + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+    _jobsCache = jobs;
+  }).catch(e => { wrap.innerHTML = '<div class="card-sub">⚠ ' + e + '</div>'; });
+}
+let _jobsCache = [];
+function editJob(id) {
+  const j = _jobsCache.find(x => x.id === id);
+  if (!j) return;
+  const set = (i, val) => { const el = document.getElementById(i); if (el) el.value = val || ''; };
+  set('job-id', j.id); set('job-name', j.name);
+  set('job-source', j.sbom.source); set('job-scheme', j.sbom.scheme || 'dir');
+  set('job-format', j.sbom.format); set('job-exclude', j.sbom.exclude);
+  document.getElementById('job-depth').checked = !!j.sbom.depth;
+  set('job-git-provider', (j.git && j.git.provider) || 'github'); set('job-git-ref', j.git && j.git.ref); set('job-git-token', j.git && j.git.token);
+  set('job-freq', j.schedule.frequency); set('job-time', j.schedule.time || '02:00'); set('job-weekday', j.schedule.weekday || 'MON');
+  set('job-cp', j.publish.control_plane); set('job-project', j.publish.project); set('job-label', j.publish.label); set('job-token', j.publish.token);
+  document.getElementById('job-form-title').textContent = 'Edit Scheduled Job';
+  onJobSchemeChange(); onJobFreqChange();
+  window.scrollTo(0, 0);
+}
+function toggleJobPause(id, paused) {
+  fetch('/api/schedule/pause', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, paused}) })
+    .then(r => r.json()).then(() => loadJobs()).catch(() => {});
+}
+function deleteJob(id) {
+  if (!confirm('Delete this scheduled job?')) return;
+  fetch('/api/schedule/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) })
+    .then(r => r.json()).then(() => loadJobs()).catch(() => {});
+}
+function runJobNow(id) {
+  const st = document.getElementById('job-status');
+  fetch('/api/schedule/run', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) })
+    .then(r => r.json()).then(res => {
+      if (st) { st.textContent = res.error ? ('⚠ ' + res.error) : '▶ Job started — refresh in a moment to see Last Run'; st.style.color = res.error ? 'var(--error)' : 'var(--success)'; }
+    }).catch(() => {});
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 // Watch all inputs/selects inside containerId and call buildFn on any change,
 // writing the result to preview-<previewId>.  Also sets up the edit-lock on the
 // preview textarea so manual edits suppress auto-updates.
@@ -2046,15 +2409,21 @@ function watchPreview(containerId, buildFn, previewId) {
 
 /* ── BOM Settings & Publish ────────────────────────────────────────────────── */
 let _bomSettings = { control_plane:'', project:'', label:'', token:'' };
+let _appConfig = {};   // full persisted config cache (preserves git/jobs across saves)
 
 function loadConfig() {
   fetch('/api/config').then(r => r.json()).then(cfg => {
+    _appConfig = cfg || {};
     const b = cfg.bom || {};
     _bomSettings = { control_plane: b.control_plane||'', project: b.project||'', label: b.label||'', token: b.token||'' };
     // Populate settings form fields (project/label selects are populated by their loaders)
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
     set('cfg-cp',    _bomSettings.control_plane);
     set('cfg-token', _bomSettings.token);
+    // Git tokens
+    const g = cfg.git || {};
+    set('cfg-github-token', g.githubToken);
+    set('cfg-gitlab-token', g.gitlabToken);
     // Auto-fetch project and label lists if credentials are already saved.
     if (_bomSettings.control_plane && _bomSettings.token) {
       loadProjects();
@@ -2161,7 +2530,8 @@ function saveSettings() {
     label:         v('cfg-label'),
     token:         v('cfg-token'),
   };
-  const cfg = { bom: _bomSettings, dashboard: counters };
+  _appConfig.git = { githubToken: v('cfg-github-token'), gitlabToken: v('cfg-gitlab-token') };
+  const cfg = { bom: _bomSettings, git: _appConfig.git, dashboard: counters };
   const btn = document.querySelector('#sec-bom-settings .btn-primary');
   const st  = document.getElementById('settings-status');
   if (btn) btn.disabled = true;
@@ -2175,7 +2545,7 @@ function saveSettings() {
 }
 
 function saveCounters() {
-  const cfg = { bom: _bomSettings, dashboard: counters };
+  const cfg = { bom: _bomSettings, git: _appConfig.git || {}, dashboard: counters };
   fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cfg) }).catch(() => {});
 }
 
