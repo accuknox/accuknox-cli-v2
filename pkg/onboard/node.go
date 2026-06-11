@@ -3,6 +3,7 @@ package onboard
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Masterminds/sprig"
@@ -264,6 +265,11 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	// write compose file
 	composeFilePath, err := copyOrGenerateFile(jc.UserConfigPath, configPath, "docker-compose.yaml", sprigFuncs, workerNodeComposeFileTemplate, jc.TCArgs)
 	if err != nil {
+		return err
+	}
+	// Add kubearmor config
+	kubearmorConfigPath := filepath.Join(configPath, "kubearmor")
+	if _, err := copyOrGenerateFile(jc.UserConfigPath, kubearmorConfigPath, "kubearmor_config.yaml", sprigFuncs, kubeArmorConfig, jc.TCArgs); err != nil {
 		return err
 	}
 

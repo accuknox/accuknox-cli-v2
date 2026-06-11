@@ -644,6 +644,12 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 			kmuxConfigTemplateString: kmuxConsumerConfig,
 			kmuxConfigFileName:       common.KmuxAnnotationFileName,
 		},
+		{
+			agentName:            "kubearmor",
+			configDir:            "kubearmor",
+			configFilePath:       "kubearmor_config.yaml",
+			configTemplateString: kubeArmorConfig,
+		},
 	}
 
 	if tlsEnabled {
