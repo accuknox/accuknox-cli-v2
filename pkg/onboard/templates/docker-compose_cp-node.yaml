@@ -264,6 +264,8 @@ services:
     image: "{{.KubeArmorVMAdapterImage}}"
     user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
+    environment:
+      KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
@@ -298,6 +300,7 @@ services:
     restart: always
     volumes:
       - "{{.ConfigPath}}:/opt:rw"
+      -  "{{.ConfigPath}}/kubearmor:/opt/kubearmor/config:rw"
     networks:
       accuknox-net:
         aliases:

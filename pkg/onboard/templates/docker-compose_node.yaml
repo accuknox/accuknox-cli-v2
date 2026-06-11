@@ -231,6 +231,7 @@ services:
     {{- range .ProxyExtraArgs }}
     - {{ . }}
     {{- end }}
+    - KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       - "--relay-server-addr={{.RelayServerURL}}"
@@ -271,6 +272,7 @@ services:
       # for spire socket
       - "/var/run:/var/run:ro"
       {{- end }}
+      -  "{{.ConfigPath}}/kubearmor:/opt/kubearmor/config:rw"
     labels:
       app: kubearmor-vm-adapter
     restart: always
