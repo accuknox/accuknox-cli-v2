@@ -204,7 +204,7 @@ services:
           exec /KubeArmor/kubearmor "$$@"
       - --
   {{- end }}
-
+{{- if not (or .RMQEnabled .TlsEnabled) }}
   kubearmor-relay-server:
     profiles:
       - "accuknox-agents"
@@ -240,7 +240,7 @@ services:
         limits:
           cpus: '{{.AgentsCPUs}}'
           memory: {{.AgentsMemoryMax}}
-
+{{- end }}
   kubearmor-vm-adapter:
     profiles:
       - "kubearmor-only"
@@ -394,8 +394,10 @@ services:
         condition: service_completed_successfully
         {{- end }}
       {{- end }}
+      {{- if not (or .TlsEnabled  .RMQEnabled) }}
       kubearmor-relay-server:
         condition: service_started
+      {{- end }}
       summary-engine:
         condition: service_started
       {{- if .DeployDiscover }}
@@ -493,8 +495,10 @@ services:
         condition: service_completed_successfully
         {{- end }}
       {{- end }}
+      {{- if not (or .TlsEnabled .RMQEnabled ) }}
       kubearmor-relay-server:
         condition: service_started
+      {{- end }}
     container_name: policy-enforcement-agent
     image: "{{.PEAImage}}"
     user: "0:0"
@@ -584,7 +588,11 @@ services:
       rabbitmq:
         condition: service_started
       {{- end }}
+      {{- if not (or .TlsEnabled .RMQEnabled ) }}
       kubearmor-relay-server:
+        condition: service_started
+      {{- end }}
+      kubearmor:
         condition: service_started
     container_name: summary-engine
     image: "{{.SumEngineImage}}"
@@ -622,7 +630,11 @@ services:
       rabbitmq:
         condition: service_started
       {{- end }}
+      {{- if not (or .TlsEnabled .RMQEnabled ) }}
       kubearmor-relay-server:
+        condition: service_started
+      {{- end }}
+      kubearmor:
         condition: service_started
     container_name: hardening-agent
     image: "{{.HardeningAgentImage}}"

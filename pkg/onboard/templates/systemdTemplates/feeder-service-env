@@ -3,8 +3,13 @@ CLUSTER_NAME="default"
 HUBBLE_ENABLED=false
 KAFKA_ENABLED=false
 KUBEARMOR_ENABLED=true
+{{ if or .TlsEnabled .RMQEnabled }}
+KUBEARMOR_URL="{{.KubeArmorAddr}}"
+KUBEARMOR_PORT="{{.KubeArmorPort}}"
+{{ else }}
 KUBEARMOR_URL="{{.RelayServerAddr}}"
 KUBEARMOR_PORT="{{.RelayServerPort}}"
+{{ end }}
 KMUX_LOGS_ENABLED={{.EnableLogs}}
 KMUX_CONFIG_PATH={{.KmuxConfigPath}}
 IGNORE_SUMMARY_EVENTS="Network:AF_UNIX,AF_NETLINK"

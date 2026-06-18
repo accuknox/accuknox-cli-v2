@@ -690,6 +690,10 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 
+		if (cc.Tls.RMQEnabled || cc.Tls.Enabled) && obj.AgentName == cm.RelayServer {
+			continue
+		}
+
 		if !cc.SkipDownload {
 			// stop existing service first otherwise errors are encountered due to
 			// busy binary
