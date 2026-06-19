@@ -274,8 +274,10 @@ services:
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.0" }}
       - "--agents-version-file=/opt/agents-version"
       {{- end }}
+      {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2" }}
       - "--policy-list-enable={{.EnablePoliciesList}}"
       - "--policy-list-relay-frequency={{.PoliciesListRefresh}}"
+      {{- end }}
       {{- if or .TlsEnabled .RMQEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"
@@ -286,7 +288,7 @@ services:
       - "--kmux-config-state=/opt/kubearmor-vm-adapter/{{.StateKmuxConfig}}"
       - "--kmux-config-alerts=/opt/kubearmor-vm-adapter/{{.AlertsKmuxConfig}}"
       - "--kmux-config-logs=/opt/kubearmor-vm-adapter/{{.LogsKmuxConfig}}"
-      {{- if .EnablePoliciesList }}
+      {{- if and .EnablePoliciesList (trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2") }}
       - "--kmux-policy-list=/opt/kubearmor-vm-adapter/{{.PoliciesListKmuxConfig}}"
       - "--policy-list-topic={{.PoliciesListTopic}}"
       {{- end }}

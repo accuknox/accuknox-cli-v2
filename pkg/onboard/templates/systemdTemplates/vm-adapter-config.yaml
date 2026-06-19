@@ -20,7 +20,7 @@ kmux-config-policy: /opt/kubearmor-vm-adapter/policies-kmux-config.yaml
 kmux-config-state: /opt/kubearmor-vm-adapter/state-kmux-config.yaml
 kmux-config-alerts: /opt/kubearmor-vm-adapter/alerts-kmux-config.yaml
 kmux-config-logs: /opt/kubearmor-vm-adapter/logs-kmux-config.yaml
-{{- if .EnablePoliciesList }}
+{{- if and .EnablePoliciesList (trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2") }}
 kmux-policy-list: "/opt/kubearmor-vm-adapter/{{.PoliciesListKmuxConfig}}"
 policy-list-topic: "{{.PoliciesListTopic}}"
 {{- end }}
@@ -45,5 +45,7 @@ kmux-config-annotation: /opt/kubearmor-vm-adapter/annotation-kmux-config.yaml
 annotation-enable: true
 {{- end }}
 
+{{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2" }}
 policy-list-enable: "{{.EnablePoliciesList}}"
 policy-list-relay-frequency: "{{.PoliciesListRefresh}}"
+{{- end }}
