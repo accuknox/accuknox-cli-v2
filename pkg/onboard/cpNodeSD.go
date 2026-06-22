@@ -19,7 +19,6 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	ic.TCArgs.SpireSecretDir = ic.SpireSecretDir
 	ic.TCArgs.KubeArmorURL = "0.0.0.0:32767"
-	ic.TCArgs.KubeArmorPort = "32767"
 
 	ic.TCArgs.KubeArmorAddr = "0.0.0.0"
 	ic.TCArgs.KubeArmorPort = "32767"

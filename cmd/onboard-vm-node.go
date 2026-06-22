@@ -235,8 +235,6 @@ func init() {
 
 	joinNodeCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "version to use - recommended to keep same as control plane node version")
 
-	joinNodeCmd.PersistentFlags().StringVar(&tls.CaCert, "ca-cert", "", "ca certificate in bas64 encoded format to validate tls connection")
-
 	joinNodeCmd.PersistentFlags().BoolVar(&deploySumEngine, "deploy-summary-engine", false, "to deploy summary engine in worker node")
 
 	// spire config - to use spire and spire cert for tls
