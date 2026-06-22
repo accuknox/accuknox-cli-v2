@@ -31,6 +31,13 @@ var (
 	cpNodeAgents     = []string{cm.SpireAgent, cm.SIAAgent, cm.PEAAgent, cm.FeederService, cm.SummaryEngine, cm.DiscoverAgent, cm.HardeningAgent}
 )
 
+// while extracting only files with these
+// prefixes will be extracted
+var allowedPrefixes = []string{
+	"opt/",
+	"usr/lib/systemd/system/",
+}
+
 func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 	systemdObjects := []SystemdServiceObject{
 		{
@@ -592,9 +599,18 @@ func ExtractAgent(fileName string) error {
 
 	tarReader := tar.NewReader(gzipReader)
 
+	isAllowed := func(name string) bool {
+		normalized := strings.TrimPrefix(name, "/")
+		for _, prefix := range allowedPrefixes {
+			if strings.HasPrefix(normalized, prefix) {
+				return true
+			}
+		}
+		return false
+	}
+
 	for {
 		header, err := tarReader.Next()
-
 		if err == io.EOF {
 			break
 		}
@@ -606,6 +622,11 @@ func ExtractAgent(fileName string) error {
 		if header.Typeflag == tar.TypeDir {
 			continue
 		}
+
+		if !isAllowed(header.Name) {
+			continue
+		}
+
 		rootDir := "/"
 
 		// Extract the file
