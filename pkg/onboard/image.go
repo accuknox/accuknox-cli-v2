@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 )
 
 type imageOptions struct {
@@ -36,6 +38,10 @@ func getImage(customRegistry, defaultRegistry, defaultRepo, customImage, default
 		if preserveUpstream {
 			repo = defaultRepo
 		}
+	}
+
+	if (customImage == "" && customTag == "") && tagSuffix == "" {
+		tagSuffix = cm.SystemdTagSuffix
 	}
 
 	// get image and tag
