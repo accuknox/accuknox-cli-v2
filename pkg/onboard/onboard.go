@@ -374,10 +374,6 @@ func (cc *ClusterConfig) PopulateAccessKeyConfig(url, key, clusterName, vmName, 
 
 func (cc *ClusterConfig) PopulateImageDetails(releaseInfo cm.ReleaseMetadata, images *ImageVersions, registry, registryConfigPath, tagSuffix string, preserveUpstream, insecureRegistryConnection, httpRegistryConnection bool) error {
 
-	if tagSuffix == "" {
-		tagSuffix = cm.SystemdTagSuffix
-	}
-
 	var err error
 	// mode specific config
 	switch cc.Mode {
