@@ -378,95 +378,95 @@ func (cc *ClusterConfig) PopulateImageDetails(releaseInfo cm.ReleaseMetadata, im
 	// mode specific config
 	switch cc.Mode {
 	case VMMode_Docker:
-		cc.KubeArmorImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.KubeArmorImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultKubeArmorRepo, images.KubearmorImage, cm.DefaultKubeArmorImage, images.KubearmorVersion, releaseInfo.KubeArmorTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.KubeArmorInitImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.KubeArmorInitImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultKubeArmorRepo, images.KubearmorInitImage, cm.DefaultKubeArmorInitImage,
 			images.KubearmorVersion, releaseInfo.KubeArmorTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.KubeArmorVMAdapterImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.KubeArmorVMAdapterImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.VmAdapterImage, cm.DefaultVMAdapterImage,
 			images.VmAdapterTag, releaseInfo.KubeArmorVMAdapterTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.KubeArmorRelayServerImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.KubeArmorRelayServerImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.RelayServerImage, cm.DefaultRelayServerImage,
 			images.KubeArmorRelayServerTag, releaseInfo.KubeArmorRelayTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.SIAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.SIAImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.SIAImage, releaseInfo.SIAImage, images.SIAVersionTag, releaseInfo.SIATag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.PEAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.PEAImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.PEAImage, releaseInfo.PEAImage,
 			images.PEAVersionTag, releaseInfo.PEATag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.FeederImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.FeederImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.FeederImage, releaseInfo.FeederServiceImage,
 			images.FeederVersionTag, releaseInfo.FeederServiceTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.SPIREAgentImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.SPIREAgentImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.SpireImage, cm.DefaultSPIREAgentImage,
 			"latest", releaseInfo.SPIREAgentImageTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.WaitForItImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.WaitForItImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.WaitForItImage, cm.DefaultWaitForItImage,
 			"latest", "", "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.DiscoverImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.DiscoverImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.DiscoverImage, releaseInfo.DiscoverImage,
 			images.DiscoverVersionTag, releaseInfo.DiscoverTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.SumEngineImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.SumEngineImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.SumEngineImage, releaseInfo.SumEngineImage,
 			images.SumEngineTag, releaseInfo.SumEngineTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.HardeningAgentImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.HardeningAgentImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.HardeningAgentImage, releaseInfo.HardeningAgentImage,
 			images.HardeningAgentVersionTag, releaseInfo.HardeningAgentTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.RMQImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.RMQImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			"", images.RMQImage, cm.DefaultRMQImage,
 			"", cm.DefaultRMQImageTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
-		cc.RRAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.RRAImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.RRAImage, releaseInfo.RraImage,
 			images.RRAImageTag, releaseInfo.RraTag, "", "", preserveUpstream)
 		if err != nil {
@@ -479,77 +479,77 @@ func (cc *ClusterConfig) PopulateImageDetails(releaseInfo cm.ReleaseMetadata, im
 			fmt.Printf("%s tag not available for systemd package. Using values from release chart", images.KubearmorVersion)
 			kaVersion = ""
 		}
-		cc.KubeArmorImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.KubeArmorImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultKubeArmorRepo, images.KubearmorImage, cm.AgentRepos[cm.KubeArmor],
 			kaVersion, releaseInfo.KubeArmorTag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.KubeArmorVMAdapterImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.KubeArmorVMAdapterImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.VmAdapterImage, cm.AgentRepos[cm.VMAdapter],
 			images.VmAdapterTag, releaseInfo.KubeArmorVMAdapterTag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.KubeArmorRelayServerImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.KubeArmorRelayServerImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.RelayServerImage, cm.AgentRepos[cm.RelayServer],
 			images.KubeArmorRelayServerTag, releaseInfo.KubeArmorRelayTag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.SIAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.SIAImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.SIAImage, cm.AgentRepos[cm.SIAAgent],
 			images.SIAVersionTag, releaseInfo.SIATag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.PEAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.PEAImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.PEAImage, cm.AgentRepos[cm.PEAAgent],
 			images.PEAVersionTag, releaseInfo.PEATag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.FeederImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.FeederImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.FeederImage, cm.AgentRepos[cm.FeederService],
 			images.FeederVersionTag, releaseInfo.FeederServiceTag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.SPIREAgentImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.SPIREAgentImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.SpireImage, cm.AgentRepos[cm.SpireAgent],
 			"", releaseInfo.SPIREAgentImageTag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.SumEngineImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.SumEngineImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.SumEngineImage, cm.AgentRepos[cm.SummaryEngine],
 			images.SumEngineTag, releaseInfo.SumEngineTag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.DiscoverImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.DiscoverImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.DiscoverImage, cm.AgentRepos[cm.DiscoverAgent],
 			images.DiscoverVersionTag, releaseInfo.DiscoverTag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.HardeningAgentImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.HardeningAgentImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.HardeningAgentImage, cm.AgentRepos[cm.HardeningAgent],
 			images.HardeningAgentVersionTag, releaseInfo.HardeningAgentTag, "v", tagSuffix, preserveUpstream)
 		if err != nil {
 			return err
 		}
 
-		cc.RRAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.RRAImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.RRAImage, cm.AgentRepos[cm.RRA],
 			images.RRAImageTag, releaseInfo.RraTag, "v", cm.SystemdTagSuffix, preserveUpstream)
 		if err != nil {

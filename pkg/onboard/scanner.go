@@ -74,7 +74,7 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 
 	switch cc.Mode {
 	case VMMode_Docker:
-		cc.RRAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.RRAImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, rraImage, releaseInfo.RraImage,
 			rraVersionTag, releaseInfo.RraTag, "", "", preserveUpstream)
 		if err != nil {
@@ -82,14 +82,14 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 		}
 
 		if !agentsDeployed {
-			cc.SPIREAgentImage, err = getImage(registry, cm.DefaultDockerRegistry,
+			cc.SPIREAgentImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 				cm.DefaultAccuKnoxRepo, spireImage, cm.DefaultSPIREAgentImage,
 				"latest", releaseInfo.SPIREAgentImageTag, "", "", preserveUpstream)
 			if err != nil {
 				return err
 			}
 
-			cc.WaitForItImage, err = getImage(registry, cm.DefaultDockerRegistry,
+			cc.WaitForItImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 				cm.DefaultAccuKnoxRepo, "", cm.DefaultWaitForItImage,
 				"latest", "", "", "", preserveUpstream)
 			if err != nil {
@@ -105,7 +105,7 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 
 	case VMMode_Systemd:
 		cc.LogRotateTemplateString = logRotateFile
-		cc.RRAImage, err = getImage(registry, cm.DefaultDockerRegistry,
+		cc.RRAImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, rraImage, cm.AgentRepos[cm.RRA],
 			rraVersionTag, releaseInfo.RraTag, "v", cm.SystemdTagSuffix, preserveUpstream)
 		if err != nil {
@@ -113,7 +113,7 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 		}
 
 		if !agentsDeployed {
-			cc.SPIREAgentImage, err = getImage(registry, cm.DefaultDockerRegistry,
+			cc.SPIREAgentImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 				cm.DefaultAccuKnoxRepo, spireImage, cm.AgentRepos[cm.SpireAgent],
 				"", releaseInfo.SPIREAgentImageTag, "v", cm.SystemdTagSuffix, preserveUpstream)
 			if err != nil {
