@@ -370,7 +370,7 @@ func (ic *InitConfig) populateCommonArgs() {
 	ic.TCArgs.PolicyV1Topic = getTopicName(ic.RMQTopicPrefix, "policy-v1")
 	ic.TCArgs.SummaryV2Topic = getTopicName(ic.RMQTopicPrefix, "summary-v2")
 	ic.TCArgs.AnnotationTopic = getTopicName(ic.RMQTopicPrefix, "annotation")
-	ic.TCArgs.PoliciesListKmuxConfig = getTopicName(ic.RMQTopicPrefix, "policies-list")
+	ic.TCArgs.PoliciesListTopic = getTopicName(ic.RMQTopicPrefix, "policies-list")
 
 	ic.TCArgs.SplunkConfigObject = ic.Splunk
 }

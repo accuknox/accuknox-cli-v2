@@ -46,6 +46,6 @@ annotation-enable: true
 {{- end }}
 
 {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2" }}
-policy-list-enable: "{{.EnablePoliciesList}}"
+policy-list-enable: {{.EnablePoliciesList}}
 policy-list-relay-frequency: "{{.PoliciesListRefresh}}"
 {{- end }}
