@@ -140,7 +140,7 @@ services:
     image: "{{.KubeArmorImage}}"
     pull_policy: "{{.ImagePullPolicy}}"
     environment:
-      KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
+      - KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     labels:
       app: kubearmor
     volumes:

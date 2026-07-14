@@ -141,7 +141,7 @@ services:
     image: "{{.KubeArmorImage}}"
     pull_policy: "{{.ImagePullPolicy}}"
     environment:
-      KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
+      - KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     labels:
       app: kubearmor
     volumes:
@@ -265,7 +265,7 @@ services:
     user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
     environment:
-      KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
+      - KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
@@ -555,7 +555,7 @@ services:
     container_name: discover
     image: "{{.DiscoverImage}}"
     environment:
-      "ENABLE_GRPC": 'false'
+      - "ENABLE_GRPC": 'false'
     pull_policy: "{{.ImagePullPolicy}}"
     command: ["--config", "/opt/discover/config.yaml", "--kmux-config", "/opt/discover/kmux-config.yaml"]
     labels:
