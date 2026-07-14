@@ -16,18 +16,33 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"text/template"
 	"time"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	se_splunk "github.com/accuknox/dev2/sumengine/pkg/sumengine/kubearmor"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/golang-jwt/jwt"
 	"github.com/pterm/pterm"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/mod/semver"
 )
+
+var containerImages = []string{
+	"spire-agent",
+	"kubearmor",
+	"kubearmor-vm-adapter",
+	"shared-informer-agent",
+	"feeder-service",
+	"policy-enforcement-agent",
+	"discover",
+	"summary-engine",
+	"hardening-agent",
+}
 
 func DumpConfig(config interface{}, path string) error {
 	byteData, err := json.Marshal(config)
@@ -66,9 +81,8 @@ func createDefaultConfigPath() (string, error) {
 
 // parseURL with/without scheme and return host, port or error
 func parseURL(address string) (string, string, error) {
-	var host string
-	port := "80"
 
+	port := "80"
 	addr, err := url.Parse(address)
 	if err != nil || addr.Host == "" {
 		// URL without scheme
@@ -80,12 +94,10 @@ func parseURL(address string) (string, string, error) {
 		addr = u
 	}
 
-	host = addr.Hostname()
 	if addr.Port() != "" {
 		port = addr.Port()
 	}
-
-	return host, port, nil
+	return addr.Hostname(), port, nil
 }
 
 // copyOrGenerateFile copies a a config file from userConfigDir to the given path or writes file with the given template at the given path
@@ -574,7 +586,8 @@ func getRMQUserPass(credentials string) (string, string, error) {
 	if len(rmqUserPass) != 2 {
 		return "", "", fmt.Errorf("invalid RMQ credentials")
 	}
-	return rmqUserPass[0], rmqUserPass[1], nil
+
+	return strings.TrimSpace(rmqUserPass[0]), strings.TrimSpace(rmqUserPass[1]), nil
 }
 
 func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath string) error {
@@ -630,7 +643,7 @@ func (m VMMode) String() string {
 	return string(m)
 }
 
-func loadDockerImagesFromPath(rootPath string, p *pterm.ProgressbarPrinter) error {
+func loadDockerImagesFromPath(rootPath string, agents []string, p *pterm.ProgressbarPrinter) error {
 	dClient, err := CreateDockerClient()
 	if err != nil {
 		return err
@@ -645,6 +658,13 @@ func loadDockerImagesFromPath(rootPath string, p *pterm.ProgressbarPrinter) erro
 			return nil
 		}
 		if d.IsDir() {
+			return nil
+		}
+
+		if !slices.ContainsFunc(agents, func(ss string) bool {
+			strWithoutPrefix := strings.TrimPrefix(ss, "accuknox-")
+			return strings.Contains(path, ss) || strings.Contains(path, strWithoutPrefix)
+		}) {
 			return nil
 		}
 
@@ -688,9 +708,10 @@ func loadImage(ctx context.Context, dClient *client.Client, path string) error {
 	return err
 }
 
-func extractAllAgents(rootPath string, p *pterm.ProgressbarPrinter) error {
+func extractAgentsFromPath(rootPath string, agents []string, p *pterm.ProgressbarPrinter) (int, error) {
 
-	return filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
+	count := 0
+	err := filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -698,6 +719,16 @@ func extractAllAgents(rootPath string, p *pterm.ProgressbarPrinter) error {
 			return nil
 		}
 		if d.IsDir() {
+			return nil
+		}
+
+		if !slices.ContainsFunc(agents, func(ss string) bool {
+			strWithoutPrefix := strings.TrimPrefix(ss, "accuknox-")
+
+			return strings.Contains(path, ss) ||
+				strings.Contains(path, strWithoutPrefix) ||
+				strings.Contains(path, "summary-engine")
+		}) {
 			return nil
 		}
 
@@ -715,11 +746,16 @@ func extractAllAgents(rootPath string, p *pterm.ProgressbarPrinter) error {
 		if parts[1] == runtime.GOARCH {
 			p.UpdateTitle(fmt.Sprintf("Extracting agent %s [%v]", path, runtime.GOARCH))
 			p.Increment()
-			return ExtractAgent(path)
+			err := ExtractAgent(path)
+			if err != nil {
+				return err
+			}
+			count++
 		}
 		return nil
-
 	})
+
+	return count, err
 }
 
 func CheckImagescanSystemdInstallation() (bool, error) {
@@ -736,4 +772,48 @@ func CheckImagescanSystemdInstallation() (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func IsDeployed(mode VMMode) bool {
+
+	switch mode {
+	case VMMode_Docker:
+		client, err := CreateDockerClient()
+		if err != nil {
+			return false
+		}
+		containers, err := client.ContainerList(context.Background(), container.ListOptions{})
+		if err != nil {
+			return false
+		}
+		targetSet := make(map[string]struct{}, len(containerImages))
+		for _, img := range containerImages {
+			targetSet[img] = struct{}{}
+		}
+
+		for _, c := range containers {
+			if c.State != container.StateRunning {
+				continue
+			}
+
+			for _, imgName := range c.Names {
+				img := strings.TrimPrefix(imgName, "/")
+				if _, ok := targetSet[img]; ok {
+					return true
+				}
+			}
+		}
+	case VMMode_Systemd:
+		services, err := CheckInstalledSystemdServices()
+		if err != nil {
+			logger.Error("failed to check systemd service", err)
+			return false
+		}
+
+		if len(services) > 0 {
+			return true
+		}
+	}
+
+	return false
 }

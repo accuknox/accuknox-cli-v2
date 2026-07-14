@@ -16,8 +16,19 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 	jc.TemplateFuncs = sprig.GenericFuncMap()
 
 	if jc.FromSource != "" {
+
+		agents := make([]string, 0)
 		for _, obj := range jc.ClusterConfig.SystemdServiceObjects {
-			if obj.ServiceName == "" {
+
+			// skip installing on worker node
+			if jc.WorkerNode && !obj.InstallOnWorkerNode {
+				continue
+			}
+			if obj.AgentImage == "" || obj.PackageName == "" || obj.ServiceName == "" {
+				continue
+			}
+
+			if jc.Proxy.Enabled && obj.AgentName == cm.SpireAgent {
 				continue
 			}
 			err := StopSystemdService(obj.ServiceName, true, true)
@@ -25,14 +36,18 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 				logger.Error("[source] error stopping %s: %s", obj.ServiceName, err)
 				return err
 			}
+			agents = append(agents, obj.AgentName)
 		}
-		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
+		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
 
-		if err := extractAllAgents(jc.FromSource, p); err != nil {
+		loadedCount, err := extractAgentsFromPath(jc.FromSource, agents, p)
+		if err != nil {
 			return err
 		}
 		_, _ = p.Stop()
 		jc.SkipDownload = true
+
+		logger.Info1("successfully loaded %v binaries", loadedCount)
 	}
 
 	if !jc.SkipDownload {
@@ -50,6 +65,7 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 	jc.TCArgs.SpireSecretDir = jc.SpireSecretDir
 
 	jc.TCArgs.TlsEnabled = jc.Tls.Enabled
+	jc.TCArgs.RMQEnabled = jc.Tls.RMQEnabled
 
 	jc.TCArgs.AccessKey = jc.AccessKey
 
@@ -91,6 +107,17 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		TlsCertFile:    jc.TCArgs.TlsCertFile,
 		ProxyEnabled:   jc.TCArgs.ProxyEnabled,
 		ProxyAddress:   jc.TCArgs.ProxyAddress,
+	}
+
+	if jc.RMQServer != "" {
+		jc.TCArgs.RMQAddr = jc.RMQServer
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
+	} else if jc.CPNodeAddr != "" {
+		jc.TCArgs.RMQAddr = jc.CPNodeAddr + ":5672"
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
+	} else {
+		jc.TCArgs.RMQAddr = "0.0.0.0:5672"
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
 	}
 
 	if jc.Proxy.Address != "" {

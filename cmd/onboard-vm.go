@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 	"github.com/spf13/cobra"
 )
@@ -75,10 +77,11 @@ var (
 
 	deployDiscovery bool
 
-	skipDownload bool
-	imageScan    bool
-	allImages    bool
-	fromSource   string
+	skipDownload  bool
+	imageScan     bool
+	allImages     bool
+	fromSource    string
+	forceRecreate bool
 )
 
 // onboardVMCmd represents the sub-command to onboard VM clusters
@@ -147,6 +150,8 @@ func init() {
 	onboardVMCmd.PersistentFlags().BoolVar(&tls.Generate, "tls-gen", false, "generate TLS certificates for rabbitmq connection (generates CA, Cert, and Key)")
 	onboardVMCmd.PersistentFlags().StringVar(&tls.CaPath, "ca-path", "", "path to ca certificate file")
 
+	onboardVMCmd.PersistentFlags().StringVar(&tls.CaCert, "ca-cert", "", "ca certificate in bas64 encoded format to validate tls connection")
+
 	onboardVMCmd.PersistentFlags().StringVar(&topicPrefix, "cp-name", "", "control plane node name to be used as topic prefix")
 
 	onboardVMCmd.PersistentFlags().StringArrayVar(&tls.Organization, "tls-org", []string{"accuknox"}, "Organization for TLS certificates")
@@ -195,7 +200,7 @@ func init() {
 
 	onboardVMCmd.PersistentFlags().StringVar(&rmqConnectionName, "rmq-connection-name", "", "Rabbitmq connection name")
 
-	onboardVMCmd.PersistentFlags().IntVar(&nodeStateRefreshTime, "node-state-refresh-time", 10, "Refresh time for node state (default 10 minutes)")
+	onboardVMCmd.PersistentFlags().IntVar(&nodeStateRefreshTime, "node-state-refresh-time", 4, "Refresh time for node state (default 4 minutes)")
 
 	onboardVMCmd.PersistentFlags().StringVar(&spireHost, "spire-host", "", "address of spire-host to connect for authenticating with accuknox SaaS")
 
@@ -237,6 +242,13 @@ func init() {
 	// Enable image scanning
 	onboardVMCmd.PersistentFlags().BoolVar(&imageScan, "image-scan", false, "deploy container image scanner")
 	onboardVMCmd.PersistentFlags().BoolVar(&allImages, "all-image", false, "if flag set, all the images in the VM will be scanned")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&tls.RMQEnabled, "rmq", false, "enable rabbitmq based connection instead of gRPC")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&forceRecreate, "force-recreate", false, "force recreate docker containers when re-onboarding")
+
+	onboardVMCmd.PersistentFlags().BoolVar(&policiesListEnabled, "enable-policies-list", true, "enable policies list")
+	onboardVMCmd.PersistentFlags().DurationVar(&policiesListRefreshTime, "policies-list-refresh-time", 5*time.Minute, "policies list refresh time")
 
 	onboardCmd.AddCommand(onboardVMCmd)
 }

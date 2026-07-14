@@ -3,6 +3,7 @@ package onboard
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Masterminds/sprig"
@@ -87,7 +88,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	}
 
 	// RMQServer that would be used by summary engine
-	if jc.Tls.Enabled {
+	if jc.Tls.Enabled || jc.Tls.RMQEnabled {
 		if jc.RMQServer == "" && jc.CPNodeAddr != "" {
 			cpNodeServerAddr, cpNodePort, err := parseURL(jc.CPNodeAddr)
 			if err != nil {
@@ -156,6 +157,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		PolicyV1Topic:               getTopicName(jc.RMQTopicPrefix, "policy-v1"),
 		SummaryV2Topic:              getTopicName(jc.RMQTopicPrefix, "summary-v2"),
 		AnnotationTopic:             getTopicName(jc.RMQTopicPrefix, "annotation"),
+		PoliciesListTopic:           getTopicName(jc.RMQTopicPrefix, "policies-list"),
 
 		EnableHostPolicyDiscovery: jc.EnableHostPolicyDiscovery,
 
@@ -170,6 +172,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		ProxyEnabled:         jc.Proxy.Enabled,
 		ProxyAddress:         jc.Proxy.Address,
 		ProxySaaSAddr:        jc.Proxy.SaaSAddr,
+		RMQEnabled:           jc.Tls.RMQEnabled,
 	}
 
 	jc.TCArgs.PoliciesKmuxConfig = common.KmuxPoliciesFileName
@@ -179,6 +182,8 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 	jc.TCArgs.SummaryKmuxConfig = common.KmuxSummaryFileName
 	jc.TCArgs.PolicyKmuxConfig = common.KmuxPolicyFileName
 	jc.TCArgs.AnnotationKmuxConfig = common.KmuxAnnotationFileName
+
+	jc.TCArgs.PoliciesListKmuxConfig = common.KmuxPoliciesListFileName
 
 	if jc.EnableVMScan {
 		jc.TCArgs.RRAConfigObject = jc.RRAConfigObject
@@ -265,6 +270,11 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	if err != nil {
 		return err
 	}
+	// Add kubearmor config
+	kubearmorConfigPath := filepath.Join(configPath, "kubearmor")
+	if _, err := copyOrGenerateFile(jc.UserConfigPath, kubearmorConfigPath, "kubearmor_config.yaml", sprigFuncs, kubeArmorConfig, jc.TCArgs); err != nil {
+		return err
+	}
 
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
 		ReleaseVersion: jc.AgentsVersion,
@@ -275,6 +285,17 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		TlsCertFile:    jc.TCArgs.TlsCertFile,
 		ProxyEnabled:   jc.Proxy.Enabled,
 		ProxyAddress:   jc.Proxy.Address,
+	}
+
+	if jc.RMQServer != "" {
+		jc.TCArgs.RMQAddr = jc.RMQServer
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
+	} else if jc.CPNodeAddr != "" {
+		jc.TCArgs.RMQAddr = jc.CPNodeAddr + ":5672"
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
+	} else {
+		jc.TCArgs.RMQAddr = "0.0.0.0:5672"
+		kmuxConfigArgs.RMQServer = jc.TCArgs.RMQAddr
 	}
 
 	if jc.Proxy.Address != "" {
@@ -293,13 +314,14 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	kmuxConfigFileTemplateMap := map[string]string{
-		"sumengine/" + common.KmuxConfigFileName:                kmuxPublisherConfig,
-		"sumengine/" + common.KmuxSummaryFileName:               kmuxPublisherConfig,
-		"kubearmor-vm-adapter/" + common.KmuxStateEventFileName: kmuxPublisherConfig,
-		"kubearmor-vm-adapter/" + common.KmuxAlertsFileName:     kmuxPublisherConfig,
-		"kubearmor-vm-adapter/" + common.KmuxLogsFileName:       kmuxPublisherConfig,
-		"kubearmor-vm-adapter/" + common.KmuxPoliciesFileName:   kmuxConsumerConfig,
-		"kubearmor-vm-adapter/" + common.KmuxAnnotationFileName: kmuxConsumerConfig,
+		"sumengine/" + common.KmuxConfigFileName:                  kmuxPublisherConfig,
+		"sumengine/" + common.KmuxSummaryFileName:                 kmuxPublisherConfig,
+		"kubearmor-vm-adapter/" + common.KmuxStateEventFileName:   kmuxPublisherConfig,
+		"kubearmor-vm-adapter/" + common.KmuxAlertsFileName:       kmuxPublisherConfig,
+		"kubearmor-vm-adapter/" + common.KmuxLogsFileName:         kmuxPublisherConfig,
+		"kubearmor-vm-adapter/" + common.KmuxPoliciesFileName:     kmuxConsumerConfig,
+		"kubearmor-vm-adapter/" + common.KmuxAnnotationFileName:   kmuxConsumerConfig,
+		"kubearmor-vm-adapter/" + common.KmuxPoliciesListFileName: kmuxPublisherConfig,
 	}
 	// Generate or copy kmux config files
 	for filePath, templateString := range kmuxConfigFileTemplateMap {
@@ -313,9 +335,20 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	if jc.FromSource != "" {
-		p, _ := pterm.DefaultProgressbar.WithTotal(14).WithTitle("loading images").WithRemoveWhenDone(true).Start()
+		agents := []string{
+			"kubearmor",
+			"kubearmor-init",
+			"vm-adapter",
+		}
+		if jc.SpireEnabled {
+			agents = append(agents, "spire-agent")
+		}
+		if jc.DeploySumengine {
+			agents = append(agents, "summary-engine")
+		}
+		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading images").WithRemoveWhenDone(true).Start()
 		defer p.Stop()
-		if err = loadDockerImagesFromPath(jc.FromSource, p); err != nil {
+		if err = loadDockerImagesFromPath(jc.FromSource, agents, p); err != nil {
 			return err
 		}
 		jc.SkipDownload = true
@@ -355,6 +388,11 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	err = os.WriteFile(jc.AgentsVersionFile, []byte(jc.AgentsVersion), 0644)
 	if err != nil {
 		return err
+	}
+
+	if jc.ForceRecreate {
+		logger.Debug("\nForce recreating containers\n")
+		args = append(args, "--force-recreate")
 	}
 
 	// run compose command

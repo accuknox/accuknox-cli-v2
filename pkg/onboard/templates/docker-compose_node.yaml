@@ -139,23 +139,8 @@ services:
     container_name: kubearmor
     image: "{{.KubeArmorImage}}"
     pull_policy: "{{.ImagePullPolicy}}"
-    command:
-      - "-k8s=false"
-      - "-enableKubeArmorPolicy"
-      - "-enableKubeArmorHostPolicy"
-      - "-visibility={{.KubeArmorVisibility}}"
-      - "-hostVisibility={{.KubeArmorHostVisibility}}"
-      - "-criSocket=unix:///var/run/docker.sock"
-      - "-enableKubeArmorStateAgent"
-      - "-defaultFilePosture={{.KubeArmorFilePosture}}"
-      - "-defaultNetworkPosture={{.KubeArmorNetworkPosture}}"
-      - "-defaultCapabilitiesPosture={{.KubeArmorCapPosture}}"
-      - "-hostDefaultFilePosture={{.KubeArmorHostFilePosture}}"
-      - "-hostDefaultNetworkPosture={{.KubeArmorHostNetworkPosture}}"
-      - "-hostDefaultCapabilitiesPosture={{.KubeArmorHostCapPosture}}"
-      - "-alertThrottling={{.KubeArmorAlertThrottling}}"
-      - "-maxAlertPerSec={{.KubeArmorMaxAlertsPerSec}}"
-      - "-throttleSec={{.KubeArmorThrottleSec}}"
+    environment:
+      KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     labels:
       app: kubearmor
     volumes:
@@ -169,6 +154,7 @@ services:
       - "/var/lib/docker:/var/lib/docker"
       - "/usr/share/kubearmor:/usr/share/kubearmor:rw"
       - "/var/run/kubearmor:/var/run/kubearmor:rw"
+      - "{{.ConfigPath}}/kubearmor:/opt/kubearmor/config:ro"
     restart: always
     network_mode: "host"
     pid: "host"
@@ -235,6 +221,7 @@ services:
     {{- end }}
     container_name: kubearmor-vm-adapter
     image: "{{.KubeArmorVMAdapterImage}}"
+    user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
     environment:
     - "test=true"
@@ -244,6 +231,7 @@ services:
     {{- range .ProxyExtraArgs }}
     - {{ . }}
     {{- end }}
+    - KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       - "--relay-server-addr={{.RelayServerURL}}"
@@ -258,7 +246,11 @@ services:
       - "--spire-agent=unix:///var/run/spire/agent.sock"
       - "--spire-cert={{.SpireCert}}"
       {{- end }}
-      {{- if .TlsEnabled }}
+      {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2" }}
+      - "--policy-list-enable={{.EnablePoliciesList}}"
+      - "--policy-list-relay-frequency={{.PoliciesListRefresh}}"
+      {{- end }}
+      {{- if or .TlsEnabled  .RMQEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"
       - "--state-topic={{.StateEventTopic}}"
@@ -268,6 +260,10 @@ services:
       - "--kmux-config-state=/opt/kubearmor-vm-adapter/{{.StateKmuxConfig}}"
       - "--kmux-config-alerts=/opt/kubearmor-vm-adapter/{{.AlertsKmuxConfig}}"
       - "--kmux-config-logs=/opt/kubearmor-vm-adapter/{{.LogsKmuxConfig}}"
+      {{- if and .EnablePoliciesList (trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2") }}
+      - "--kmux-policy-list=/opt/kubearmor-vm-adapter/{{.PoliciesListKmuxConfig}}"
+      - "--policy-list-topic={{.PoliciesListTopic}}"
+      {{- end }}
       {{- else }}
       - "--sia-addr={{.SIAAddr}}"
       - "--pea-addr={{.PEAAddr}}"
@@ -279,11 +275,12 @@ services:
       - "--annotation-enable=true"
       {{- end }}
     volumes:
-      - "{{.ConfigPath}}:/opt"
+      - "{{.ConfigPath}}:/opt:rw"
       {{- if .SpireEnabled }}
       # for spire socket
       - "/var/run:/var/run:ro"
       {{- end }}
+      -  "{{.ConfigPath}}/kubearmor:/opt/kubearmor/config:rw"
     labels:
       app: kubearmor-vm-adapter
     restart: always

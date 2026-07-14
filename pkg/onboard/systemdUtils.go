@@ -31,6 +31,13 @@ var (
 	cpNodeAgents     = []string{cm.SpireAgent, cm.SIAAgent, cm.PEAAgent, cm.FeederService, cm.SummaryEngine, cm.DiscoverAgent, cm.HardeningAgent}
 )
 
+// while extracting only files with these
+// prefixes will be extracted
+var allowedPrefixes = []string{
+	"opt/",
+	"usr/lib/systemd/system/",
+}
+
 func (cc *ClusterConfig) CreateSystemdServiceObjects() {
 	systemdObjects := []SystemdServiceObject{
 		{
@@ -242,6 +249,14 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			AgentImage:               cc.KubeArmorVMAdapterImage,
 		},
 		{
+			AgentName:                cm.VMAdapter,
+			AgentDir:                 cm.VmAdapterConfigPath,
+			KmuxConfigPath:           filepath.Join(cm.VmAdapterConfigPath, cm.KmuxPoliciesListFileName),
+			KmuxConfigTemplateString: kmuxPublisherConfig,
+			KmuxConfigFileName:       cm.KmuxPoliciesListFileName,
+			AgentImage:               cc.KubeArmorVMAdapterImage,
+		},
+		{
 			AgentName:                cm.SummaryEngine,
 			AgentDir:                 cm.SumEngineConfigPath,
 			KmuxConfigPath:           filepath.Join(cm.SumEngineConfigPath, cm.KmuxSummaryFileName),
@@ -301,7 +316,7 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			AgentName:                cm.PEAAgent,
 			AgentDir:                 cm.PEAconfigPath,
 			KmuxConfigPath:           filepath.Join(cm.PEAconfigPath, cm.KmuxPoliciesFileName),
-			KmuxConfigTemplateString: kmuxConsumerConfig,
+			KmuxConfigTemplateString: kmuxPublisherConfig,
 			KmuxConfigFileName:       cm.KmuxPoliciesFileName,
 			AgentImage:               cc.PEAImage,
 		},
@@ -309,8 +324,16 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			AgentName:                cm.PEAAgent,
 			AgentDir:                 cm.PEAconfigPath,
 			KmuxConfigPath:           filepath.Join(cm.PEAconfigPath, cm.KmuxStateEventFileName),
-			KmuxConfigTemplateString: kmuxPublisherConfig,
+			KmuxConfigTemplateString: kmuxConsumerConfig,
 			KmuxConfigFileName:       cm.KmuxStateEventFileName,
+			AgentImage:               cc.PEAImage,
+		},
+		{
+			AgentName:                cm.PEAAgent,
+			AgentDir:                 cm.PEAconfigPath,
+			KmuxConfigPath:           filepath.Join(cm.PEAconfigPath, cm.KmuxPoliciesListFileName),
+			KmuxConfigTemplateString: kmuxConsumerConfig,
+			KmuxConfigFileName:       cm.KmuxPoliciesListFileName,
 			AgentImage:               cc.PEAImage,
 		},
 		{
@@ -344,6 +367,14 @@ func getSystemdAgentsKmuxConfigs(cc *ClusterConfig) []SystemdServiceObject {
 			KmuxConfigTemplateString: kmuxConsumerConfig,
 			KmuxConfigFileName:       cm.KmuxPolicyFileName,
 			AgentImage:               cc.FeederImage,
+		},
+		{
+			AgentName:                cm.SIAAgent,
+			AgentDir:                 cm.SIAconfigPath,
+			KmuxConfigPath:           filepath.Join(cm.SIAconfigPath, cm.KmuxStateEventFileName),
+			KmuxConfigTemplateString: kmuxConsumerConfig,
+			KmuxConfigFileName:       cm.KmuxStateEventFileName,
+			AgentImage:               cc.SIAImage,
 		},
 	}
 }
@@ -568,9 +599,18 @@ func ExtractAgent(fileName string) error {
 
 	tarReader := tar.NewReader(gzipReader)
 
+	isAllowed := func(name string) bool {
+		normalized := strings.TrimPrefix(name, "/")
+		for _, prefix := range allowedPrefixes {
+			if strings.HasPrefix(normalized, prefix) {
+				return true
+			}
+		}
+		return false
+	}
+
 	for {
 		header, err := tarReader.Next()
-
 		if err == io.EOF {
 			break
 		}
@@ -582,6 +622,11 @@ func ExtractAgent(fileName string) error {
 		if header.Typeflag == tar.TypeDir {
 			continue
 		}
+
+		if !isAllowed(header.Name) {
+			continue
+		}
+
 		rootDir := "/"
 
 		// Extract the file
@@ -666,6 +711,10 @@ func (cc *ClusterConfig) SystemdInstall() error {
 			continue
 		}
 
+		if (cc.Tls.RMQEnabled || cc.Tls.Enabled) && obj.AgentName == cm.RelayServer {
+			continue
+		}
+
 		if !cc.SkipDownload {
 			// stop existing service first otherwise errors are encountered due to
 			// busy binary
@@ -729,7 +778,7 @@ func DeboardSystemd(nodeType NodeType) error {
 		if obj.ServiceName == "" {
 			continue
 		}
-		err := StopSystemdService(obj.ServiceName, true, true)
+		err := StopSystemdService(obj.ServiceName, false, true)
 		if err != nil {
 			logger.Error("error stopping %s: %s", obj.ServiceName, err)
 			continue
@@ -934,4 +983,3 @@ func ResetRestartCount(exclude map[string]bool) error {
 
 	return nil
 }
-

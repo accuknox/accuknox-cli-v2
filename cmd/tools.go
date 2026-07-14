@@ -31,6 +31,7 @@ func init() {
 				if err != nil {
 					return err
 				}
+				args = enrichPkgscanCycloneDXArgs(t.Name, args)
 				return tools.Exec(binPath, args)
 			},
 		}

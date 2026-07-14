@@ -83,7 +83,8 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 
 	if !skipDeleteDisable {
 		if _, err := conn.DisableUnitFilesContext(ctx, []string{serviceName}, false); err != nil {
-			if !strings.Contains(err.Error(), "does not exist") {
+			if !strings.Contains(err.Error(), "does not exist") &&
+				!strings.Contains(err.Error(), "No such file or directory") {
 				logger.Error("Failed to disable %s : %v", serviceName, err)
 				return err
 			}

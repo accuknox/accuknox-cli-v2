@@ -34,17 +34,34 @@ annotation:
 non-k8s:
   enable: true
   policy-server-port: 32770
+  policy-list-kmux: {{.PoliciesListKmuxConfig}}
+  policy-list-topic: {{.PoliciesTopic}}
 tls:
-  enabled: {{.TlsEnabled}}
+  enabled: {{ or .TlsEnabled .RMQEnabled }}
   policy:
     topic: {{.PoliciesTopic}}
     kmux-config: {{.PoliciesKmuxConfig}}
+    enabled: {{ or .TlsEnabled .RMQEnabled }}
   state:
+    enabled: false
     topic: {{.StateEventTopic}}
     kmux-config: {{.StateKmuxConfig}}
 
 policy-watcher:
   enable: false
+  delay: 00h00m10s
+  topic: discovery/custom-policy-v1
+  watchers: 
+    KubeArmorPolicy:
+      - selector.matchLabels
+      - selector.matchExpressions
+    KubeArmorHostPolicy:
+      - nodeSelector.matchLabels
+    NetworkPolicy:
+      - podSelector.matchLabels
+    KubeArmorClusterPolicy:
+      - selector.matchExpressions
+    AdmissionPolicy:
 
 deployMode: "vm"
 

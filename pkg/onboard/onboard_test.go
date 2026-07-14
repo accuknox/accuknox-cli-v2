@@ -200,6 +200,7 @@ func TestGetImage(t *testing.T) {
 	for _, config := range tests {
 		t.Run(config.name, func(t *testing.T) {
 			result, err := getImage(
+				VMMode_Systemd,
 				config.customRegistry, config.defaultRegistry,
 				config.defaultRepo, config.customImage, config.defaultImage,
 				config.customTag, config.defaultTag, config.tagPrefixToTrim,

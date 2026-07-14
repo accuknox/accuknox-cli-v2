@@ -140,23 +140,8 @@ services:
     container_name: kubearmor
     image: "{{.KubeArmorImage}}"
     pull_policy: "{{.ImagePullPolicy}}"
-    command:
-      - "-k8s=false"
-      - "-enableKubeArmorPolicy"
-      - "-enableKubeArmorHostPolicy"
-      - "-visibility={{.KubeArmorVisibility}}"
-      - "-hostVisibility={{.KubeArmorHostVisibility}}"
-      - "-criSocket=unix:///var/run/docker.sock"
-      - "-enableKubeArmorStateAgent"
-      - "-defaultFilePosture={{.KubeArmorFilePosture}}"
-      - "-defaultNetworkPosture={{.KubeArmorNetworkPosture}}"
-      - "-defaultCapabilitiesPosture={{.KubeArmorCapPosture}}"
-      - "-hostDefaultFilePosture={{.KubeArmorHostFilePosture}}"
-      - "-hostDefaultNetworkPosture={{.KubeArmorHostNetworkPosture}}"
-      - "-hostDefaultCapabilitiesPosture={{.KubeArmorHostCapPosture}}"
-      - "-alertThrottling={{.KubeArmorAlertThrottling}}"
-      - "-maxAlertPerSec={{.KubeArmorMaxAlertsPerSec}}"
-      - "-throttleSec={{.KubeArmorThrottleSec}}"
+    environment:
+      KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     labels:
       app: kubearmor
     volumes:
@@ -170,6 +155,7 @@ services:
       - "/var/lib/docker:/var/lib/docker"
       - "/usr/share/kubearmor:/usr/share/kubearmor:rw"
       - "/var/run/kubearmor:/var/run/kubearmor:rw"
+      - "{{.ConfigPath}}/kubearmor:/opt/kubearmor/config:ro"
     restart: always
     network_mode: "host"
     pid: "host"
@@ -218,7 +204,7 @@ services:
           exec /KubeArmor/kubearmor "$$@"
       - --
   {{- end }}
-
+{{- if not (or .RMQEnabled .TlsEnabled) }}
   kubearmor-relay-server:
     profiles:
       - "accuknox-agents"
@@ -254,7 +240,7 @@ services:
         limits:
           cpus: '{{.AgentsCPUs}}'
           memory: {{.AgentsMemoryMax}}
-
+{{- end }}
   kubearmor-vm-adapter:
     profiles:
       - "kubearmor-only"
@@ -268,7 +254,7 @@ services:
       discover:
         condition: service_started
       {{- end }}
-      {{- if .TlsEnabled }}
+      {{- if or .TlsEnabled .RMQEnabled }}
       shared-informer-agent:
         condition: service_started
       policy-enforcement-agent:
@@ -276,7 +262,10 @@ services:
       {{- end }}
     container_name: kubearmor-vm-adapter
     image: "{{.KubeArmorVMAdapterImage}}"
+    user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
+    environment:
+      KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
@@ -285,7 +274,11 @@ services:
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.0" }}
       - "--agents-version-file=/opt/agents-version"
       {{- end }}
-      {{- if .TlsEnabled }}
+      {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2" }}
+      - "--policy-list-enable={{.EnablePoliciesList}}"
+      - "--policy-list-relay-frequency={{.PoliciesListRefresh}}"
+      {{- end }}
+      {{- if or .TlsEnabled .RMQEnabled }}
       - "--tls"
       - "--policy-topic={{.PoliciesTopic}}"
       - "--state-topic={{.StateEventTopic}}"
@@ -295,6 +288,10 @@ services:
       - "--kmux-config-state=/opt/kubearmor-vm-adapter/{{.StateKmuxConfig}}"
       - "--kmux-config-alerts=/opt/kubearmor-vm-adapter/{{.AlertsKmuxConfig}}"
       - "--kmux-config-logs=/opt/kubearmor-vm-adapter/{{.LogsKmuxConfig}}"
+      {{- if and .EnablePoliciesList (trimPrefix "v" .ReleaseVersion | semverCompare ">0.12.2") }}
+      - "--kmux-policy-list=/opt/kubearmor-vm-adapter/{{.PoliciesListKmuxConfig}}"
+      - "--policy-list-topic={{.PoliciesListTopic}}"
+      {{- end }}
       {{- else }}
       - "--relay-server-addr={{.RelayServerURL}}"
       - "--sia-addr={{.SIAAddr}}"
@@ -310,7 +307,8 @@ services:
       app: kubearmor-vm-adapter
     restart: always
     volumes:
-      - "{{.ConfigPath}}:/opt"
+      - "{{.ConfigPath}}:/opt:rw"
+      -  "{{.ConfigPath}}/kubearmor:/opt/kubearmor/config:rw"
     networks:
       accuknox-net:
         aliases:
@@ -343,7 +341,7 @@ services:
       {{- end }}
       kubearmor:
         condition: service_started
-      {{- if not .TlsEnabled }}
+      {{- if not (or .TlsEnabled  .RMQEnabled) }}
       kubearmor-vm-adapter:
         condition: service_started
       {{- end }}
@@ -398,15 +396,17 @@ services:
         condition: service_completed_successfully
         {{- end }}
       {{- end }}
+      {{- if not (or .TlsEnabled  .RMQEnabled) }}
       kubearmor-relay-server:
         condition: service_started
+      {{- end }}
       summary-engine:
         condition: service_started
       {{- if .DeployDiscover }}
       discover:
         condition: service_started
       {{- end }}
-      {{- if and (not .TlsEnabled) ( .EnableHardeningAgent ) }}
+      {{- if and (not ( or .TlsEnabled .RMQEnabled )) ( .EnableHardeningAgent ) }}
       hardening-agent:
         condition: service_started
       {{- end }}
@@ -448,9 +448,9 @@ services:
       {{- range .ProxyExtraArgs }}
       - {{ . }}
       {{- end }}
-      - "TLS_ENABLED={{.TlsEnabled}}"
+      - "TLS_ENABLED={{ or .TlsEnabled .RMQEnabled }}"
       - "TLS_CERT_FILE=/opt/cert/encoded.pem"
-      - "RABBITMQ_ENABLED={{.TlsEnabled}}"
+      - "RABBITMQ_ENABLED={{ or .TlsEnabled .RMQEnabled }}"
       - "RABBITMQ_ALERTS_TOPIC={{.AlertsTopic}}"
       - "RABBITMQ_LOGS_TOPIC={{.LogsTopic}}"
       - "POLICY_TOPIC={{.PolicyV1Topic}}"
@@ -458,7 +458,7 @@ services:
       - "DEPLOY_MODE=vm"
       - "RABBITMQ_ALERTS_KMUX_CONFIG=/opt/feeder-service/{{.AlertsKmuxConfig}}"
       - "RABBITMQ_LOGS_KMUX_CONFIG=/opt/feeder-service/{{.LogsKmuxConfig}}"
-      - "DISCOVERYENGINE_POLICY_ENABLED=true"
+      - "DISCOVERYENGINE_POLICY_ENABLED={{.DeployDiscover}}"
       - "KMUX_CONFIG_POLICY=/opt/feeder-service/{{.PolicyKmuxConfig}}"
       - "KMUX_CONFIG_SUMMARY=/opt/feeder-service/{{.SummaryKmuxConfig}}"
       - "HEALTH_ENABLED=true"
@@ -497,16 +497,19 @@ services:
         condition: service_completed_successfully
         {{- end }}
       {{- end }}
+      {{- if not (or .TlsEnabled .RMQEnabled ) }}
       kubearmor-relay-server:
         condition: service_started
+      {{- end }}
     container_name: policy-enforcement-agent
     image: "{{.PEAImage}}"
+    user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
     command: ["-config-path", "/opt/pea/"]
     labels:
       app: policy-enforcement-agent
     volumes:
-      - "{{.ConfigPath}}:/opt"
+      - "{{.ConfigPath}}:/opt:rw"
       # for spire socket
       - "/var/run:/var/run:ro"
     environment:
@@ -587,7 +590,11 @@ services:
       rabbitmq:
         condition: service_started
       {{- end }}
+      {{- if not (or .TlsEnabled .RMQEnabled ) }}
       kubearmor-relay-server:
+        condition: service_started
+      {{- end }}
+      kubearmor:
         condition: service_started
     container_name: summary-engine
     image: "{{.SumEngineImage}}"
@@ -625,7 +632,11 @@ services:
       rabbitmq:
         condition: service_started
       {{- end }}
+      {{- if not (or .TlsEnabled .RMQEnabled ) }}
       kubearmor-relay-server:
+        condition: service_started
+      {{- end }}
+      kubearmor:
         condition: service_started
     container_name: hardening-agent
     image: "{{.HardeningAgentImage}}"

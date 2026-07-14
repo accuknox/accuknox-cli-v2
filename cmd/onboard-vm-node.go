@@ -26,6 +26,9 @@ var (
 	// spire config - to use spire and spire cert for tls
 	spireEnabled bool
 	spireCert    bool
+
+	policiesListRefreshTime time.Duration
+	policiesListEnabled     bool
 )
 
 // joinNodeCmd represents the join command
@@ -79,9 +82,13 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 
-		var configDumpPath string
+		var (
+			configDumpPath string
+			mode           onboard.VMMode
+		)
 		switch vmMode {
 		case onboard.VMMode_Systemd:
+			mode = onboard.VMMode_Docker
 			err := os.Mkdir(common.SystemdKnoxctlDir, 0o755) // #nosec G301 need for archiving and file operations
 			if err != nil && !os.IsExist(err) {
 				return err
@@ -94,6 +101,8 @@ var joinNodeCmd = &cobra.Command{
 			}
 			logger.Debug("===\n%s - Running %s", time.Now().Format(time.RFC3339), strings.Join(os.Args, " "))
 		case onboard.VMMode_Docker:
+
+			mode = onboard.VMMode_Systemd
 			// TODO
 			defaultConfigPath, err := common.GetDefaultConfigPath()
 			if err == nil {
@@ -103,6 +112,10 @@ var joinNodeCmd = &cobra.Command{
 
 		if clusterName != "" && topicPrefix == "" {
 			topicPrefix = clusterName
+		}
+
+		if onboard.IsDeployed(mode) {
+			return fmt.Errorf("KubeArmor is already running in %v mode on this node", mode)
 		}
 
 		vmConfigs, err := onboard.CreateClusterConfig(onboard.ClusterType_VM, userConfigPath, vmMode, imageVersions, releaseVersion,
@@ -119,6 +132,9 @@ var joinNodeCmd = &cobra.Command{
 			logger.Error("failed to create VM config: %s", err.Error())
 			return err
 		}
+
+		vmConfigs.ForceRecreate = forceRecreate
+
 		vmConfigs.KaResource = kaResource
 		vmConfigs.AgentsResource = agentsResource
 
@@ -163,6 +179,9 @@ var joinNodeCmd = &cobra.Command{
 			logger.Error("failed to create VM config: %s", err.Error())
 			return err
 		}
+
+		joinConfig.TCArgs.PoliciesListRefresh = policiesListRefreshTime
+		joinConfig.TCArgs.EnablePoliciesList = policiesListEnabled
 
 		switch vmMode {
 
@@ -210,8 +229,6 @@ func init() {
 	joinNodeCmd.PersistentFlags().StringVar(&nodeAddr, "cp-node-addr", "", "address of control plane")
 
 	joinNodeCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "version to use - recommended to keep same as control plane node version")
-
-	joinNodeCmd.PersistentFlags().StringVar(&tls.CaCert, "ca-cert", "", "ca certificate in bas64 encoded format to validate tls connection")
 
 	joinNodeCmd.PersistentFlags().BoolVar(&deploySumEngine, "deploy-summary-engine", false, "to deploy summary engine in worker node")
 
