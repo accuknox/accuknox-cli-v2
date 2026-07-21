@@ -352,7 +352,7 @@ services:
     labels:
       app: shared-informer-agent
     environment:
-    - "test=true"
+    - "AGENT=true"
     {{- if .ProxyEnabled }}
     - "JOIN_TOKEN={{.JoinToken}}"
     {{- end }}
@@ -513,7 +513,7 @@ services:
       # for spire socket
       - "/var/run:/var/run:ro"
     environment:
-    - "test=true"
+    - "AGENT=true"
     {{- if .ProxyEnabled  }}
     - "JOIN_TOKEN={{.JoinToken}}"
     {{- end }}
@@ -555,7 +555,7 @@ services:
     container_name: discover
     image: "{{.DiscoverImage}}"
     environment:
-      "ENABLE_GRPC": 'false'
+      ENABLE_GRPC: "false"
     pull_policy: "{{.ImagePullPolicy}}"
     command: ["--config", "/opt/discover/config.yaml", "--kmux-config", "/opt/discover/kmux-config.yaml"]
     labels:

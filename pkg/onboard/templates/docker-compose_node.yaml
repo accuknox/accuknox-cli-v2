@@ -224,14 +224,14 @@ services:
     user: "0:0"
     pull_policy: "{{.ImagePullPolicy}}"
     environment:
-    - "test=true"
+    - "AGENT=true"
     {{- if .ProxyEnabled  }}
     - "JOIN_TOKEN={{.JoinToken}}"
     {{- end }}
     {{- range .ProxyExtraArgs }}
     - {{ . }}
     {{- end }}
-    - KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
+    - "KUBEARMOR_CFG=/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
       - "--relay-server-addr={{.RelayServerURL}}"
@@ -319,7 +319,7 @@ services:
     labels:
       app: sumengine
     environment:
-    - "test=true"
+    - "AGENT=true"
     {{- if .ProxyEnabled  }}
     - "JOIN_TOKEN={{.JoinToken}}"
     {{- end }}
