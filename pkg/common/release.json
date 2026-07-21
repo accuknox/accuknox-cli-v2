@@ -2180,5 +2180,27 @@
       "hardening_agent_image": "public.ecr.aws/k9v9d5v2/discovery-engine-hardening",
       "rra_tag": "v0.5.3",
       "rra_image": "accuknox/rra"
+    },
+    "v0.12.4": {
+      "creation_time": "1781603518",
+      "kubearmor_tag": "v1.7.4",
+      "kubearmor_relay_tag": "v0.0.4",
+      "kubearmor_vm_adapter_tag": "v0.1.28",
+      "spire_agent_tag": "v2.0.14",
+      "sia_tag": "v0.8.14",
+      "sia_image": "public.ecr.aws/k9v9d5v2/shared-informer-agent",
+      "pea_tag": "v0.9.9",
+      "pea_image": "public.ecr.aws/k9v9d5v2/policy-enforcement-agent",
+      "feeder_service_tag": "v0.10.8",
+      "feeder_service_image": "public.ecr.aws/k9v9d5v2/feeder-service",
+      "discover_tag": "v0.3.23",
+      "discover_image": "public.ecr.aws/k9v9d5v2/discovery-engine-discover",
+      "sumengine_tag": "v0.3.23",
+      "sumengine_image": "public.ecr.aws/k9v9d5v2/discovery-engine-sumengine",
+      "hardening_agent_tag": "v0.3.23",
+      "hardening_agent_image": "public.ecr.aws/k9v9d5v2/discovery-engine-hardening",
+      "rra_tag": "v0.5.3",
+      "rra_image": "accuknox/rra"
     }
+ 
   }
