@@ -37,6 +37,7 @@ var (
 var allowedPrefixes = []string{
 	"opt/",
 	"usr/lib/systemd/system/",
+	"usr/local/",
 }
 
 func (cc *ClusterConfig) CreateSystemdServiceObjects() {
