@@ -392,7 +392,6 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 	}
 
 	kmuxConfigArgs.ConsumerTag = agentName
-	kmuxConfigArgs.QueueDurability = getQueueDurability(kmuxFile)
 	kmuxConfigArgs.TlsCertFile = fmt.Sprintf("/opt%s/%s", common.DefaultCACertDir, common.DefaultEncodedFileName)
 
 	if slices.ContainsFunc([]string{
@@ -820,14 +819,6 @@ func oldCertPaths(root string) []string {
 	}
 
 	return paths
-}
-
-func getQueueDurability(kmuxFile string) bool {
-	durable, ok := common.QueueDurability[kmuxFile]
-	if !ok {
-		return false
-	}
-	return durable
 }
 
 func useCaFile(tcArgs *TemplateConfigArgs, agentName, agentImage string) bool {
