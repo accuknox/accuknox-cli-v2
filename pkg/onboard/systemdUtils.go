@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 
@@ -486,8 +487,6 @@ func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadD
 		return "", err
 	}
 
-	fileName := path.Join(downloadDir, agentName+"_"+agentTag+".tar.gz")
-
 	// 1. Connect to a remote repository
 	ctx := context.Background()
 	repo, err := remote.NewRepository(agentRepo)
@@ -500,8 +499,18 @@ func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadD
 
 	desc, err := repo.Resolve(ctx, agentTag)
 	if err != nil {
-		return "", err
+		tagSuffix := "_" + runtime.GOOS + "-" + runtime.GOARCH
+		if !strings.HasSuffix(agentTag, tagSuffix) {
+			newTag := agentTag + tagSuffix
+			desc, err = repo.Resolve(ctx, newTag)
+			if err != nil {
+				return "", err
+			}
+			agentTag = newTag
+		}
 	}
+
+	fileName := path.Join(downloadDir, agentName+"_"+agentTag+".tar.gz")
 
 	manifestBytes, err := content.FetchAll(ctx, repo, desc)
 	if err != nil {

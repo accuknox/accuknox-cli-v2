@@ -221,13 +221,6 @@ var QueueName = map[string]string{
 	KmuxPoliciesListFileName: "policies-list",
 }
 
-var QueueDurability = map[string]bool{
-	KmuxAlertsFileName:  true,
-	KmuxLogsFileName:    true,
-	KmuxSummaryFileName: true,
-	KmuxPolicyFileName:  true,
-}
-
 var LastOldAgentVersion = map[string]string{
 	KubeArmorVMAdapter: "v0.1.8",
 	VMAdapter:          "v0.1.8",
