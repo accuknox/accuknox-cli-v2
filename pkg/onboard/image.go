@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -23,6 +24,7 @@ type imageOptions struct {
 
 // getImage takes image options and returns the final image
 func getImage(mode VMMode, customRegistry, defaultRegistry, defaultRepo, customImage, defaultImage, customTag, defaultTag, tagPrefixToTrim, tagSuffix string, preserveUpstream bool) (string, error) {
+
 	var registry, repo, imageName, tag string
 
 	if customRegistry != "" {
@@ -116,6 +118,18 @@ func getImage(mode VMMode, customRegistry, defaultRegistry, defaultRepo, customI
 		repoAndRegistry = registry
 	} else if repo != "" {
 		repoAndRegistry = repo
+	}
+
+	if customRegistry != "" {
+		repoRegistrySlice := splitLast(repoAndRegistry, "/")
+		var repoName string
+		if len(repoRegistrySlice) > 1 {
+			repoName = repoRegistrySlice[1]
+		}
+		repoAndRegistry = customRegistry
+		if preserveUpstream {
+			repoAndRegistry = filepath.Join(repoAndRegistry, repoName)
+		}
 	}
 
 	return fmt.Sprintf("%s/%s:%s", repoAndRegistry, imageName, tag), nil
