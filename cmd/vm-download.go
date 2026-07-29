@@ -77,7 +77,7 @@ func init() {
 	vmDownload.PersistentFlags().StringVar(&archs, "arch", "amd64,arm64", "comma separated list of architectures to download, Default: amd64,arm64")
 	vmDownload.PersistentFlags().StringVar(&downloadOpts.SavePath, "save-path", "", "path to save downloaded binaries/images, Default: current directory")
 
-	vmDownload.PersistentFlags().StringVarP(&registry, "registry", "r", "docker.io", "the registry to authenticate with (default - DockerHub)")
+	vmDownload.PersistentFlags().StringVarP(&registry, "registry", "r", "", "the registry to authenticate with (default - DockerHub)")
 	vmDownload.PersistentFlags().StringVarP(&registryConfigPath, "registry-config-path", "", "", "path to pre-existing OCI registry config")
 
 	vmDownload.PersistentFlags().BoolVarP(&plainHTTP, "plain-http", "", false, "use plain HTTP everywhere")

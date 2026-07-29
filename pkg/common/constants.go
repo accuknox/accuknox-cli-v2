@@ -57,6 +57,7 @@ const (
 	DefaultConfigPathDirName = ".accuknox-config"
 
 	DefaultDockerRegistry = "docker.io"
+	DefaultECRRegistry    = "public.ecr.aws"
 
 	// KubeArmor related image/image registries are fixed as of now
 	DefaultKubeArmorRepo      = "kubearmor"
