@@ -437,6 +437,7 @@ services:
       - "IGNORE_SUMMARY_EVENTS=Network:AF_UNIX,AF_NETLINK"
 
       - "SPIRE_AGENT_URL=unix:///var/run/spire/agent.sock"
+      - "LOG_LEVEL=INFO"
       {{- if .ProxyEnabled }}
       - "SPIRE_ENABLED=false"
       - "PROXY_ENABLED={{.ProxyEnabled}}"
