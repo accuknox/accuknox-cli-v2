@@ -79,6 +79,17 @@ func createDefaultConfigPath() (string, error) {
 	return configPath, nil
 }
 
+// setRecursivePermissions applies the same permissions to the config directory
+// and all files and directories below it.
+func setRecursivePermissions(path string, mode os.FileMode) error {
+	return filepath.WalkDir(path, func(currentPath string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		return os.Chmod(currentPath, mode)
+	})
+}
+
 // parseURL with/without scheme and return host, port or error
 func parseURL(address string) (string, string, error) {
 
