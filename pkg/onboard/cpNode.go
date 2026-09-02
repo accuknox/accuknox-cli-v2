@@ -350,7 +350,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		return err
 	}
 
-	if err := setRecursivePermissions(configPath, 0o755); err != nil {
+	if err := setRecursivePermissions(configPath, 0o755, 0o644); err != nil {
 		return fmt.Errorf("failed to set permissions on %s: %w", configPath, err)
 	}
 
