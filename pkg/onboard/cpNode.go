@@ -346,7 +346,15 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	// Diagnose if necessary and run compose command
-	return ic.runComposeCommand(composeFilePath)
+	if err := ic.runComposeCommand(composeFilePath); err != nil {
+		return err
+	}
+
+	if err := setRecursivePermissions(configPath, 0o755, 0o644); err != nil {
+		return fmt.Errorf("failed to set permissions on %s: %w", configPath, err)
+	}
+
+	return nil
 
 }
 
