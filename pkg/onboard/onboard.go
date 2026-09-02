@@ -427,7 +427,7 @@ func (cc *ClusterConfig) PopulateImageDetails(releaseInfo cm.ReleaseMetadata, im
 
 		cc.SPIREAgentImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 			cm.DefaultAccuKnoxRepo, images.SpireImage, cm.DefaultSPIREAgentImage,
-			"", releaseInfo.SPIREAgentImageTag, "", "", preserveUpstream)
+			"latest", releaseInfo.SPIREAgentImageTag, "", "", preserveUpstream)
 		if err != nil {
 			return err
 		}
