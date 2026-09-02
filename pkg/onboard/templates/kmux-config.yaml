@@ -5,6 +5,10 @@ kmux:
 
 knox-gateway:
   server: {{.ServerURL}}
+  keepalive:
+    time: 5m
+    timeout: 10s 
+    permitwithoutstream: true
 
 spire:
   spiffeID:
