@@ -466,6 +466,9 @@ services:
       - "HEALTH_INTERVAL=00h05m00s"
       - "HEALTH_THRESHOLD=3"
       - "HEALTH_URL=http://spire-agent:9090/live"
+      - "START-RATE=0.5"
+      - "MIN-RATE=0.5"
+      - "MAX-RATE=0.5"
 
     pid: "host"
     networks:
