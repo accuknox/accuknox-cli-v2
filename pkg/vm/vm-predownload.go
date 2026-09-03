@@ -18,6 +18,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 	"github.com/docker/docker/api/types/image"
+	"github.com/fatih/color"
 
 	"github.com/pterm/pterm"
 	"github.com/regclient/regclient"
@@ -312,10 +313,7 @@ func downloadSystemdAgents(
 		imageLen = len(workerAgents)
 	}
 
-	p, _ := pterm.DefaultProgressbar.WithTotal(imageLen).WithTitle("Downloading binaries").WithRemoveWhenDone(true).Start()
-
-	// #nosec G104 -- false positive
-	defer p.Stop()
+	sp := cm.NewSpinner(color.GreenString("Downloading %v binaries", imageLen)).Start()
 
 	for image, binaryImage := range images {
 		if worker {
@@ -324,30 +322,28 @@ func downloadSystemdAgents(
 			}
 		}
 
-		p.UpdateTitle(fmt.Sprintf("Downloading %s [%s] binary", image, arch))
+		sp.UpdateMessage(color.GreenString("Downloading %s [%s] binary", image, arch))
 
 		if binaryImage == "" {
 			skipped++
-			pterm.Warning.Printf("skipping %v [%v]: binary not required\n", image, arch)
-			p.Increment()
+			sp.UpdateMessage(color.CyanString("skipping %v [%v]: binary not required", image, arch))
 			continue
 		}
 		imgTag := strings.Split(binaryImage, ":")
 		if len(imgTag) != 2 {
 			skipped++
-			p.Increment()
 			return downloaded, skipped, fmt.Errorf("[%v] binary tag is empty for %v", arch, image, 0)
 		}
 
 		_, err := cc.DownloadAgent(image, imgTag[0], imgTag[1], dir)
 		if err != nil {
-			p.Increment()
 			skipped++
 			return downloaded, skipped, fmt.Errorf("error downloading binary %s [%v]: %v", image, arch, err)
 		}
 		downloaded++
-		p.Increment()
 	}
+
+	sp.Stop("")
 	return downloaded, skipped, nil
 
 }
@@ -358,17 +354,15 @@ func downloadDockerAgents(
 	worker bool,
 ) (int, int, error) {
 
+	skipped := 0
+	downloaded := 0
+
 	imageLen := len(images)
 	if worker {
 		imageLen = len(workerAgents)
 	}
 
-	skipped := 0
-	downloaded := 0
-	p, _ := pterm.DefaultProgressbar.WithTotal(imageLen).WithTitle("Downloading images").WithRemoveWhenDone(true).Start()
-
-	// #nosec G104 -- false positive
-	defer p.Stop()
+	sp := cm.NewSpinner(color.GreenString("Downloading %v images", imageLen)).Start()
 
 	for image, dockerImage := range images {
 		if worker {
@@ -377,17 +371,15 @@ func downloadDockerAgents(
 			}
 		}
 
-		p.UpdateTitle(fmt.Sprintf("Downloading %s [%s] image", image, arch))
+		sp.UpdateMessage(color.GreenString("Downloading %s [%s] image", image, arch))
 
 		if dockerImage == "" {
 			skipped++
-			pterm.Warning.Printf("skipping %v [%v]: image is empty\n", image, arch)
-			p.Increment()
+			sp.UpdateMessage(color.GreenString("skipping %v [%v]: image is empty", image, arch))
 			continue
 		}
 		imgTag := strings.Split(dockerImage, ":")
 		if len(imgTag) != 2 {
-			p.Increment()
 			skipped++
 			return downloaded, skipped, fmt.Errorf("[%v] image tag is empty for %v", arch, image, 0)
 		}
@@ -396,15 +388,12 @@ func downloadDockerAgents(
 
 		outFileName := filepath.Join(dir, image+"_"+tag+".tar.gz")
 		if err := pullAndSave(dockerImage, arch, outFileName); err != nil {
-			pterm.Error.Printf("failed to download image %s [%v]: %v\n", dockerImage, arch, err)
-			p.Increment()
 			skipped++
 			return downloaded, skipped, fmt.Errorf("failed to download image %s [%v]: %v", dockerImage, arch, err)
 		}
 		downloaded++
-		p.Increment()
 	}
-
+	sp.Stop("")
 	return downloaded, skipped, nil
 
 }

@@ -25,8 +25,8 @@ import (
 	se_splunk "github.com/accuknox/dev2/sumengine/pkg/sumengine/kubearmor"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/fatih/color"
 	"github.com/golang-jwt/jwt"
-	"github.com/pterm/pterm"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/mod/semver"
 )
@@ -658,7 +658,8 @@ func (m VMMode) String() string {
 	return string(m)
 }
 
-func loadDockerImagesFromPath(rootPath string, agents map[string]struct{}, p *pterm.ProgressbarPrinter) error {
+func loadDockerImagesFromPath(rootPath string, agents map[string]struct{}, sp *cm.Spinner) error {
+
 	dClient, err := CreateDockerClient()
 	if err != nil {
 		return err
@@ -695,8 +696,7 @@ func loadDockerImagesFromPath(rootPath string, agents map[string]struct{}, p *pt
 		}
 
 		if parts[1] == runtime.GOARCH {
-			p.UpdateTitle(fmt.Sprintf("Loading image %s [%v]", path, runtime.GOARCH))
-			p.Increment()
+			sp.UpdateMessage(color.GreenString("Loading image %s [%v]", path, runtime.GOARCH))
 			return loadImage(ctx, dClient, path)
 
 		}
@@ -739,7 +739,7 @@ func loadImage(ctx context.Context, dClient *client.Client, path string) error {
 	return err
 }
 
-func extractAgentsFromPath(rootPath string, agents map[string]struct{}, p *pterm.ProgressbarPrinter) (int, error) {
+func extractAgentsFromPath(rootPath string, agents map[string]struct{}, sp *cm.Spinner) (int, error) {
 
 	count := 0
 	err := filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
@@ -775,8 +775,7 @@ func extractAgentsFromPath(rootPath string, agents map[string]struct{}, p *pterm
 		}
 
 		if parts[1] == runtime.GOARCH {
-			p.UpdateTitle(fmt.Sprintf("Extracting agent %s [%v]", path, runtime.GOARCH))
-			p.Increment()
+			sp.UpdateMessage(color.GreenString("Extracting agent %s [%v]", path, runtime.GOARCH))
 			err := ExtractAgent(path)
 			if err != nil {
 				return err

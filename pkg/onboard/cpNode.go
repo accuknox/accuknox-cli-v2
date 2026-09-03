@@ -12,7 +12,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
-	"github.com/pterm/pterm"
+	"github.com/fatih/color"
 	"golang.org/x/mod/semver"
 )
 
@@ -329,12 +329,13 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		if ic.EnableHardeningAgent {
 			agents[GetImage(ic.HardeningAgentImage, 2)] = struct{}{}
 		}
-		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading images").WithRemoveWhenDone(true).Start()
-		defer p.Stop()
-		if err = loadDockerImagesFromPath(ic.FromSource, agents, p); err != nil {
+
+		sp := common.NewSpinner(color.GreenString("loading %v images", len(agents))).Start()
+		if err = loadDockerImagesFromPath(ic.FromSource, agents, sp); err != nil {
 			return err
 		}
 		ic.SkipDownload = true
+		sp.Stop("")
 	}
 
 	logger.Info1("writing release version to %s", ic.AgentsVersionFile)

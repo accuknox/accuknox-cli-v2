@@ -9,7 +9,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
-	"github.com/pterm/pterm"
+	"github.com/fatih/color"
 	"golang.org/x/mod/semver"
 )
 
@@ -346,12 +346,14 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 		if jc.DeploySumengine {
 			agents[ParseImage(jc.SumEngineImage)] = struct{}{}
 		}
-		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading images").WithRemoveWhenDone(true).Start()
-		defer p.Stop()
-		if err = loadDockerImagesFromPath(jc.FromSource, agents, p); err != nil {
+
+		sp := common.NewSpinner(color.GreenString("loading %v images", len(agents))).Start()
+
+		if err = loadDockerImagesFromPath(jc.FromSource, agents, sp); err != nil {
 			return err
 		}
 		jc.SkipDownload = true
+		sp.Stop("")
 	}
 
 	diagnosis := true

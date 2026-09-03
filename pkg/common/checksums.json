@@ -12,9 +12,19 @@
             "org": "kubearmor",
             "versions": [
                 {
+                    "version": "1.6.15",
+                    "platform": "linux-amd64",
+                    "md5": "968e1767fdc4a24cc84cb310e800ef1b"
+                },
+                {
                     "version": "1.6.18",
                     "platform": "linux-amd64",
                     "md5": "1ba24f26630511f3ae41addbd3fcb46f"
+                },
+                {
+                    "version": "1.7.4",
+                    "platform": "linux-amd64",
+                    "md5": "b23aa9aa62b021d040babaa5ced4c5c4"
                 }
             ]
         },
