@@ -180,6 +180,8 @@ var cpNodeCmd = &cobra.Command{
 		onboardConfig.TCArgs.PoliciesListRefresh = policiesListRefreshTime
 		onboardConfig.TCArgs.EnablePoliciesList = policiesListEnabled
 
+		onboardConfig.TCArgs.KubeArmorHealthPort = onboardConfig.KubeArmorHealthPort
+
 		switch vmMode {
 
 		case onboard.VMMode_Systemd:

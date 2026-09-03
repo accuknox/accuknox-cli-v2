@@ -40,12 +40,7 @@ type DownloadOptions struct {
 	Worker                     bool
 }
 
-var workerAgents = map[string]bool{
-	"kubearmor":            true,
-	"summary-engine":       true,
-	"kubearmor-vm-adapter": true,
-	"kubearmor-init":       true,
-}
+var workerAgents map[string]struct{}
 
 func (o *DownloadOptions) Download() error {
 
@@ -80,23 +75,31 @@ func (o *DownloadOptions) Download() error {
 			if err != nil {
 				return err
 			}
+
+			workerAgents = map[string]struct{}{
+				onboard.GetImage(cc.KubeArmorImage, 0):          {},
+				onboard.GetImage(cc.SumEngineImage, 0):          {},
+				onboard.GetImage(cc.KubeArmorInitImage, 0):      {},
+				onboard.GetImage(cc.KubeArmorVMAdapterImage, 0): {},
+			}
+
 			var data []string
 			switch mode {
 			case onboard.VMMode_Systemd:
-				downloaded, skipped := downloadSystemdAgents(cc, dir, arch, images, o.Worker)
+				downloaded, skipped, err := downloadSystemdAgents(cc, dir, arch, images, o.Worker)
+				if err != nil {
+					return err
+				}
 				data = []string{string(mode), arch, fmt.Sprintf("%d", downloaded), fmt.Sprintf("%d", skipped), o.Version}
 			case onboard.VMMode_Docker:
-				downloaded, skipped := downloadDockerAgents(arch, dir, images, o.Worker)
+				downloaded, skipped, err := downloadDockerAgents(arch, dir, images, o.Worker)
+				if err != nil {
+					return err
+				}
 				data = []string{string(mode), arch, fmt.Sprintf("%d", downloaded), fmt.Sprintf("%d", skipped), o.Version}
 			}
 
 			tableData = append(tableData, pterm.TableData{data}...)
-
-			outFileName := fmt.Sprintf("%v-%v.tar.gz", string(mode), arch)
-			if err := compressDirectory(filepath.Join(basePath, o.Version), dir, outFileName); err != nil {
-				return err
-			}
-
 		}
 	}
 
@@ -276,20 +279,20 @@ func (o *DownloadOptions) getImageDetails(arch string, releaseInfo cm.ReleaseMet
 	}
 
 	return map[string]string{
-		"kubearmor":                cc.KubeArmorImage,
-		"kubearmor-init":           cc.KubeArmorInitImage,
-		"kubearmor-vm-adapter":     cc.KubeArmorVMAdapterImage,
-		"kubearmor-relay-server":   cc.KubeArmorRelayServerImage,
-		"spire-agent":              cc.SPIREAgentImage,
-		"wait-for-it":              cc.WaitForItImage,
-		"shared-informer-agent":    cc.SIAImage,
-		"policy-enforcement-agent": cc.PEAImage,
-		"feeder-service":           cc.FeederImage,
-		"rabbitMQ":                 cc.RMQImage,
-		"discover-agent":           cc.DiscoverImage,
-		"summary-engine":           cc.SumEngineImage,
-		"hardening-agent":          cc.HardeningAgentImage,
-		"rra":                      cc.RRAImage,
+		onboard.GetImage(cc.KubeArmorImage, 0):            cc.KubeArmorImage,
+		onboard.GetImage(cc.KubeArmorInitImage, 0):        cc.KubeArmorInitImage,
+		onboard.GetImage(cc.KubeArmorVMAdapterImage, 0):   cc.KubeArmorVMAdapterImage,
+		onboard.GetImage(cc.KubeArmorRelayServerImage, 0): cc.KubeArmorRelayServerImage,
+		onboard.GetImage(cc.SPIREAgentImage, 0):           cc.SPIREAgentImage,
+		onboard.GetImage(cc.WaitForItImage, 0):            cc.WaitForItImage,
+		onboard.GetImage(cc.SIAImage, 0):                  cc.SIAImage,
+		onboard.GetImage(cc.PEAImage, 0):                  cc.PEAImage,
+		onboard.GetImage(cc.FeederImage, 0):               cc.FeederImage,
+		onboard.GetImage(cc.RMQImage, 0):                  cc.RMQImage,
+		onboard.GetImage(cc.DiscoverImage, 0):             cc.DiscoverImage,
+		onboard.GetImage(cc.SumEngineImage, 0):            cc.SumEngineImage,
+		onboard.GetImage(cc.HardeningAgentImage, 0):       cc.HardeningAgentImage,
+		onboard.GetImage(cc.RRAImage, 0):                  cc.RRAImage,
 	}, nil
 
 }
@@ -299,7 +302,7 @@ func downloadSystemdAgents(
 	dir, arch string,
 	images map[string]string,
 	worker bool,
-) (int, int) {
+) (int, int, error) {
 
 	skipped := 0
 	downloaded := 0
@@ -311,9 +314,14 @@ func downloadSystemdAgents(
 
 	p, _ := pterm.DefaultProgressbar.WithTotal(imageLen).WithTitle("Downloading binaries").WithRemoveWhenDone(true).Start()
 
+	// #nosec G104 -- false positive
+	defer p.Stop()
+
 	for image, binaryImage := range images {
-		if worker && !workerAgents[image] {
-			continue
+		if worker {
+			if _, ok := workerAgents[image]; !ok {
+				continue
+			}
 		}
 
 		p.UpdateTitle(fmt.Sprintf("Downloading %s [%s] binary", image, arch))
@@ -327,24 +335,20 @@ func downloadSystemdAgents(
 		imgTag := strings.Split(binaryImage, ":")
 		if len(imgTag) != 2 {
 			skipped++
-			pterm.Warning.Printf("skipping %v [%v]: binary tag is empty\n", image, arch)
 			p.Increment()
-			continue
+			return downloaded, skipped, fmt.Errorf("[%v] binary tag is empty for %v", arch, image, 0)
 		}
 
 		_, err := cc.DownloadAgent(image, imgTag[0], imgTag[1], dir)
 		if err != nil {
-			pterm.Error.Printf("error downloading binary %s [%v]: %v\n", image, arch, err)
 			p.Increment()
 			skipped++
-			continue
+			return downloaded, skipped, fmt.Errorf("error downloading binary %s [%v]: %v", image, arch, err)
 		}
 		downloaded++
 		p.Increment()
 	}
-	// #nosec G104 -- false positive
-	p.Stop()
-	return downloaded, skipped
+	return downloaded, skipped, nil
 
 }
 
@@ -352,7 +356,7 @@ func downloadDockerAgents(
 	arch, dir string,
 	images map[string]string,
 	worker bool,
-) (int, int) {
+) (int, int, error) {
 
 	imageLen := len(images)
 	if worker {
@@ -363,9 +367,14 @@ func downloadDockerAgents(
 	downloaded := 0
 	p, _ := pterm.DefaultProgressbar.WithTotal(imageLen).WithTitle("Downloading images").WithRemoveWhenDone(true).Start()
 
+	// #nosec G104 -- false positive
+	defer p.Stop()
+
 	for image, dockerImage := range images {
-		if worker && !workerAgents[image] {
-			continue
+		if worker {
+			if _, ok := workerAgents[image]; !ok {
+				continue
+			}
 		}
 
 		p.UpdateTitle(fmt.Sprintf("Downloading %s [%s] image", image, arch))
@@ -378,24 +387,25 @@ func downloadDockerAgents(
 		}
 		imgTag := strings.Split(dockerImage, ":")
 		if len(imgTag) != 2 {
-			pterm.Warning.Printf("skipping %v [%v]: image tag is empty\n", image, arch)
 			p.Increment()
 			skipped++
-			continue
+			return downloaded, skipped, fmt.Errorf("[%v] image tag is empty for %v", arch, image, 0)
 		}
-		outFileName := filepath.Join(dir, image+".tar.gz")
+
+		tag := strings.TrimPrefix(imgTag[1], "v")
+
+		outFileName := filepath.Join(dir, image+"_"+tag+".tar.gz")
 		if err := pullAndSave(dockerImage, arch, outFileName); err != nil {
 			pterm.Error.Printf("failed to download image %s [%v]: %v\n", dockerImage, arch, err)
 			p.Increment()
 			skipped++
-			continue
+			return downloaded, skipped, fmt.Errorf("failed to download image %s [%v]: %v", dockerImage, arch, err)
 		}
 		downloaded++
 		p.Increment()
 	}
-	// #nosec G104 -- false positive
-	p.Stop()
-	return downloaded, skipped
+
+	return downloaded, skipped, nil
 
 }
 

@@ -17,7 +17,7 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 
 	if jc.FromSource != "" {
 
-		agents := make([]string, 0)
+		agents := make(map[string]struct{}, 0)
 		for _, obj := range jc.ClusterConfig.SystemdServiceObjects {
 
 			// skip installing on worker node
@@ -36,15 +36,15 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 				logger.Error("[source] error stopping %s: %s", obj.ServiceName, err)
 				return err
 			}
-			agents = append(agents, obj.AgentName)
+
+			agents[GetImage(obj.AgentImage, 2)] = struct{}{}
 		}
 		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
-
+		defer p.Stop()
 		loadedCount, err := extractAgentsFromPath(jc.FromSource, agents, p)
 		if err != nil {
 			return err
 		}
-		_, _ = p.Stop()
 		jc.SkipDownload = true
 
 		logger.Info1("successfully loaded %v binaries", loadedCount)

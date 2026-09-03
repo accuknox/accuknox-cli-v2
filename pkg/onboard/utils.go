@@ -16,7 +16,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"strings"
 	"text/template"
 	"time"
@@ -659,14 +658,14 @@ func (m VMMode) String() string {
 	return string(m)
 }
 
-func loadDockerImagesFromPath(rootPath string, agents []string, p *pterm.ProgressbarPrinter) error {
+func loadDockerImagesFromPath(rootPath string, agents map[string]struct{}, p *pterm.ProgressbarPrinter) error {
 	dClient, err := CreateDockerClient()
 	if err != nil {
 		return err
 	}
 	ctx := context.Background()
 
-	return filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -677,12 +676,12 @@ func loadDockerImagesFromPath(rootPath string, agents []string, p *pterm.Progres
 			return nil
 		}
 
-		if !slices.ContainsFunc(agents, func(ss string) bool {
-			strWithoutPrefix := strings.TrimPrefix(ss, "accuknox-")
-			return strings.Contains(path, ss) || strings.Contains(path, strWithoutPrefix)
-		}) {
+		img := ParseImage(strings.TrimSuffix(path, ".tar.gz"))
+		if _, ok := agents[img]; !ok {
 			return nil
 		}
+
+		delete(agents, img)
 
 		rel, err := filepath.Rel(rootPath, path)
 		if err != nil {
@@ -704,6 +703,22 @@ func loadDockerImagesFromPath(rootPath string, agents []string, p *pterm.Progres
 		return nil
 
 	})
+
+	if err != nil {
+		return err
+	}
+
+	if len(agents) > 0 {
+		var missing []string
+		for img := range agents {
+			missing = append(missing, img)
+
+		}
+		return fmt.Errorf("failed to process all images, missing images: %v", missing)
+	}
+
+	return nil
+
 }
 
 func loadImage(ctx context.Context, dClient *client.Client, path string) error {
@@ -724,7 +739,7 @@ func loadImage(ctx context.Context, dClient *client.Client, path string) error {
 	return err
 }
 
-func extractAgentsFromPath(rootPath string, agents []string, p *pterm.ProgressbarPrinter) (int, error) {
+func extractAgentsFromPath(rootPath string, agents map[string]struct{}, p *pterm.ProgressbarPrinter) (int, error) {
 
 	count := 0
 	err := filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
@@ -738,15 +753,15 @@ func extractAgentsFromPath(rootPath string, agents []string, p *pterm.Progressba
 			return nil
 		}
 
-		if !slices.ContainsFunc(agents, func(ss string) bool {
-			strWithoutPrefix := strings.TrimPrefix(ss, "accuknox-")
-
-			return strings.Contains(path, ss) ||
-				strings.Contains(path, strWithoutPrefix) ||
-				strings.Contains(path, "summary-engine")
-		}) {
-			return nil
+		img := ParseImage(strings.TrimSuffix(path, ".tar.gz"))
+		if _, ok := agents[img]; !ok {
+			img = strings.TrimSuffix(img, cm.SystemdTagSuffix)
+			if _, ok := agents[img]; !ok {
+				return nil
+			}
 		}
+
+		delete(agents, img)
 
 		rel, err := filepath.Rel(rootPath, path)
 		if err != nil {
@@ -771,7 +786,20 @@ func extractAgentsFromPath(rootPath string, agents []string, p *pterm.Progressba
 		return nil
 	})
 
-	return count, err
+	if err != nil {
+		return count, err
+	}
+
+	if len(agents) > 0 {
+		var missing []string
+		for img := range agents {
+			missing = append(missing, img)
+
+		}
+		return count, fmt.Errorf("failed to process all images, missing images: %v", missing)
+	}
+
+	return count, nil
 }
 
 func CheckImagescanSystemdInstallation() (bool, error) {
@@ -832,4 +860,21 @@ func IsDeployed(mode VMMode) bool {
 	}
 
 	return false
+}
+
+func ParseImage(img string) string {
+	if idx := strings.LastIndexByte(img, '/'); idx != -1 {
+		img = img[idx+1:]
+	}
+	return strings.TrimSuffix(img, cm.SystemdTagSuffix)
+}
+
+func GetImage(img string, part int) string {
+	img = ParseImage(img)
+	imgSplits := strings.Split(img, ":")
+	imgSplits[len(imgSplits)-1] = strings.TrimPrefix(imgSplits[len(imgSplits)-1], "v")
+	if part >= 0 && part < len(imgSplits) {
+		return imgSplits[part]
+	}
+	return strings.Join(imgSplits, "_")
 }

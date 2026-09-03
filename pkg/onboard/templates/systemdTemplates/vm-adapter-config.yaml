@@ -49,3 +49,8 @@ annotation-enable: true
 policy-list-enable: {{.EnablePoliciesList}}
 policy-list-relay-frequency: "{{.PoliciesListRefresh}}"
 {{- end }}
+
+
+{{- if gt .KubeArmorHealthPort 0 }}
+kubearmor-health-port={{ .KubeArmorHealthPort }}
+{{- end }}

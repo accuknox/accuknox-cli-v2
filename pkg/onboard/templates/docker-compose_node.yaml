@@ -274,6 +274,9 @@ services:
       - "--kmux-config-annotation=/opt/kubearmor-vm-adapter/{{.AnnotationKmuxConfig}}"
       - "--annotation-enable=true"
       {{- end }}
+      {{- if gt .KubeArmorHealthPort 0 }}
+      - "--kubearmor-health-port={{ .KubeArmorHealthPort }}"
+      {{- end }}
     volumes:
       - "{{.ConfigPath}}:/opt:rw"
       {{- if .SpireEnabled }}

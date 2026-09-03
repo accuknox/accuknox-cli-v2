@@ -308,26 +308,26 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	if ic.FromSource != "" {
-		agents := []string{
-			"feeder-service",
-			"kubearmor-init",
-			"kubearmor-relay-server",
-			"kubearmor",
-			"kubearmor-vm-adapter",
-			"policy-enforcement-agent",
-			"rabbitMQ",
-			"rra",
-			"shared-informer-agent",
-			"spire-agent",
-			"summary-engine",
-			"wait-for-it",
+		agents := map[string]struct{}{
+			GetImage(ic.FeederImage, 2):               {},
+			GetImage(ic.KubeArmorInitImage, 2):        {},
+			GetImage(ic.KubeArmorRelayServerImage, 2): {},
+			GetImage(ic.KubeArmorImage, 2):            {},
+			GetImage(ic.KubeArmorVMAdapterImage, 2):   {},
+			GetImage(ic.PEAImage, 2):                  {},
+			GetImage(ic.RMQImage, 2):                  {},
+			GetImage(ic.RRAImage, 2):                  {},
+			GetImage(ic.SIAImage, 2):                  {},
+			GetImage(ic.SPIREAgentImage, 2):           {},
+			GetImage(ic.SumEngineImage, 2):            {},
+			GetImage(ic.WaitForItImage, 2):            {},
 		}
 
 		if ic.DeployDiscover {
-			agents = append(agents, "discover-agent")
+			agents[GetImage(ic.DiscoverImage, 2)] = struct{}{}
 		}
 		if ic.EnableHardeningAgent {
-			agents = append(agents, "hardening-agent")
+			agents[GetImage(ic.HardeningAgentImage, 2)] = struct{}{}
 		}
 		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading images").WithRemoveWhenDone(true).Start()
 		defer p.Stop()

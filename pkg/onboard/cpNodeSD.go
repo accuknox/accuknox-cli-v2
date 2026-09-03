@@ -111,7 +111,7 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	if ic.FromSource != "" {
 
-		agents := make([]string, 0)
+		agents := make(map[string]struct{}, 0)
 		for _, obj := range ic.ClusterConfig.SystemdServiceObjects {
 
 			if ic.WorkerNode && !obj.InstallOnWorkerNode {
@@ -130,17 +130,18 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 				return err
 			}
 
-			agents = append(agents, obj.AgentName)
+			agents[GetImage(obj.AgentImage, 2)] = struct{}{}
 		}
 
 		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
+		defer p.Stop()
 
 		loadedCount, err := extractAgentsFromPath(ic.FromSource, agents, p)
 		if err != nil {
 			return err
 		}
 		ic.SkipDownload = true
-		_, _ = p.Stop()
+
 		logger.Info1("successfully loaded %v binaries", loadedCount)
 	}
 

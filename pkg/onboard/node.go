@@ -335,16 +335,16 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	if jc.FromSource != "" {
-		agents := []string{
-			"kubearmor",
-			"kubearmor-init",
-			"vm-adapter",
+		agents := map[string]struct{}{
+			GetImage(jc.KubeArmorImage, 2):          {},
+			GetImage(jc.KubeArmorInitImage, 2):      {},
+			GetImage(jc.KubeArmorVMAdapterImage, 2): {},
 		}
 		if jc.SpireEnabled {
-			agents = append(agents, "spire-agent")
+			agents[ParseImage(jc.SPIREAgentImage)] = struct{}{}
 		}
 		if jc.DeploySumengine {
-			agents = append(agents, "summary-engine")
+			agents[ParseImage(jc.SumEngineImage)] = struct{}{}
 		}
 		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading images").WithRemoveWhenDone(true).Start()
 		defer p.Stop()
