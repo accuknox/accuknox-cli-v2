@@ -1,0 +1,343 @@
+{
+    "_comment": [
+        "op will be created as follows:",
+        "<label> : <registry>/<org>/<name>:<version>_<platform>",
+        "eg: kubearmor: docker.io/kubearmor/kubearmor-systemd:1.6.18_linux-amd64"
+    ],
+    "agents": [
+        {
+            "name": "kubearmor-systemd",
+            "label": "kubearmor",
+            "registry": "docker.io",
+            "org": "kubearmor",
+            "versions": [
+                {
+                    "version": "1.6.15",
+                    "platform": "linux-amd64",
+                    "md5": "968e1767fdc4a24cc84cb310e800ef1b"
+                },
+                {
+                    "version": "1.6.18",
+                    "platform": "linux-amd64",
+                    "md5": "1ba24f26630511f3ae41addbd3fcb46f"
+                },
+                {
+                    "version": "1.7.4",
+                    "platform": "linux-amd64",
+                    "md5": "b23aa9aa62b021d040babaa5ced4c5c4"
+                }
+            ]
+        },
+        {
+            "name": "kubearmor-systemd-idt",
+            "label": "kubearmor",
+            "registry": "docker.io",
+            "org": "kubearmor",
+            "versions": [
+                {
+                    "version": "1.3.8",
+                    "platform": "linux-amd64",
+                    "md5": "fd4f530bb0da5724cfa6770ba30d703e"
+                },
+                {
+                    "version": "1.4.4",
+                    "platform": "linux-amd64",
+                    "md5": "755e24aedf7e12bac08bba0fd5f12122"
+                },
+                {
+                    "version": "1.4.6",
+                    "platform": "linux-amd64",
+                    "md5": "2f95a60e576ad021ff362b28a0e3c37c"
+                },
+                {
+                    "version": "1.4.8",
+                    "platform": "linux-amd64",
+                    "md5": "57a9cab1e67fb45d98195fce943d94cd"
+                },
+                {
+                    "version": "1.5.3",
+                    "platform": "linux-amd64",
+                    "md5": "d2b6bf1d7ab94ed6461b3caa6c45c23f"
+                },
+                {
+                    "version": "1.5.5",
+                    "platform": "linux-amd64",
+                    "md5": "9c0d7d245bc5e43a0a63d0707d4b6e19"
+                },
+                {
+                    "version": "1.6.4",
+                    "platform": "linux-amd64",
+                    "md5": "4e37e491c1e1811820120b62035566ed"
+                },
+                {
+                    "version": "1.6.5",
+                    "platform": "linux-amd64",
+                    "md5": "d77b537b605877587917f5980e10162d"
+                },
+                {
+                    "version": "1.6.9",
+                    "platform": "linux-amd64",
+                    "md5": "feccde534c6493b39cb0a042ff0c8334"
+                },
+                {
+                    "version": "1.6.15",
+                    "platform": "linux-amd64",
+                    "md5": "968e1767fdc4a24cc84cb310e800ef1b"
+                },
+                {
+                    "version": "1.7.4",
+                    "platform": "linux-amd64",
+                    "md5": "b23aa9aa62b021d040babaa5ced4c5c4"
+                }
+            ]
+        },
+        {
+            "name": "vm-adapter-systemd",
+            "label": "kubearmor-vm-adapter",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.1.11",
+                    "platform": "linux-amd64",
+                    "md5": "1286619408ff111a4c1861e1c41a50ca"
+                },
+                {
+                    "version": "0.1.23",
+                    "platform": "linux-amd64",
+                    "md5": "3159ab3e8d290675c919937696fbc3ac"
+                },
+                {
+                    "version": "0.1.25",
+                    "platform": "linux-amd64",
+                    "md5": "da61da2a8c205ffb3832813906944113"
+                },
+                {
+                    "version": "0.1.27",
+                    "platform": "linux-amd64",
+                    "md5": "5df877cc0e2fb0cafe7097ab27072b66"
+                },
+                {
+                    "version": "0.1.29",
+                    "platform": "linux-amd64",
+                    "md5": "45fa0f5c5b6efc5fbe29a14e7712a46e"
+                },
+                {
+                    "version": "0.1.30",
+                    "platform": "linux-amd64",
+                    "md5": "2cd0639ab093e499dcefd3a237f6cb9d"
+                }
+            ]
+        },
+        {
+            "name": "accuknox-discover-systemd",
+            "label": "discover",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.3.23",
+                    "platform": "linux-amd64",
+                    "md5": "93aa865765756c8fa519dae9206aad81"
+                }
+            ]
+        },
+        {
+            "name": "accuknox-feeder-service-systemd",
+            "label": "feeder-service",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.10.7",
+                    "platform": "linux-amd64",
+                    "md5": "61fab6421998f542108b5f547ad7eb0d"
+                },
+                {
+                    "version": "0.10.8",
+                    "platform": "linux-amd64",
+                    "md5": "19ed9da9dfbd6733a0e11df313cb58e2"
+                },
+                {
+                    "version": "0.10.10",
+                    "platform": "linux-amd64",
+                    "md5": "8d610dcf5095ec21033fde7803bc38c7"
+                },
+                {
+                    "version": "0.10.11",
+                    "platform": "linux-amd64",
+                    "md5": "916c4a185bafce8b794a22293eb64a48"
+                }
+            ]
+        },
+        {
+            "name": "kubearmor-relay-server-systemd",
+            "label": "kubearmor-relay",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.0.4",
+                    "platform": "linux-amd64",
+                    "md5": "9e13cbe191bcf90f5de293eb77026ced"
+                },
+                {
+                    "version": "0.0.5",
+                    "platform": "linux-amd64",
+                    "md5": "040d554aec423c5cdca34a2ca3ca2275"
+                }
+            ]
+        },
+        {
+            "name": "accuknox-policy-enforcement-agent-systemd",
+            "label": "policy-enforcement-agent",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.9.5",
+                    "platform": "linux-amd64",
+                    "md5": "2ace5fd7bf6a50384ca163de9798d28e"
+                },
+                {
+                    "version": "0.9.8",
+                    "platform": "linux-amd64",
+                    "md5": "7518375f721c4987bb3e90878afee34e"
+                },
+                {
+                    "version": "0.9.10",
+                    "platform": "linux-amd64",
+                    "md5": "2cfd2446cfa7d470eb11e41af67def88"
+                },
+                {
+                    "version": "0.9.11",
+                    "platform": "linux-amd64",
+                    "md5": "0ee53901440de98032b7489e1d7bf250"
+                }
+            ]
+        },
+        {
+            "name": "accuknox-rra-systemd",
+            "label": "rra",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.5.2",
+                    "platform": "linux-amd64",
+                    "md5": "a4f596f2cb5fabc137aefdcb57f651fb"
+                },
+                {
+                    "version": "0.5.3",
+                    "platform": "linux-amd64",
+                    "md5": "17ce25fe5b2307587410e9c0adc0b6a8"
+                }
+            ]
+        },
+        {
+            "name": "accuknox-shared-informer-agent-systemd",
+            "label": "shared-informer-agent",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.8.13",
+                    "platform": "linux-amd64",
+                    "md5": "4b59d5cd241cc2c29d2ff770fe759622"
+                },
+                {
+                    "version": "0.8.14",
+                    "platform": "linux-amd64",
+                    "md5": "38f1d3dcb15bcaf38e8f13202adb3f3b"
+                },
+                {
+                    "version": "0.8.17",
+                    "platform": "linux-amd64",
+                    "md5": "46a353b43ebc18936933f18acbce1013"
+                }
+            ]
+        },
+        {
+            "name": "spire-agent-systemd",
+            "label": "spire-agent",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "2.0.14",
+                    "platform": "linux-amd64",
+                    "md5": "2a6c64832f4d2177759da6e770744afc"
+                }
+            ]
+        },
+        {
+            "name": "discover",
+            "label": "accuknox-discover-systemd",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.3.1",
+                    "platform": "linux-amd64",
+                    "md5": "138a6bfdf135dacd6730ca264c02359b"
+                },
+                {
+                    "version": "0.3.23",
+                    "platform": "linux-amd64",
+                    "md5": "93aa865765756c8fa519dae9206aad81"
+                },
+                {
+                    "version": "0.3.29",
+                    "platform": "linux-amd64",
+                    "md5": "0a6b757c5d63d1e6a3a4ba479f9e2a21"
+                }
+            ]
+        },
+        {
+            "name": "accuknox-hardening-agent-systemd",
+            "label": "hardening-agent",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.3.1",
+                    "platform": "linux-amd64",
+                    "md5": "93b3d9b94980d7e96e4def391f885544"
+                },
+                {
+                    "version": "0.3.23",
+                    "platform": "linux-amd64",
+                    "md5": "9410d1923a479f0677536f02da6b4dda"
+                },
+                {
+                    "version": "0.3.29",
+                    "platform": "linux-amd64",
+                    "md5": "5dff52e3c4d4d45c44cec597f29a8ce3"
+                }
+            ]
+        },
+        {
+            "name": "accuknox-sumengine-systemd",
+            "label": "summary-engine",
+            "registry": "docker.io",
+            "org": "accuknox",
+            "versions": [
+                {
+                    "version": "0.3.1",
+                    "platform": "linux-amd64",
+                    "md5": "071ba6b09058a64be51f52ea0b90f535"
+                },
+                {
+                    "version": "0.3.23",
+                    "platform": "linux-amd64",
+                    "md5": "89e9db9b48c41dfaaa710c12e6fc39b4"
+                },
+                {
+                    "version": "0.3.29",
+                    "platform": "linux-amd64",
+                    "md5": "46ea353e81351683490eda7af0155034"
+                }
+            ]
+        }
+    ]
+}

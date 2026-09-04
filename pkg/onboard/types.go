@@ -174,6 +174,8 @@ type ClusterConfig struct {
 	DeployImagescan   bool            `json:"deploy_imagescan,omitempty"`
 	AgentsVersionFile string          `json:"agents_version_file,omitempty"`
 	ForceRecreate     bool            `json:"force_recreate,omitempty"`
+
+	KubeArmorHealthPort int64 `json:"kubearmor_health_port,omitempty"`
 }
 
 type ImageScanConfig struct {
@@ -388,6 +390,8 @@ type TemplateConfigArgs struct {
 	DeployDiscover    bool   `json:"deploy_discover,omitempty"`
 	AgentsVersionFile string `json:"agents_version_file,omitempty"`
 	RMQEnabled        bool   `json:"rmq_enabled,omitempty"`
+
+	KubeArmorHealthPort int64 `json:"kubearmor_health_port,omitempty"`
 }
 
 type KmuxConfigTemplateArgs struct {
