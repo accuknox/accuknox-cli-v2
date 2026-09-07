@@ -12,7 +12,7 @@ import (
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
-	"github.com/pterm/pterm"
+	"github.com/fatih/color"
 	"golang.org/x/mod/semver"
 )
 
@@ -308,33 +308,34 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	if ic.FromSource != "" {
-		agents := []string{
-			"feeder-service",
-			"kubearmor-init",
-			"kubearmor-relay-server",
-			"kubearmor",
-			"kubearmor-vm-adapter",
-			"policy-enforcement-agent",
-			"rabbitMQ",
-			"rra",
-			"shared-informer-agent",
-			"spire-agent",
-			"summary-engine",
-			"wait-for-it",
+		agents := map[string]struct{}{
+			GetImage(ic.FeederImage, 2):               {},
+			GetImage(ic.KubeArmorInitImage, 2):        {},
+			GetImage(ic.KubeArmorRelayServerImage, 2): {},
+			GetImage(ic.KubeArmorImage, 2):            {},
+			GetImage(ic.KubeArmorVMAdapterImage, 2):   {},
+			GetImage(ic.PEAImage, 2):                  {},
+			GetImage(ic.RMQImage, 2):                  {},
+			GetImage(ic.RRAImage, 2):                  {},
+			GetImage(ic.SIAImage, 2):                  {},
+			GetImage(ic.SPIREAgentImage, 2):           {},
+			GetImage(ic.SumEngineImage, 2):            {},
+			GetImage(ic.WaitForItImage, 2):            {},
 		}
 
 		if ic.DeployDiscover {
-			agents = append(agents, "discover-agent")
+			agents[GetImage(ic.DiscoverImage, 2)] = struct{}{}
 		}
 		if ic.EnableHardeningAgent {
-			agents = append(agents, "hardening-agent")
+			agents[GetImage(ic.HardeningAgentImage, 2)] = struct{}{}
 		}
-		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading images").WithRemoveWhenDone(true).Start()
-		defer p.Stop()
-		if err = loadDockerImagesFromPath(ic.FromSource, agents, p); err != nil {
+
+		sp := common.NewSpinner(color.GreenString("loading %v images", len(agents))).Start()
+		if err = loadDockerImagesFromPath(ic.FromSource, agents, sp); err != nil {
 			return err
 		}
 		ic.SkipDownload = true
+		sp.Stop("")
 	}
 
 	logger.Info1("writing release version to %s", ic.AgentsVersionFile)
