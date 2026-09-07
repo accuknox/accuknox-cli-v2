@@ -183,6 +183,8 @@ var joinNodeCmd = &cobra.Command{
 		joinConfig.TCArgs.PoliciesListRefresh = policiesListRefreshTime
 		joinConfig.TCArgs.EnablePoliciesList = policiesListEnabled
 
+		joinConfig.TCArgs.KubeArmorHealthPort = joinConfig.KubeArmorHealthPort
+
 		switch vmMode {
 
 		case onboard.VMMode_Systemd:

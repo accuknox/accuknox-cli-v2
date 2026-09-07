@@ -21,6 +21,7 @@ import (
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
+	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/mod/semver"
 	"oras.land/oras-go/v2/content"
@@ -477,24 +478,19 @@ func (cc *ClusterConfig) placeServiceFiles() error {
 	return nil
 }
 
-// DownloadAgent downloads agents as OCI artifacts
 func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadDir string) (string, error) {
-
 	if downloadDir == "" {
 		downloadDir = cm.GetDownloadDir()
 	}
-
 	if err := os.MkdirAll(downloadDir, 0750); err != nil {
 		return "", err
 	}
 
-	// 1. Connect to a remote repository
 	ctx := context.Background()
 	repo, err := remote.NewRepository(agentRepo)
 	if err != nil {
 		return "", err
 	}
-
 	repo.Client = cc.ORASClient
 	repo.PlainHTTP = cc.PlainHTTP
 
@@ -511,13 +507,10 @@ func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadD
 		}
 	}
 
-	fileName := path.Join(downloadDir, agentName+"_"+agentTag+".tar.gz")
-
 	manifestBytes, err := content.FetchAll(ctx, repo, desc)
 	if err != nil {
 		return "", err
 	}
-
 	var manifest ocispec.Manifest
 	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
 		return "", err
@@ -525,70 +518,102 @@ func (cc *ClusterConfig) DownloadAgent(agentName, agentRepo, agentTag, downloadD
 	if len(manifest.Layers) == 0 {
 		return "", errors.New("no layers in manifest")
 	}
-
 	layer := manifest.Layers[0]
+
+	fileName := path.Join(downloadDir, agentName+"_"+agentTag+".tar.gz")
 
 	var offset int64
 	if info, err := os.Stat(fileName); err == nil {
 		offset = info.Size()
 	}
-
 	if offset >= layer.Size {
-		return fileName, nil
+		if err := verifyDigest(fileName, layer.Digest); err == nil {
+			return fileName, nil
+		}
+		// Size matches but content doesn't - corrupt, start over.
+		offset = 0
+		if err := os.Remove(fileName); err != nil {
+			return "", err
+		}
 	}
 
 	schema := "http"
 	if !repo.PlainHTTP {
 		schema = "https"
 	}
-
 	registry := repo.Reference.Registry
 	if registry == cm.DockerHubRegisty {
 		registry = cm.DockerHubRegistyReplace
 	}
-
-	blobURL := fmt.Sprintf(
-		"%s://%s/v2/%s/blobs/%s",
-		schema,
-		registry,
-		repo.Reference.Repository,
-		layer.Digest.String(),
-	)
+	blobURL := fmt.Sprintf("%s://%s/v2/%s/blobs/%s",
+		schema, registry, repo.Reference.Repository, layer.Digest.String())
 
 	req, err := http.NewRequestWithContext(ctx, "GET", blobURL, nil)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-
 	if offset > 0 {
 		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
 	}
+
 	resp, err := repo.Client.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK &&
-		resp.StatusCode != http.StatusPartialContent {
+
+	var flags int
+	switch resp.StatusCode {
+	case http.StatusPartialContent:
+		// Server honored the range - append to existing partial file.
+		flags = os.O_CREATE | os.O_WRONLY | os.O_APPEND
+	case http.StatusOK:
+		// Server ignored Range (or offset was 0) and is sending the
+		// full blob - must overwrite, not append.
+		flags = os.O_CREATE | os.O_WRONLY | os.O_TRUNC
+		offset = 0
+	default:
 		return "", fmt.Errorf("unexpected HTTP status: %s", resp.Status)
 	}
 
-	out, err := os.OpenFile(filepath.Clean(fileName),
-		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
-		0600,
-	)
+	out, err := os.OpenFile(filepath.Clean(fileName), flags, 0600)
 	if err != nil {
 		return "", err
 	}
 
-	defer out.Close()
+	_, copyErr := io.Copy(out, resp.Body)
+	closeErr := out.Close()
+	if copyErr != nil {
+		return "", copyErr
+	}
+	if closeErr != nil {
+		return "", closeErr
+	}
 
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return "", err
+	if err := verifyDigest(fileName, layer.Digest); err != nil {
+		_ = os.Remove(fileName) // don't leave a corrupt file for the next run to trust
+		return "", fmt.Errorf("downloaded file failed digest verification: %w", err)
 	}
 
 	return fileName, nil
+}
+
+// verifyDigest checks that the file on disk matches the expected OCI digest.
+func verifyDigest(fileName string, want digest.Digest) error {
+	f, err := os.Open(filepath.Clean(fileName))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	verifier := want.Verifier()
+	if _, err := io.Copy(verifier, f); err != nil {
+		return err
+	}
+	if !verifier.Verified() {
+		return fmt.Errorf("digest mismatch for %s", fileName)
+	}
+	return nil
 }
 
 // ExtractAgent extracts agent tar
@@ -752,7 +777,6 @@ func (cc *ClusterConfig) SystemdInstall() error {
 
 			err = cc.installAgent(obj.AgentName, packageMeta[0], packageMeta[1])
 			if err != nil {
-				// fmt.Println(err)
 				return err
 			}
 

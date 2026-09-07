@@ -11,7 +11,7 @@ import (
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
-	"github.com/pterm/pterm"
+	"github.com/fatih/color"
 	"golang.org/x/mod/semver"
 )
 
@@ -111,7 +111,7 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	if ic.FromSource != "" {
 
-		agents := make([]string, 0)
+		agents := make(map[string]struct{}, 0)
 		for _, obj := range ic.ClusterConfig.SystemdServiceObjects {
 
 			if ic.WorkerNode && !obj.InstallOnWorkerNode {
@@ -130,17 +130,17 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 				return err
 			}
 
-			agents = append(agents, obj.AgentName)
+			agents[GetImage(obj.AgentImage, 2)] = struct{}{}
 		}
 
-		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
-
-		loadedCount, err := extractAgentsFromPath(ic.FromSource, agents, p)
+		sp := cm.NewSpinner(color.GreenString("loading %v binaries", len(agents))).Start()
+		loadedCount, err := extractAgentsFromPath(ic.FromSource, agents, sp)
 		if err != nil {
 			return err
 		}
 		ic.SkipDownload = true
-		_, _ = p.Stop()
+		sp.Stop("")
+
 		logger.Info1("successfully loaded %v binaries", loadedCount)
 	}
 
