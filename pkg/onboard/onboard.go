@@ -18,6 +18,7 @@ import (
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/mholt/archives"
+	"golang.org/x/mod/semver"
 )
 
 const AgentsVersionFile = "agents-version"
@@ -572,7 +573,45 @@ func (cc *ClusterConfig) PopulateImageDetails(releaseInfo cm.ReleaseMetadata, im
 		}
 	}
 
+	cc.KubeArmorHealthPort = getKubeArmorHealthPort(cc.KubeArmorImage, cc.KubeArmorVMAdapterImage)
+
 	return nil
+}
+
+func getKubeArmorHealthPort(kaImage, vmaImage string) int64 {
+
+	var (
+		healthPort    int64 = 0
+		kaTag, vmaTag string
+	)
+	if kaSplit := strings.Split(kaImage, ":"); len(kaSplit) > 1 {
+		kaTag = ensurePrefix(kaSplit[1])
+	}
+
+	if vmaSplit := strings.Split(vmaImage, ":"); len(vmaSplit) > 1 {
+		vmaTag = ensurePrefix(vmaSplit[1])
+	}
+
+	if semver.Compare(vmaTag, "v0.1.29") >= 0 {
+		healthPort = 32767
+		if semver.Compare(kaTag, "v1.7.4") >= 0 {
+			healthPort = 32766
+		}
+	}
+
+	return healthPort
+
+}
+
+func ensurePrefix(tag string) string {
+
+	if idx := strings.Index(tag, "_"); idx != -1 {
+		tag = tag[:idx]
+	}
+	if tag != "" && !strings.HasPrefix(tag, "v") {
+		return "v" + tag
+	}
+	return tag
 }
 
 func resolveSource(source, version string) (string, string, error) {

@@ -34,11 +34,33 @@ type ReleaseMetadata struct {
 	RraImage              string `json:"rra_image"`
 }
 
+type Version struct {
+	Version  string `json:"version"`
+	Platform string `json:"platform"`
+	MD5      string `json:"md5"`
+}
+
+type Agent struct {
+	Name     string    `json:"name"`
+	Label    string    `json:"label"`
+	Registry string    `json:"registry"`
+	Org      string    `json:"org"`
+	Versions []Version `json:"versions"`
+}
+
+type ChecksumManifest struct {
+	Agents []Agent `json:"agents"`
+}
+
 var (
 	//go:embed release.json
 	releaseInfoFile []byte
 
-	ReleaseInfo = make(map[string]ReleaseMetadata, 0)
+	//go:embed checksums.json
+	checksumsInfo []byte
+
+	ReleaseInfo   = make(map[string]ReleaseMetadata, 0)
+	checksumInfos ChecksumManifest
 )
 
 func init() {
@@ -48,6 +70,11 @@ func init() {
 		os.Exit(1)
 	}
 	ReleaseInfo = releaseInfo
+
+	if err := json.Unmarshal(checksumsInfo, &checksumInfos); err != nil {
+		fmt.Println("failed to unmarshal checksum file", err)
+		os.Exit(1)
+	}
 }
 
 func unmarshal(content []byte) (map[string]ReleaseMetadata, error) {
@@ -155,4 +182,8 @@ func createDir(path string) error {
 		return nil
 	}
 	return os.MkdirAll(dir, os.ModeDir|os.ModePerm)
+}
+
+func GetChecksumsInfo() ChecksumManifest {
+	return checksumInfos
 }

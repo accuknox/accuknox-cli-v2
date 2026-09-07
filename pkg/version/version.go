@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
@@ -30,6 +29,7 @@ type Option struct {
 // PrintVersion displays the current version and checks for updates
 func PrintVersion(c *k8s.Client, o Option) error {
 	fmt.Printf("knoxctl's version: %s (Built on %s)\n", GitSummary, BuildDate)
+	fmt.Println()
 
 	if o.LatestRelease {
 		releaseVer, err := fetchReleaseVersion()
@@ -39,14 +39,7 @@ func PrintVersion(c *k8s.Client, o Option) error {
 		fmt.Printf("knoxctl release version: [%v]\n", releaseVer)
 	}
 
-	systemdVersions, err := onboard.DetermineAgentVersions()
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	for agent, version := range systemdVersions {
-		fmt.Printf("%s: %s\n", agent, version)
-	}
+	return onboard.DetermineAgentVersions()
 
 	/*
 		// knoxctl based kubernetes installation is not done right now
@@ -61,7 +54,6 @@ func PrintVersion(c *k8s.Client, o Option) error {
 
 		fmt.Printf("kubearmor image (running) version: [%s]\n", kubearmorVersion)
 	*/
-	return nil
 }
 
 func getKubeArmorVersion(c *k8s.Client) (string, error) {

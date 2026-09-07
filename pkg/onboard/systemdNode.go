@@ -7,7 +7,7 @@ import (
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
-	"github.com/pterm/pterm"
+	"github.com/fatih/color"
 	"golang.org/x/mod/semver"
 )
 
@@ -17,7 +17,7 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 
 	if jc.FromSource != "" {
 
-		agents := make([]string, 0)
+		agents := make(map[string]struct{}, 0)
 		for _, obj := range jc.ClusterConfig.SystemdServiceObjects {
 
 			// skip installing on worker node
@@ -36,17 +36,16 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 				logger.Error("[source] error stopping %s: %s", obj.ServiceName, err)
 				return err
 			}
-			agents = append(agents, obj.AgentName)
-		}
-		p, _ := pterm.DefaultProgressbar.WithTotal(len(agents)).WithTitle("loading binaries").WithRemoveWhenDone(true).Start()
 
-		loadedCount, err := extractAgentsFromPath(jc.FromSource, agents, p)
+			agents[GetImage(obj.AgentImage, 2)] = struct{}{}
+		}
+		sp := cm.NewSpinner(color.GreenString("loading %v binaries", len(agents))).Start()
+		loadedCount, err := extractAgentsFromPath(jc.FromSource, agents, sp)
 		if err != nil {
 			return err
 		}
-		_, _ = p.Stop()
 		jc.SkipDownload = true
-
+		sp.Stop("")
 		logger.Info1("successfully loaded %v binaries", loadedCount)
 	}
 
