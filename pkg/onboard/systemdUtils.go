@@ -766,7 +766,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 		if !cc.SkipDownload {
 			// stop existing service first otherwise errors are encountered due to
 			// busy binary
-			err := StopSystemdService(obj.ServiceName, true, false)
+			err := StopSystemdService(obj.ServiceName, false, false)
 			if err != nil {
 				logger.Warn("Failed to stop existing systemd service %s: %s", obj.ServiceName, err.Error())
 			}
@@ -825,7 +825,7 @@ func DeboardSystemd(nodeType NodeType) error {
 		if obj.ServiceName == "" {
 			continue
 		}
-		err := StopSystemdService(obj.ServiceName, false, true)
+		err := StopSystemdService(obj.ServiceName, false, false)
 		if err != nil {
 			logger.Error("error stopping %s: %s", obj.ServiceName, err)
 			continue

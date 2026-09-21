@@ -31,7 +31,7 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 			if jc.Proxy.Enabled && obj.AgentName == cm.SpireAgent {
 				continue
 			}
-			err := StopSystemdService(obj.ServiceName, true, true)
+			err := StopSystemdService(obj.ServiceName, false, false)
 			if err != nil {
 				logger.Error("[source] error stopping %s: %s", obj.ServiceName, err)
 				return err
