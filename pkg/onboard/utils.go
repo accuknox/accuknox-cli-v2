@@ -43,6 +43,8 @@ var containerImages = []string{
 	"hardening-agent",
 }
 
+var removeFileSuffix = []string{".service", ".yaml", ".conf"}
+
 func DumpConfig(config interface{}, path string) error {
 	byteData, err := json.Marshal(config)
 	if err != nil {
@@ -139,6 +141,23 @@ func copyOrGenerateFile(userConfigDir, dirPath, filePath string, tempFuncs templ
 
 	fullFilePath := filepath.Join(dirPath, filePath)
 	fullFileDir := filepath.Dir(fullFilePath)
+
+	shouldRemove := func(name string) bool {
+		for _, suffix := range removeFileSuffix {
+			if strings.HasSuffix(name, suffix) {
+				return true
+			}
+		}
+		return false
+	}
+
+	if shouldRemove(filePath) {
+		if err := os.Remove(fullFilePath); err != nil {
+			if !os.IsNotExist(err) {
+				logger.Error("Failed to remove existing %s file: %v", filePath, err)
+			}
+		}
+	}
 
 	// create needed directories at the path to write
 	err := os.MkdirAll(fullFileDir, os.ModeDir|os.ModePerm)

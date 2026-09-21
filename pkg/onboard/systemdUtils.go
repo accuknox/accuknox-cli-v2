@@ -42,7 +42,6 @@ var (
 // prefixes will be extracted
 var allowedPrefixes = []string{
 	"opt/",
-	"usr/lib/systemd/system/",
 	"usr/local/",
 }
 
@@ -678,25 +677,39 @@ func ExtractAgent(fileName string) error {
 		if err != nil {
 			return err
 		}
-		file, err := os.Create(filepath.Clean(filename)) // #nosec G703
+
+		tmpFilename := filename + ".tmp"
+
+		outFile, err := os.Create(filepath.Clean(tmpFilename)) // #nosec G703
 		if err != nil {
 			return err
 		}
-		defer file.Close()
 
-		_, err = io.Copy(file, tarReader) // #nosec G110
+		_, err = io.Copy(outFile, tarReader) // #nosec G110
 		if err != nil {
+			outFile.Close()
+			os.Remove(tmpFilename)
 			return err
 		}
 
-		// Set execute permissions for the binaries
-
+		// Set execute permissions for the binaries before the rename
 		if header.Mode&0o111 != 0 {
-			err := os.Chmod(filename, 0o755) // #nosec G302 G703
-			if err != nil {
+			if err := outFile.Chmod(0o755); err != nil { // #nosec G302
+				outFile.Close()
+				os.Remove(tmpFilename)
 				return err
 			}
 		}
+
+		if err := outFile.Close(); err != nil {
+			os.Remove(tmpFilename)
+			return err
+		}
+		if err := os.Rename(tmpFilename, filename); err != nil {
+			os.Remove(tmpFilename)
+			return err
+		}
+
 	}
 
 	return nil
@@ -758,7 +771,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 		if !cc.SkipDownload {
 			// stop existing service first otherwise errors are encountered due to
 			// busy binary
-			err := StopSystemdService(obj.ServiceName, true, true)
+			err := StopSystemdService(obj.ServiceName, true, false)
 			if err != nil {
 				logger.Warn("Failed to stop existing systemd service %s: %s", obj.ServiceName, err.Error())
 			}
