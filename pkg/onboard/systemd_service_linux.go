@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	dbus "github.com/coreos/go-systemd/v22/dbus"
@@ -79,6 +80,18 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 		logger.Info1("Stopping existing %s...", serviceName)
 		<-stopChan
 		logger.Info1("%s stopped successfully.", serviceName)
+	}
+
+	if force {
+		if err := conn.KillUnitWithTarget(
+			ctx,
+			serviceName,
+			dbus.All,
+			int32(syscall.SIGKILL)); err != nil {
+			if !strings.Contains(err.Error(), "not loaded") {
+				logger.Error("Failed to kill leftover processes of %s: %v", serviceName, err)
+			}
+		}
 	}
 
 	if !skipDeleteDisable {
