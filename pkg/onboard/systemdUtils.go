@@ -18,13 +18,14 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/Masterminds/sprig"
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
-	"github.com/opencontainers/go-digest"
 	"github.com/coreos/go-systemd/v22/dbus"
+	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/mod/semver"
 	"oras.land/oras-go/v2"
@@ -771,7 +772,7 @@ func (cc *ClusterConfig) SystemdInstall() error {
 		if !cc.SkipDownload {
 			// stop existing service first otherwise errors are encountered due to
 			// busy binary
-			err := StopSystemdService(obj.ServiceName, true, false)
+			err := StopSystemdService(obj.ServiceName, false, false)
 			if err != nil {
 				logger.Warn("Failed to stop existing systemd service %s: %s", obj.ServiceName, err.Error())
 			}
@@ -879,6 +880,18 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 		logger.Info1("%s stopped successfully.", serviceName)
 	}
 
+	if force {
+		if err := conn.KillUnitWithTarget(
+			ctx,
+			serviceName,
+			dbus.All,
+			int32(syscall.SIGKILL)); err != nil {
+			if !strings.Contains(err.Error(), "not loaded") {
+				logger.Error("Failed to kill leftover processes of %s: %v", serviceName, err)
+			}
+		}
+	}
+
 	if !skipDeleteDisable {
 		if _, err := conn.DisableUnitFilesContext(ctx, []string{serviceName}, false); err != nil {
 
@@ -925,7 +938,7 @@ func DeboardSystemd(nodeType NodeType) error {
 		if obj.ServiceName == "" {
 			continue
 		}
-		err := StopSystemdService(obj.ServiceName, false, true)
+		err := StopSystemdService(obj.ServiceName, false, false)
 		if err != nil {
 			logger.Error("error stopping %s: %s", obj.ServiceName, err)
 			continue
