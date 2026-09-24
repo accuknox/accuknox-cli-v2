@@ -855,46 +855,45 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 	}
 	defer conn.Close()
 
-	stopChan := make(chan string, 1)
-
+	loaded := true
+	state := ""
 	property, err := conn.GetUnitPropertyContext(ctx, serviceName, "ActiveState")
 	if err != nil {
-		return fmt.Errorf("Failed to check service status: %s", err.Error())
-	}
-
-	state, ok := property.Value.Value().(string)
-	if !ok {
-		return fmt.Errorf("failed to get %s service state", serviceName)
-	}
-	if state != "active" && state != "deactivating" && !force {
-		return nil
-	}
-
-	if _, err := conn.StopUnitContext(ctx, serviceName, "replace", stopChan); err != nil {
 		if !strings.Contains(err.Error(), "not loaded") {
-			return fmt.Errorf("Failed to stop existing %s service: %v\n", serviceName, err)
+			return fmt.Errorf("failed to check service status: %v", err)
 		}
+		loaded = false
 	} else {
-		logger.Info1("Stopping existing %s...", serviceName)
-		<-stopChan
-		logger.Info1("%s stopped successfully.", serviceName)
+		state, _ = property.Value.Value().(string)
 	}
 
-	if force {
-		if err := conn.KillUnitWithTarget(
-			ctx,
-			serviceName,
-			dbus.All,
-			int32(syscall.SIGKILL)); err != nil {
+	if loaded && state != "inactive" && state != "failed" {
+		stopChan := make(chan string, 1)
+		if _, err := conn.StopUnitContext(ctx, serviceName, "replace", stopChan); err != nil {
 			if !strings.Contains(err.Error(), "not loaded") {
-				logger.Error("Failed to kill leftover processes of %s: %v", serviceName, err)
+				return fmt.Errorf("failed to stop existing %s service: %v", serviceName, err)
+			}
+		} else {
+			logger.Info1("Stopping existing %s...", serviceName)
+			select {
+			case res := <-stopChan:
+				if res != "done" {
+					logger.Error("Stop job for %s finished with result %q", serviceName, res)
+				} else {
+					logger.Info1("%s stopped successfully.", serviceName)
+				}
+			case <-time.After(2 * time.Minute):
+				logger.Error("Timed out waiting for %s to stop", serviceName)
 			}
 		}
 	}
 
+	if loaded {
+		killLeftovers(ctx, conn, serviceName)
+	}
+
 	if !skipDeleteDisable {
 		if _, err := conn.DisableUnitFilesContext(ctx, []string{serviceName}, false); err != nil {
-
 			if !strings.Contains(err.Error(), "does not exist") &&
 				!strings.Contains(err.Error(), "No such file or directory") {
 				logger.Error("Failed to disable %s : %v", serviceName, err)
@@ -919,6 +918,20 @@ func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error
 	}
 
 	return nil
+}
+func killLeftovers(ctx context.Context, conn *dbus.Conn, serviceName string) {
+	if err := conn.KillUnitWithTarget(ctx, serviceName, dbus.All, int32(syscall.SIGTERM)); err != nil {
+		if !strings.Contains(err.Error(), "not loaded") {
+			logger.Info1("No leftover processes for %s (%v)", serviceName, err)
+		}
+		return
+	}
+
+	time.Sleep(5 * time.Second)
+
+	if err := conn.KillUnitWithTarget(ctx, serviceName, dbus.All, int32(syscall.SIGKILL)); err != nil {
+		logger.Info1("SIGKILL of leftovers for %s: %v", serviceName, err)
+	}
 }
 
 func Deletedir(dirName string) {
