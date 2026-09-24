@@ -798,7 +798,7 @@ func extractAgentsFromPath(rootPath string, agents map[string]struct{}, sp *cm.S
 			missing = append(missing, img)
 
 		}
-		return count, fmt.Errorf("failed to process all images, missing images: %v", missing)
+		return count, fmt.Errorf("failed to process all images, missing binaries: %v", missing)
 	}
 
 	return count, nil

@@ -82,7 +82,9 @@ func DetermineAgentVersions() error {
 		infos = append(infos, info)
 	}
 
-	printVersionInfo(infos)
+	if len(infos) > 0 {
+		printVersionInfo(infos)
+	}
 
 	return nil
 }
