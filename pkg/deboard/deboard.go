@@ -123,6 +123,9 @@ func GetInstalledObjects() (map[string]dockerContainerTypes.Summary, []string, e
 	}
 
 	for _, container := range containerList {
+		if len(container.Names) <= 0 {
+			continue
+		}
 		containerName := strings.TrimPrefix(container.Names[0], "/")
 		if _, ok := allContainers[containerName]; ok {
 			installedContainers[containerName] = container
