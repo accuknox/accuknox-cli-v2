@@ -5,6 +5,9 @@
 package cmd
 
 import (
+	"errors"
+	"os"
+
 	//"github.com/accuknox/accuknox-cli/cmd/license"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/rs/zerolog/log"
@@ -50,5 +53,8 @@ func init() {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	if os.Geteuid() != 0 {
+		cobra.CheckErr(errors.New("knoxctl must be run as root; use sudo"))
+	}
 	cobra.CheckErr(rootCmd.Execute())
 }
