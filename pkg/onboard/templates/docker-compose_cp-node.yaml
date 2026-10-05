@@ -5,6 +5,10 @@ volumes:
 {{- end }}
   kubearmor-init-vol:
     name: kubearmor-init-vol
+{{- if .DeployRMQ }}
+  rabbitmq-data:
+    name: accuknox-rabbitmq-data
+{{- end }}
 
 services:
 {{- if ne .ProxyEnabled true }}
@@ -716,8 +720,3 @@ networks:
       config:
         - subnet: {{.NetworkCIDR}}
 
-{{- if .DeployRMQ }}
-volumes:
-  rabbitmq-data:
-    name: accuknox-rabbitmq-data
-{{- end }}
