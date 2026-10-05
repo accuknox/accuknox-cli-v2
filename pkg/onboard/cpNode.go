@@ -205,10 +205,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	ic.TCArgs.AccessKey = ic.AccessKey
 
-	ic.TCArgs.RMQUsername,
-		ic.TCArgs.RMQPassword,
-		err = getRMQUserPass(ic.Tls.RMQCredentials)
-	if err != nil {
+	if err = ic.prepareRMQCredentials(); err != nil {
 		return err
 	}
 
@@ -267,7 +264,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	// List of config files to be generated or copied
 	// TODO: Refactor later
-	agentMeta := getAgentConfigMeta(ic.Tls.Enabled)
+	agentMeta := getAgentConfigMeta(ic.Tls.Enabled || ic.Tls.RMQEnabled)
 
 	if semver.Compare(ic.AgentsVersion, "v0.11.0") < 0 {
 		ic.DeployDiscover = true
@@ -512,10 +509,8 @@ func (ic *InitConfig) handleTLS() error {
 	if ic.Tls.Enabled && ic.Tls.CaPath == "" && len(paths) == 0 {
 		ic.Tls.Generate = true
 	}
-	if ic.RMQCredentials == "" {
-		ic.TCArgs.RMQUsername, ic.TCArgs.RMQPassword = GenerateUserAndPassword()
-		ic.TCArgs.RMQPasswordHash = GetHash(ic.TCArgs.RMQPassword)
-		ic.RMQCredentials = Encode([]byte(ic.TCArgs.RMQUsername + ":" + ic.TCArgs.RMQPassword))
+	if err := ic.prepareRMQCredentials(); err != nil {
+		return err
 	}
 	ic.TCArgs.RMQTlsPort = "5672"
 

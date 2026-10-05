@@ -4,6 +4,7 @@
       {
         "name": "{{.RMQUsername}}",
         "password_hash": "{{.RMQPasswordHash}}",
+        "hashing_algorithm": "rabbit_password_hashing_sha256",
         "tags": "administrator"
       }
     ],

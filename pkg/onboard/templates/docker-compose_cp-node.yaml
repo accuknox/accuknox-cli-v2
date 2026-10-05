@@ -679,6 +679,7 @@ services:
   rabbitmq:
     image: {{.RMQImage}}
     container_name: rabbitmq
+    hostname: rabbitmq
     ports:
       - "5672:5672"
       - "5671:5671"
@@ -692,11 +693,14 @@ services:
     extra_hosts:
       - "kubearmor:host-gateway"
     volumes:
+      - "rabbitmq-data:/var/lib/rabbitmq"
       - "{{.ConfigPath}}/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf"
       - "{{.ConfigPath}}/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json"
+      {{- if .TlsEnabled }}
       - "{{.ConfigPath}}/rabbitmq/ca_certificate.pem:/etc/ssl/ca_certificate.pem"
       - "{{.ConfigPath}}/rabbitmq/certificate.pem:/etc/ssl/server_certificate.pem"
       - "{{.ConfigPath}}/rabbitmq/key.pem:/etc/ssl/server_key.pem"
+      {{- end }}
     logging:
       driver: {{.DockerLogDriver}}
       options:
@@ -711,3 +715,9 @@ networks:
     ipam:
       config:
         - subnet: {{.NetworkCIDR}}
+
+{{- if .DeployRMQ }}
+volumes:
+  rabbitmq-data:
+    name: accuknox-rabbitmq-data
+{{- end }}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -616,12 +617,15 @@ func getRMQUserPass(credentials string) (string, string, error) {
 		return "", "", nil
 	}
 
-	rmqUserPass := strings.Split(Decode(credentials), ":")
-	if len(rmqUserPass) != 2 {
-		return "", "", fmt.Errorf("invalid RMQ credentials")
+	decoded, err := base64.StdEncoding.DecodeString(credentials)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid RMQ credentials: %w", err)
 	}
-
-	return strings.TrimSpace(rmqUserPass[0]), strings.TrimSpace(rmqUserPass[1]), nil
+	username, password, ok := strings.Cut(string(decoded), ":")
+	if !ok || username == "" || password == "" {
+		return "", "", fmt.Errorf("invalid RMQ credentials: expected base64(username:password) with a non-empty username and password")
+	}
+	return username, password, nil
 }
 
 func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath string) error {
@@ -632,7 +636,7 @@ func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath stri
 		rmqPassword = "guest"
 	}
 
-	connectionString := fmt.Sprintf("amqp://%s:%s@%s", rmqUsername, rmqPassword, rmqAddress)
+	connectionString := (&url.URL{Scheme: "amqp", Host: rmqAddress, User: url.UserPassword(rmqUsername, rmqPassword)}).String()
 	if caCert != "" || caPath != "" {
 		connectionString = strings.Replace(connectionString, "amqp://", "amqps://", 1)
 	}
@@ -644,18 +648,23 @@ func testRMQConnection(rmqAddress, rmqUsername, rmqPassword, caCert, caPath stri
 	}
 
 	if caCert != "" || caPath != "" {
-
+		var caBytes []byte
 		if caPath != "" {
 			ca, err := os.ReadFile(filepath.Clean(caPath))
 			if err != nil {
 				return err
 			}
-			caCert = string(ca)
+			caBytes = ca
+		} else {
+			decoded, err := base64.StdEncoding.DecodeString(caCert)
+			if err != nil {
+				return fmt.Errorf("invalid RabbitMQ CA certificate encoding: %w", err)
+			}
+			caBytes = decoded
 		}
 
-		decoded := Decode(caCert)
 		caCertPool := x509.NewCertPool()
-		if ok := caCertPool.AppendCertsFromPEM([]byte(decoded)); !ok {
+		if ok := caCertPool.AppendCertsFromPEM(caBytes); !ok {
 			return fmt.Errorf("failed to add server CA certificates to client pool")
 		}
 		config.TLSClientConfig = &tls.Config{
