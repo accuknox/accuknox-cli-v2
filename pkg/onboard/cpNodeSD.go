@@ -41,11 +41,21 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	ic.TCArgs.RMQEnabled = ic.Tls.RMQEnabled
 
+	hasRMQAuth := ic.Tls.RMQCredentials != "" || ic.RMQCredentials != ""
 	var err error
+	if err = ic.prepareRMQCredentials(); err != nil {
+		return err
+	}
 	if ic.Tls.Enabled {
 		ic.TCArgs.TlsEnabled = ic.Tls.Enabled
 		ic.TCArgs.TlsCertFile = fmt.Sprintf("%s%s%s/%s", ic.UserConfigPath, "/opt", cm.DefaultCACertDir, cm.DefaultEncodedFileName)
 		if err = ic.handleTLS(); err != nil {
+			return err
+		}
+	}
+
+	if (ic.Tls.RMQEnabled || ic.Tls.Enabled) && !hasRMQAuth {
+		if err = ic.saveSystemdRMQConfiguration(); err != nil {
 			return err
 		}
 	}
@@ -81,23 +91,25 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 	if ic.RMQServer != "" {
 		ic.TCArgs.RMQAddr = ic.RMQServer
 		kmuxConfigArgs.RMQServer = ic.TCArgs.RMQAddr
-	} else if ic.CPNodeAddr != "" {
-		ic.TCArgs.RMQAddr = ic.CPNodeAddr + ":5672"
-		kmuxConfigArgs.RMQServer = ic.TCArgs.RMQAddr
 	} else {
-		ic.TCArgs.RMQAddr = "0.0.0.0:5672"
+		ic.TCArgs.RMQAddr = "127.0.0.1:5672"
 		kmuxConfigArgs.RMQServer = ic.TCArgs.RMQAddr
 	}
 
-	ic.TCArgs.RMQUsername,
-		ic.TCArgs.RMQPassword,
-		err = getRMQUserPass(ic.Tls.RMQCredentials)
-	if err != nil {
-		return err
-	}
+	ic.TCArgs.RMQAddr, ic.TCArgs.RMQUsername, ic.TCArgs.RMQPassword = ic.controlPlaneRMQConnection(ic.TCArgs.RMQAddr, hasRMQAuth)
+	kmuxConfigArgs.RMQServer = ic.TCArgs.RMQAddr
+	kmuxConfigArgs.RMQUsername = ic.TCArgs.RMQUsername
+	kmuxConfigArgs.RMQPassword = ic.TCArgs.RMQPassword
 
 	if ic.TCArgs.RMQAddr != "" {
-		if err = testRMQConnection(ic.TCArgs.RMQAddr, ic.TCArgs.RMQUsername, ic.TCArgs.RMQPassword, ic.Tls.CaCert, ic.Tls.CaPath); err != nil {
+		caCert := ic.Tls.CaCert
+		if caCert == "" && ic.Tls.Enabled {
+			caCert = ic.CaCert
+		}
+		if err = testRMQConnection(ic.TCArgs.RMQAddr, ic.TCArgs.RMQUsername, ic.TCArgs.RMQPassword, caCert, ic.Tls.CaPath); err != nil {
+			if ic.TCArgs.RMQUsername == "guest" {
+				return fmt.Errorf("local RabbitMQ guest connection failed: %w; guest must exist and allow connections from this loopback endpoint. Docker bridge brokers require the generated worker account: run the saved RabbitMQ setup script, then retry with --auth=%q", err, ic.RMQCredentials)
+			}
 			return err
 		}
 	}

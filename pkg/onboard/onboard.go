@@ -269,7 +269,16 @@ func (cc *ClusterConfig) PrintJoinCommand() {
 	}
 
 	if cc.CaCert != "" {
-		command = fmt.Sprintf("%s --tls --ca-cert=\"%s\" --auth=\"%s\"", command, cc.CaCert, cc.RMQCredentials)
+		command = fmt.Sprintf("%s --tls --ca-cert=\"%s\"", command, cc.CaCert)
+	}
+	if cc.Tls.RMQEnabled {
+		command += " --rmq"
+	}
+	if cc.RMQCredentials != "" {
+		command = fmt.Sprintf("%s --auth=\"%s\"", command, cc.RMQCredentials)
+	}
+	if cc.RMQServer != "" {
+		command = fmt.Sprintf("%s --rmq-address=\"%s\"", command, cc.RMQServer)
 	}
 	if cc.Tls.Enabled || cc.Tls.RMQEnabled {
 		command = fmt.Sprintf("%s --deploy-summary-engine", command)

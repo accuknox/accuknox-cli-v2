@@ -223,6 +223,8 @@ Please assign appropriate IP address to --cp-node-addr to make sure
 that worker nodes can connect to this node`))
 
 		onboardConfig.PrintJoinCommand()
+		fmt.Println()
+		onboardConfig.PrintRMQSetupScripts()
 
 		return nil
 	},

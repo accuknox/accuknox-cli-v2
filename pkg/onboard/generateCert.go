@@ -202,7 +202,6 @@ func Decode(input string) string {
 func generateSalt() ([4]byte, error) {
 	salt := [4]byte{}
 	_, err := rand.Read(salt[:])
-	salt = [4]byte{0, 0, 0, 0}
 	return salt, err
 }
 
