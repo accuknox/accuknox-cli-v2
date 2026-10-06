@@ -329,7 +329,7 @@ func getSpireDetails(addrs, tbAddr string) (string, string, string, error) {
 	}
 	if spirePort == "80" {
 		// default spire port
-		spirePort = "8081"
+		spirePort = "443"
 	}
 
 	// currently unused as we use insecure bootstrap

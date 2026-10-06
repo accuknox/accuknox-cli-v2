@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -904,4 +905,18 @@ func GetImage(img string, part int) string {
 		return imgSplits[part]
 	}
 	return strings.Join(imgSplits, "_")
+}
+
+// defaultKnoxGatewayURL supplies the TLS port when only a host is provided.
+func defaultKnoxGatewayURL(address string) string {
+	if address == "" {
+		return address
+	}
+	if host, port, err := net.SplitHostPort(address); err == nil {
+		if port == "" {
+			return net.JoinHostPort(host, "443")
+		}
+		return address
+	}
+	return net.JoinHostPort(strings.Trim(address, "[]"), "443")
 }
