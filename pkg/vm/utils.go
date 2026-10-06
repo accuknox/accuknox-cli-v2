@@ -321,8 +321,8 @@ func getInstalledAgents() (map[string]string, onboard.VMMode, onboard.NodeType) 
 func getPortList() []portInfo {
 	var portsToCheck = []portInfo{
 		// Outbound rules for connecting to external SaaS services
-		{portNo: "8081", ruleType: "out"}, // spire-agent to spire-server
-		{portNo: "3000", ruleType: "out"}, // control plane to knox-gateway
+		{portNo: "443", ruleType: "out"}, // spire-agent to spire-server
+		{portNo: "443", ruleType: "out"}, // control plane to knox-gateway
 		{portNo: "443", ruleType: "out"},  // PEA to PPS
 
 		// Internal rules
