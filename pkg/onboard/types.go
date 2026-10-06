@@ -213,7 +213,8 @@ type InitConfig struct {
 	EnableLogs          bool   `json:"enable_logs,omitempty"`
 
 	// internal
-	TCArgs TemplateConfigArgs `json:"tc_args,omitempty"`
+	TCArgs      TemplateConfigArgs `json:"tc_args,omitempty"`
+	rmqSetupDir string
 }
 
 type JoinConfig struct {

@@ -13,8 +13,8 @@ spire:
 
 rabbitmq:
   server: {{.RMQServer}}
-  username: {{.RMQUsername}}
-  password: {{.RMQPassword}}
+  username: {{.RMQUsername | quote}}
+  password: {{.RMQPassword | quote}}
   exchange:
     name: {{.ExchangeName}}
     type: {{.ExchangeType}} # exchange type
