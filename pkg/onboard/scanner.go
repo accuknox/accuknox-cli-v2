@@ -53,7 +53,7 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 	}
 
 	cc.RRAConfigObject.SpireSecretDir = spireDir
-	cc.RRAConfigObject.GatewayServer = knoxGateway
+	cc.RRAConfigObject.GatewayServer = defaultKnoxGatewayURL(knoxGateway)
 
 	if cc.Mode == VMMode_Systemd {
 		cc.RRAConfigObject.Schedule, err = ConvertCronToSystemd(schedule)

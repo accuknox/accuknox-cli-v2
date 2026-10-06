@@ -40,7 +40,7 @@ func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGatew
 		JoinToken:     joinToken,
 		SpireHost:     spireHost,
 		PPSHost:       ppsHost,
-		KnoxGateway:   knoxGateway,
+		KnoxGateway:   defaultKnoxGatewayURL(knoxGateway),
 
 		SpireTrustBundleURL: spireTrustBundle,
 		EnableLogs:          enableLogs,
