@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	_ "embed"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -11,16 +12,45 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 )
 
 // prepareRMQCredentials prepares the broker account advertised to worker nodes.
 func (ic *InitConfig) prepareRMQCredentials() error {
+	managedDockerBroker := ic.Mode == VMMode_Docker && ic.DeployRMQ
 	credentials := ic.Tls.RMQCredentials
 	if credentials == "" {
 		credentials = ic.RMQCredentials
 	}
-	if credentials == "" && (ic.Tls.Enabled || ic.Tls.RMQEnabled) && (ic.DeployRMQ || ic.Mode == VMMode_Systemd) {
+	if credentials == "" && managedDockerBroker && ic.TCArgs.ConfigPath != "" {
+		// Reuse the previous join credentials instead of generating a new
+		// password while the persistent broker still has the old account.
+		data, err := os.ReadFile(filepath.Join(ic.TCArgs.ConfigPath, common.KnoxctlConfigFilename))
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("reading previous RabbitMQ configuration: %w", err)
+		}
+		if err == nil {
+			var previous struct {
+				Credentials string `json:"rmq_credentials"`
+				TLS         TLS    `json:"tls"`
+				Cluster     struct {
+					Credentials string `json:"rmq_credentials"`
+					TLS         TLS    `json:"tls"`
+				} `json:"cluster_config"`
+			}
+			if err := json.Unmarshal(data, &previous); err != nil {
+				return fmt.Errorf("reading previous RabbitMQ configuration: %w", err)
+			}
+			for _, saved := range []string{previous.Cluster.TLS.RMQCredentials, previous.Cluster.Credentials, previous.TLS.RMQCredentials, previous.Credentials} {
+				if saved != "" {
+					credentials = saved
+					break
+				}
+			}
+		}
+	}
+	if credentials == "" && (managedDockerBroker || ((ic.Tls.Enabled || ic.Tls.RMQEnabled) && (ic.DeployRMQ || ic.Mode == VMMode_Systemd))) {
 		secret := make([]byte, 24)
 		if _, err := rand.Read(secret); err != nil {
 			return fmt.Errorf("generating RabbitMQ password: %w", err)
@@ -31,7 +61,7 @@ func (ic *InitConfig) prepareRMQCredentials() error {
 	if err != nil {
 		return err
 	}
-	if (ic.Tls.Enabled || ic.Tls.RMQEnabled) && username == "guest" {
+	if (managedDockerBroker || ic.Tls.Enabled || ic.Tls.RMQEnabled) && username == "guest" {
 		return fmt.Errorf("RabbitMQ remote connections require a non-guest user; supply --auth=base64(username:password)")
 	}
 	ic.RMQCredentials = credentials
@@ -153,6 +183,30 @@ func saveRMQInstructions(dir, name, content string) error {
 	}
 	if err := os.Rename(file.Name(), filepath.Join(dir, name)); err != nil {
 		return fmt.Errorf("saving RabbitMQ instructions: %w", err)
+	}
+	return nil
+}
+
+func validateRabbitMQMountSources(configPath string, tlsEnabled, allowMissing bool) error {
+	names := []string{"rabbitmq.conf", "definitions.json"}
+	if tlsEnabled {
+		names = append(names, "ca_certificate.pem", "certificate.pem", "key.pem")
+	}
+	for _, name := range names {
+		path := filepath.Join(configPath, "rabbitmq", name)
+		info, err := os.Stat(path)
+		if allowMissing && os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("checking RabbitMQ bind-mount source %s: %w", path, err)
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("RabbitMQ bind-mount source %s must be a regular file; move the invalid path aside and rerun onboarding", path)
+		}
+		if !allowMissing && info.Size() == 0 {
+			return fmt.Errorf("RabbitMQ bind-mount source %s is empty", path)
+		}
 	}
 	return nil
 }

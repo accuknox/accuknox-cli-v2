@@ -28,7 +28,7 @@ var sysdumpVMCmd = &cobra.Command{
 		if vmMode == "" {
 			installedSystemdServices, err = onboard.CheckInstalledSystemdServices()
 			if err != nil {
-				return fmt.Errorf(color.RedString("error checking systemd files"))
+				return fmt.Errorf("%s", color.RedString("error checking systemd files"))
 			}
 
 			if len(installedSystemdServices) > 0 {
@@ -45,7 +45,7 @@ var sysdumpVMCmd = &cobra.Command{
 
 		// create directory
 		tmpDirRoot := os.TempDir()
-		sysdumpDir := fmt.Sprintf(fmt.Sprintf("knoxctl-sysdump-%s-", hostname))
+		sysdumpDir := fmt.Sprintf("knoxctl-sysdump-%s-", hostname)
 		tmpDir, err := os.MkdirTemp(tmpDirRoot, sysdumpDir)
 		if err != nil {
 			tmpDirRoot = "."
@@ -74,7 +74,7 @@ var sysdumpVMCmd = &cobra.Command{
 			// TODO: sysdump for docker mode
 
 		default:
-			fmt.Printf(color.RedString("vm mode: %s invalid, accepted values (docker/systemd)", vmMode))
+			fmt.Print(color.RedString("vm mode: %s invalid, accepted values (docker/systemd)", vmMode))
 		}
 
 		tarFileName := filepath.Base(tmpDir) + ".tar.gz"

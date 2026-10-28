@@ -37,6 +37,14 @@ var joinNodeCmd = &cobra.Command{
 	Short: "Join this worker node with the control plane node for onboarding onto SaaS",
 	Long:  "Join this worker node with the control plane node for onboarding onto SaaS",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if enableVMScan {
+			if err := validateLegacyRRAFlags(cmd); err != nil {
+				return err
+			}
+		}
+		if err := validateOnboardScanners(cmd); err != nil {
+			return err
+		}
 		inspectionOptions := options
 		inspectionOptions.Print = printInspectOutput
 
@@ -205,7 +213,11 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 		if enableVMScan {
-			err := joinConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, true, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
+			artifactToken, tokenErr := resolveArtifactToken(authToken, authTokenFile)
+			if tokenErr != nil {
+				return tokenErr
+			}
+			err := joinConfig.InitRRAConfig(artifactToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, true, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
 			if err != nil {
 				logger.Print("error creating RRA config in %s mode", vmMode)
 			} else {
@@ -214,6 +226,10 @@ var joinNodeCmd = &cobra.Command{
 					logger.Print("error installing RRA in %s mode", vmMode)
 				}
 			}
+		}
+
+		if err := installOnboardScanners(cmd, &joinConfig.ClusterConfig); err != nil {
+			return err
 		}
 
 		logger.Print("VM successfully joined with control-plane!")
