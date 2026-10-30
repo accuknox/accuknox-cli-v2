@@ -22,7 +22,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 )
 
-// Scan runs only Omni's VM vulnerability scanner, without container or malware scanning.
+// Scan runs Omni's VM vulnerability scanner and optional malware scanning, without container scanning.
 func Scan(ctx context.Context, c Config, out io.Writer) error {
 	return ScanWithProgress(ctx, c, out, os.Stderr)
 }
@@ -53,6 +53,10 @@ func ScanWithProgress(ctx context.Context, c Config, out, logs io.Writer) (scanE
 		}
 	}
 	pub = observedPublisher{next: pub, progress: progress, timeout: c.UploadTimeout, remote: c.OutputDir == ""}
+	if c.MalwareScan {
+		progress.stage(ctx, "checking malware scanner prerequisites")
+		checkMalwarePrerequisites(&c, logs)
+	}
 	progress.stage(ctx, "detecting host filesystem")
 	if c.RootFS == "" {
 		c.RootFS, err = util.FindRootFS()
@@ -107,11 +111,15 @@ func ScanWithProgress(ctx context.Context, c Config, out, logs io.Writer) (scanE
 	progress.stage(ctx, "creating VM vulnerability scan job")
 	opts := []agent.OptFunc{
 		agent.WithLogger(progress.logger),
-		agent.WithMalwareScanDisabled(),
 		agent.WithContainerVulnScanDisabled(),
 		agent.WithVulnDBDirectory(c.DBDirectory),
 		agent.WithOverrideHostname(c.Hostname),
 		agent.WithClusterName(c.ClusterName),
+	}
+	if !c.MalwareScan {
+		opts = append(opts, agent.WithMalwareScanDisabled())
+	} else {
+		opts = append(opts, agent.WithClamAVDBDirectory(c.malwareDBDirectory()), agent.WithMalwareScanTargetDirectory(c.RootFS))
 	}
 	if c.ClusterID != nil {
 		opts = append(opts, agent.WithClusterID(*c.ClusterID))

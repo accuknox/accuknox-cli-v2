@@ -15,23 +15,32 @@ const (
 )
 
 type Config struct {
-	Endpoint      string
-	Token         string
-	TenantID      uint
-	Label         string
-	ClusterID     *int
-	ClusterName   string
-	RootFS        string
-	DBDirectory   string
-	Hostname      string
-	SkipDBUpdate  bool
-	Offline       bool
-	OutputDir     string
-	ScriptURL     string
-	ScriptPath    string
-	BinaryURL     string
-	InstallDir    string
-	UploadTimeout time.Duration
+	Endpoint           string
+	Token              string
+	TenantID           uint
+	Label              string
+	ClusterID          *int
+	ClusterName        string
+	RootFS             string
+	DBDirectory        string
+	Hostname           string
+	SkipDBUpdate       bool
+	Offline            bool
+	OutputDir          string
+	ScriptURL          string
+	ScriptPath         string
+	BinaryURL          string
+	InstallDir         string
+	UploadTimeout      time.Duration
+	MalwareScan        bool
+	MalwareDBDirectory string
+}
+
+func (c Config) malwareDBDirectory() string {
+	if c.MalwareDBDirectory != "" {
+		return c.MalwareDBDirectory
+	}
+	return "/var/lib/clamav"
 }
 
 func (c Config) Validate() error {

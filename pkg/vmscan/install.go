@@ -112,11 +112,16 @@ func install(ctx context.Context, c Config, scriptURL string, client *http.Clien
 	if len(script) == 0 || len(script) > maxScriptSize {
 		return fmt.Errorf("invalid Omni installer size")
 	}
+	checkMalwarePrerequisites(&c, stderr)
 	cmd := exec.CommandContext(ctx, "bash", "-s", "-",
 		"--artifact-endpoint="+c.Endpoint,
 		"--tenant-id="+strconv.FormatUint(uint64(c.TenantID), 10),
 		"--artifact-label="+c.Label)
-	cmd.Env = append(os.Environ(), "OMNI_ARTIFACT_API_TOKEN="+c.Token)
+	if c.MalwareScan {
+		cmd.Args = append(cmd.Args, "--clamav-db-directory="+c.malwareDBDirectory())
+	}
+	cmd.Env = append(os.Environ(), "OMNI_ARTIFACT_API_TOKEN="+c.Token,
+		"OMNI_SKIP_MALWARE_SCAN="+strconv.FormatBool(!c.MalwareScan))
 	if runtime.GOOS == "linux" {
 		cmd.Env = append(cmd.Env, "OMNI_INSTALL_SYSTEMD_DIR="+onboard.VMScannerSystemdDirectory)
 	}
@@ -140,7 +145,7 @@ func install(ctx context.Context, c Config, scriptURL string, client *http.Clien
 		if installDir == "" {
 			installDir = "/usr/local/bin"
 		}
-		cmd.Env = append(cmd.Env, "OMNI_SKIP_DOWNLOAD=true", "OMNI_SKIP_MALWARE_SCAN=true", "OMNI_HOME_DIR="+directory, "OMNI_INSTALL_PATH="+installDir)
+		cmd.Env = append(cmd.Env, "OMNI_SKIP_DOWNLOAD=true", "OMNI_HOME_DIR="+directory, "OMNI_INSTALL_PATH="+installDir)
 	}
 	cmd.Stdin = bytes.NewReader(script)
 	cmd.Stdout, cmd.Stderr = stdout, stderr

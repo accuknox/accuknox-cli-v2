@@ -26,7 +26,7 @@ func (c Config) ValidateScheduled() error {
 			return err
 		}
 	}
-	for _, path := range []string{c.RootFS, c.DBDirectory, c.OutputDir} {
+	for _, path := range []string{c.RootFS, c.DBDirectory, c.OutputDir, c.MalwareDBDirectory} {
 		if path != "" && !filepath.IsAbs(path) {
 			return fmt.Errorf("scheduled VM scanner filesystem paths must be absolute: %s", path)
 		}
@@ -43,6 +43,7 @@ func InstallScheduled(ctx context.Context, c Config, stdout, stderr io.Writer) e
 	if err := c.ValidateScheduled(); err != nil {
 		return err
 	}
+	checkMalwarePrerequisites(&c, stderr)
 	executable, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("locating knoxctl: %w", err)
@@ -84,6 +85,9 @@ func scheduledArguments(c Config) []string {
 	}
 	if c.Offline {
 		args = append(args, "--offline")
+	}
+	if c.MalwareScan {
+		args = append(args, "--malware-scan", "--malware-db-directory="+c.malwareDBDirectory())
 	}
 	return args
 }

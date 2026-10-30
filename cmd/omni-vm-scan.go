@@ -104,6 +104,8 @@ func newOmniVMScanCmdWithLifecycle(schedule func(context.Context, vmscan.Config,
 	c.Flags().StringVar(&config.ScriptPath, "script-path", "", "local external installer file (requires --use-script)")
 	c.Flags().StringVar(&config.BinaryURL, "omni-binary-url", "", "Omni binary download URL passed to the installer (for internal mirrors)")
 	c.Flags().StringVar(&config.InstallDir, "omni-install-dir", "/usr/local/bin", "Omni installation directory; offline installation requires an executable omni here")
+	c.Flags().BoolVar(&config.MalwareScan, "malware-scan", false, "enable malware scanning for direct scans and native or script installations; skips malware scanning with guidance if ClamAV tools or signatures are missing")
+	c.Flags().StringVar(&config.MalwareDBDirectory, "malware-db-directory", "/var/lib/clamav", "ClamAV signature database directory")
 	c.MarkFlagsMutuallyExclusive("script-url", "script-path")
 	c.MarkFlagsMutuallyExclusive("use-script", "run-once", "uninstall")
 	return c
