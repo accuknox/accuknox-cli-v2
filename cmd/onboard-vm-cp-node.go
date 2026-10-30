@@ -44,6 +44,14 @@ var cpNodeCmd = &cobra.Command{
 	Short: "Initialize a control plane node for onboarding onto SaaS",
 	Long:  "Initialize a control plane node for onboarding onto SaaS",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if enableVMScan {
+			if err := validateLegacyRRAFlags(cmd); err != nil {
+				return err
+			}
+		}
+		if err := validateOnboardScanners(cmd); err != nil {
+			return err
+		}
 		inspectionOptions := options
 		inspectionOptions.Print = printInspectOutput
 
@@ -202,7 +210,11 @@ var cpNodeCmd = &cobra.Command{
 			return err
 		}
 		if enableVMScan {
-			err := vmConfig.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, true, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
+			artifactToken, tokenErr := resolveArtifactToken(authToken, authTokenFile)
+			if tokenErr != nil {
+				return tokenErr
+			}
+			err := vmConfig.InitRRAConfig(artifactToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, true, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
 			if err != nil {
 				logger.Error("error initializing RRA config", vmMode)
 			}
@@ -210,6 +222,10 @@ var cpNodeCmd = &cobra.Command{
 			if err != nil {
 				logger.Error("error installing RRA in %s mode /n", vmMode)
 			}
+		}
+
+		if err := installOnboardScanners(cmd, &onboardConfig.ClusterConfig); err != nil {
+			return err
 		}
 
 		logger.PrintSuccess((`VM successfully onboarded!

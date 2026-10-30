@@ -323,7 +323,7 @@ func getPortList() []portInfo {
 		// Outbound rules for connecting to external SaaS services
 		{portNo: "443", ruleType: "out"}, // spire-agent to spire-server
 		{portNo: "443", ruleType: "out"}, // control plane to knox-gateway
-		{portNo: "443", ruleType: "out"},  // PEA to PPS
+		{portNo: "443", ruleType: "out"}, // PEA to PPS
 
 		// Internal rules
 		{portNo: "9091", ruleType: "internal"},  // spire-agent workload API endpoint

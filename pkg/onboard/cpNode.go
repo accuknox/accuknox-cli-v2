@@ -169,6 +169,11 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	if err != nil {
 		return err
 	}
+	if ic.DeployRMQ {
+		if err := validateRabbitMQMountSources(configPath, ic.Tls.Enabled, true); err != nil {
+			return err
+		}
+	}
 	ic.TCArgs.KubeArmorImage = ic.KubeArmorImage
 	ic.TCArgs.KubeArmorInitImage = ic.KubeArmorInitImage
 	ic.TCArgs.KubeArmorRelayServerImage = ic.KubeArmorRelayServerImage
@@ -264,7 +269,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	// List of config files to be generated or copied
 	// TODO: Refactor later
-	agentMeta := getAgentConfigMeta(ic.Tls.Enabled || ic.Tls.RMQEnabled)
+	agentMeta := getAgentConfigMeta(ic.DeployRMQ)
 
 	if semver.Compare(ic.AgentsVersion, "v0.11.0") < 0 {
 		ic.DeployDiscover = true
@@ -343,13 +348,20 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		return err
 	}
 
-	// Diagnose if necessary and run compose command
-	if err := ic.runComposeCommand(composeFilePath); err != nil {
-		return err
+	if ic.DeployRMQ {
+		if err := validateRabbitMQMountSources(configPath, ic.Tls.Enabled, false); err != nil {
+			return err
+		}
 	}
 
+	// Prepare configs before Docker creates runtime files in the /etc bind mount.
 	if err := setRecursivePermissions(configPath, 0o755, 0o644); err != nil {
 		return fmt.Errorf("failed to set permissions on %s: %w", configPath, err)
+	}
+
+	// Diagnose if necessary and run compose command.
+	if err := ic.runComposeCommand(composeFilePath); err != nil {
+		return err
 	}
 
 	return nil
@@ -555,7 +567,7 @@ func combineVisibilities(visibility, hostVisibility string) string {
 	return strings.Join(combined, ",")
 }
 
-func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
+func getAgentConfigMeta(includeRabbitMQ bool) []agentConfigMeta {
 	agentMeta := []agentConfigMeta{
 		{
 			agentName:            "spire",
@@ -665,7 +677,7 @@ func getAgentConfigMeta(tlsEnabled bool) []agentConfigMeta {
 		},
 	}
 
-	if tlsEnabled {
+	if includeRabbitMQ {
 		agentMeta = append(agentMeta, []agentConfigMeta{
 			{
 				agentName:            "rabbitmq",

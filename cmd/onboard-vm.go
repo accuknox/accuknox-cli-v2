@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
+	"github.com/accuknox/accuknox-cli-v2/pkg/vmscan"
 	"github.com/spf13/cobra"
 )
 
@@ -37,16 +38,17 @@ var (
 	systemMonitorPath string
 
 	// flags for RRA scan
-	enableVMScan bool
-	profile      string
-	benchmark    string
-	schedule     string
-	authToken    string
-	url          string
-	tenantID     string
-	clusterName  string
-	clusterID    string
-	label        string
+	enableVMScan  bool
+	profile       string
+	benchmark     string
+	schedule      string
+	authToken     string
+	authTokenFile string
+	url           string
+	tenantID      string
+	clusterName   string
+	clusterID     string
+	label         string
 
 	// different meaning for both worker node but
 	// declared here as common global variables
@@ -99,6 +101,7 @@ var onboardVMCmd = &cobra.Command{
 }
 
 func init() {
+	onboardVMCmd.SetGlobalNormalizationFunc(artifactEndpointFlagAlias)
 	// all flags are optional
 	// add a mode flag here for systemd or docker
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&vmMode), "vm-mode", "", "Mode of installation (systemd/docker)")
@@ -178,15 +181,14 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&profile), "profile", "", "ubuntu,rhel")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&benchmark), "benchmark", "", "security benchmark (stig,soc2)")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&schedule), "schedule", "", "schedule for RRA to run")
-	onboardVMCmd.PersistentFlags().StringVar((*string)(&authToken), "auth-token", "", "authentication token")
+	onboardVMCmd.PersistentFlags().StringVarP(&authToken, "auth-token", "t", "", "artifact API token (alias: --token; defaults to OMNI_ARTIFACT_API_TOKEN)")
+	onboardVMCmd.PersistentFlags().StringVar(&authTokenFile, "token-file", "", "read artifact API token from a file (aliases: --auth-token-file, --artifact-token-file)")
+	onboardVMCmd.MarkFlagsMutuallyExclusive("auth-token", "token-file")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&tenantID), "tenant-id", "", "tenant id of the cluster")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterName), "cluster-name", "", "cluster name")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&clusterID), "cluster-id", "", "cluster id")
-	onboardVMCmd.PersistentFlags().StringVar((*string)(&url), "url", "", "url")
+	onboardVMCmd.PersistentFlags().StringVar(&url, "url", "", "SaaS/artifact API URL or domain (alias: --artifact-endpoint)")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&label), "label", "", "label")
-
-	onboardVMCmd.MarkFlagsRequiredTogether("benchmark", "profile", "url", "tenant-id")
-	onboardVMCmd.MarkFlagsRequiredTogether("auth-token", "label", "schedule")
 
 	// splunk flags
 	onboardVMCmd.PersistentFlags().BoolVar(&splunk.Enabled, "splunk", false, "enable Splunk")
@@ -238,6 +240,19 @@ func init() {
 	onboardVMCmd.PersistentFlags().BoolVar(&skipDownload, "no-download", false, "skip downloading images or binaries")
 
 	onboardVMCmd.PersistentFlags().StringVar(&fromSource, "from-source", "", "use agents from url or local path")
+
+	// Optional scanners for control-plane and worker node onboarding
+	onboardVMCmd.PersistentFlags().BoolVar(&enableOmniVMScan, "enable-vm-scan", false, "install Omni VM vulnerability scanner (daily native agent)")
+	onboardVMCmd.PersistentFlags().BoolVar(&onboardVMScanUseScript, "use-script", false, "use the external Omni installer when --enable-vm-scan is enabled")
+	onboardVMCmd.PersistentFlags().BoolVar(&imageScan, "enable-image-scan", false, "deploy container image scanner")
+	onboardVMCmd.PersistentFlags().StringVar(&onboardVMScannerOptions.ScriptURL, "vm-scan-script-url", vmscan.InstallerURL, "Omni installer URL")
+	onboardVMCmd.PersistentFlags().StringVar(&onboardVMScannerOptions.ScriptPath, "vm-scan-script-path", "", "local Omni installer file (requires --use-script)")
+	onboardVMCmd.PersistentFlags().StringVar(&onboardVMScannerOptions.BinaryURL, "vm-scan-binary-url", "", "Omni binary URL for an internal mirror")
+	onboardVMCmd.PersistentFlags().StringVar(&onboardVMScannerOptions.InstallDir, "vm-scan-install-dir", "/usr/local/bin", "Omni installation directory containing the pre-provisioned omni binary when offline")
+	onboardVMCmd.PersistentFlags().StringVar(&onboardVMScannerOptions.DBDirectory, "vm-scan-db-directory", "/var/lib/accuknox-omni", "Omni vulnerability database directory")
+	onboardVMCmd.PersistentFlags().DurationVar(&onboardVMScannerOptions.UploadTimeout, "vm-scan-upload-timeout", vmscan.DefaultUploadTimeout, "maximum VM scanner artifact upload time including retries (native scanning only)")
+	onboardVMCmd.PersistentFlags().BoolVar(&onboardVMScannerOptions.Offline, "vm-scan-offline", false, "disable VM scanner downloads; requires local databases, plus installer and binary with --use-script")
+	onboardVMCmd.MarkFlagsMutuallyExclusive("vm-scan-script-url", "vm-scan-script-path")
 
 	// Enable image scanning
 	onboardVMCmd.PersistentFlags().BoolVar(&imageScan, "image-scan", false, "deploy container image scanner")

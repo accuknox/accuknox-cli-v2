@@ -274,7 +274,7 @@ func (cc *ClusterConfig) PrintJoinCommand() {
 	if cc.Tls.RMQEnabled {
 		command += " --rmq"
 	}
-	if cc.RMQCredentials != "" {
+	if (cc.Tls.Enabled || cc.Tls.RMQEnabled) && cc.RMQCredentials != "" {
 		command = fmt.Sprintf("%s --auth=\"%s\"", command, cc.RMQCredentials)
 	}
 	if cc.RMQServer != "" {
