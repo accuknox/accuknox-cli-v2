@@ -31,6 +31,7 @@ var (
 	secureContainers bool
 
 	alertThrottling bool
+	enableIMA       bool
 	maxAlertPerSec  int
 	throttleSec     int
 
@@ -137,6 +138,9 @@ func init() {
 	onboardVMCmd.MarkFlagsMutuallyExclusive("hostBlock", "host-block")
 
 	onboardVMCmd.PersistentFlags().BoolVarP(&alertThrottling, "alert-throttling", "", true, "to toggle alert-throttling")
+	onboardVMCmd.PersistentFlags().BoolVar(&enableIMA, "enable-ima", false, "Enable KubeArmor file integrity IMA hashing (requires KubeArmor v1.6.4 or newer)")
+	onboardVMCmd.PersistentFlags().BoolVar(&enableIMA, "enableIMA", false, "Alias for --enable-ima")
+	_ = onboardVMCmd.PersistentFlags().MarkHidden("enableIMA")
 	onboardVMCmd.PersistentFlags().IntVarP(&maxAlertPerSec, "max-alerts-per-sec", "", 10, "specifies maximum alert rate past which throttling will be triggered")
 	onboardVMCmd.PersistentFlags().IntVarP(&throttleSec, "throttle-sec", "", 30, "duration (in seconds) for which subsequent alerts will be dropped once alert throttling comes into action")
 

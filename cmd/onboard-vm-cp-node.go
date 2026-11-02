@@ -140,6 +140,7 @@ var cpNodeCmd = &cobra.Command{
 		}
 
 		vmConfig.ForceRecreate = forceRecreate
+		vmConfig.EnableIMA = enableIMA
 
 		vmConfig.KaResource = kaResource
 		vmConfig.AgentsResource = agentsResource

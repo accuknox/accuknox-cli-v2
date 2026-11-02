@@ -142,6 +142,7 @@ var joinNodeCmd = &cobra.Command{
 		}
 
 		vmConfigs.ForceRecreate = forceRecreate
+		vmConfigs.EnableIMA = enableIMA
 
 		vmConfigs.KaResource = kaResource
 		vmConfigs.AgentsResource = agentsResource

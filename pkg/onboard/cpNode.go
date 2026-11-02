@@ -49,6 +49,8 @@ func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGatew
 }
 
 func (ic *InitConfig) CreateBaseTemplateConfig() error {
+	ic.validateIMA()
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		return err
@@ -116,6 +118,7 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		KubeArmorHostCapPosture:     ic.DefaultHostCapPosture,
 
 		KubeArmorAlertThrottling: ic.AlertThrottling,
+		KubeArmorEnableIMA:       ic.EnableIMA,
 		KubeArmorMaxAlertsPerSec: ic.MaxAlertsPerSec,
 		KubeArmorThrottleSec:     ic.ThrottleSec,
 

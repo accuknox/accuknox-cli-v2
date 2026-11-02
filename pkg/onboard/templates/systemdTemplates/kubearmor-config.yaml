@@ -1,6 +1,9 @@
 # generic settings
 k8s: false
 enableKubeArmorStateAgent: true
+{{- if .KubeArmorEnableIMA }}
+enableIMA: true
+{{- end }}
 {{- if .SecureContainers }}
 # overall container settings
 enableKubeArmorPolicy: true
