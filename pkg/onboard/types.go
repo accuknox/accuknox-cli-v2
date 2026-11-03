@@ -94,6 +94,7 @@ type ClusterConfig struct {
 	DefaultHostNetworkPosture string `json:"default_host_network_posture,omitempty"`
 	DefaultHostCapPosture     string `json:"default_host_cap_posture,omitempty"`
 	AlertThrottling           bool   `json:"alert_throttling,omitempty"`
+	EnableIMA                 bool   `json:"enable_ima,omitempty"`
 	MaxAlertsPerSec           int    `json:"max_alerts_per_sec,omitempty"`
 	ThrottleSec               int    `json:"throttle_sec,omitempty"`
 
@@ -255,6 +256,7 @@ type TemplateConfigArgs struct {
 	KubeArmorHostCapPosture     string `json:"kubearmor_host_cap_posture,omitempty"`
 
 	KubeArmorAlertThrottling bool `json:"kubearmor_alert_throttling,omitempty"`
+	KubeArmorEnableIMA       bool `json:"kubearmor_enable_ima,omitempty"`
 	KubeArmorMaxAlertsPerSec int  `json:"kubearmor_max_alerts_per_sec,omitempty"`
 	KubeArmorThrottleSec     int  `json:"kubearmor_throttle_sec,omitempty"`
 

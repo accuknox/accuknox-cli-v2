@@ -1,0 +1,12 @@
+[Unit]
+Description=Run AccuKnox VM vulnerability scanning daily
+
+[Timer]
+OnCalendar=daily
+Unit=omni.service
+Persistent=true
+AccuracySec=1h
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target
