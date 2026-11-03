@@ -285,6 +285,7 @@ func (cc *ClusterConfig) InitImageScan(authToken, url, tenantID, clusterID, clus
 		AgentDir:                cm.ImageScanConfigPath,
 		ServiceTemplateString:   containerImageScannerFile,
 		TimerTemplateString:     containerImageScannerTimerFile,
+		InstallOnWorkerNode:     true,
 		EnvironmentFileTemplate: imagescanEnvVal,
 		LogRotateMaxFileSize:    cc.LogRotateMaxSize,
 		LogRotateMaxFile:        cc.LogRotateMaxFile,
@@ -296,7 +297,10 @@ func (cc *ClusterConfig) InitImageScan(authToken, url, tenantID, clusterID, clus
 	cc.TemplateFuncs = sprig.FuncMap()
 
 	// Stop existing running service
-	return StopSystemdService(cm.Imagescan+".service", true, false)
+	if cc.Mode == VMMode_Systemd {
+		return StopSystemdService(cm.Imagescan+".service", true, false)
+	}
+	return nil
 }
 
 func (cc *ClusterConfig) InstallImagescan() error {
@@ -356,6 +360,9 @@ func (cc *ClusterConfig) InstallImagescan() error {
 		err := StartSystemdService(cm.Imagescan + ".service")
 		if err != nil {
 			logger.Warn("failed to start service %s: %s\n", cm.Imagescan, err.Error())
+			return err
+		}
+		if err := StartSystemdService(cm.Imagescan + ".timer"); err != nil {
 			return err
 		}
 

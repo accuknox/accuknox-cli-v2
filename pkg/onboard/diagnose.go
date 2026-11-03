@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	dockerTypes "github.com/docker/docker/api/types"
-	dockerContainerTypes "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
+	dockerContainerTypes "github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 )
 
 const (
@@ -48,28 +47,28 @@ var (
 	}
 )
 
-func GetKnownContainerMap() map[string]dockerTypes.Container {
-	knownContainerMap := make(map[string]dockerTypes.Container)
+func GetKnownContainerMap() map[string]dockerContainerTypes.Summary {
+	knownContainerMap := make(map[string]dockerContainerTypes.Summary)
 
-	knownContainerMap[kubeArmorInitName] = dockerTypes.Container{}
-	knownContainerMap[kubeArmorName] = dockerTypes.Container{}
-	knownContainerMap[kubeArmorRelayName] = dockerTypes.Container{}
-	knownContainerMap[kubearmorVMAdapterName] = dockerTypes.Container{}
-	knownContainerMap[spireAgentName] = dockerTypes.Container{}
-	knownContainerMap[waitForItName] = dockerTypes.Container{}
-	knownContainerMap[siaName] = dockerTypes.Container{}
-	knownContainerMap[peaName] = dockerTypes.Container{}
-	knownContainerMap[feederServiceName] = dockerTypes.Container{}
+	knownContainerMap[kubeArmorInitName] = dockerContainerTypes.Summary{}
+	knownContainerMap[kubeArmorName] = dockerContainerTypes.Summary{}
+	knownContainerMap[kubeArmorRelayName] = dockerContainerTypes.Summary{}
+	knownContainerMap[kubearmorVMAdapterName] = dockerContainerTypes.Summary{}
+	knownContainerMap[spireAgentName] = dockerContainerTypes.Summary{}
+	knownContainerMap[waitForItName] = dockerContainerTypes.Summary{}
+	knownContainerMap[siaName] = dockerContainerTypes.Summary{}
+	knownContainerMap[peaName] = dockerContainerTypes.Summary{}
+	knownContainerMap[feederServiceName] = dockerContainerTypes.Summary{}
 
-	knownContainerMap[summaryEngineName] = dockerTypes.Container{}
-	knownContainerMap[discoveryName] = dockerTypes.Container{}
-	knownContainerMap[hardeningAgentName] = dockerTypes.Container{}
+	knownContainerMap[summaryEngineName] = dockerContainerTypes.Summary{}
+	knownContainerMap[discoveryName] = dockerContainerTypes.Summary{}
+	knownContainerMap[hardeningAgentName] = dockerContainerTypes.Summary{}
 
 	return knownContainerMap
 }
 
 // containerFailed checks container status
-func containerFailed(containerJSON dockerTypes.ContainerJSON, containerName string) bool {
+func containerFailed(containerJSON dockerContainerTypes.InspectResponse, containerName string) bool {
 
 	if containerJSON.State != nil {
 		switch containerJSON.State.Status {
@@ -91,16 +90,16 @@ func containerFailed(containerJSON dockerTypes.ContainerJSON, containerName stri
 }
 
 // getContainerDiagnosis returns a diagnosis, name of the failed container or an error
-func getContainerDiagnosis(client *client.Client, knownContainerMap map[string]dockerTypes.Container, priorityList []string) (string, error) {
+func getContainerDiagnosis(dockerClient *client.Client, knownContainerMap map[string]dockerContainerTypes.Summary, priorityList []string) (string, error) {
 	var diagnosis, failedContainer string
 
 	for _, container := range priorityList {
-		containerJSON, err := client.ContainerInspect(context.Background(), knownContainerMap[container].ID)
+		containerJSON, err := dockerClient.ContainerInspect(context.Background(), knownContainerMap[container].ID, client.ContainerInspectOptions{})
 		if err != nil {
 			return "", err
 		}
 
-		if containerFailed(containerJSON, container) {
+		if containerFailed(containerJSON.Container, container) {
 			failedContainer = container
 			diagnosis = fmt.Sprintf("Container %s failed to run as", failedContainer)
 
@@ -135,7 +134,7 @@ func diagnose(nodeType NodeType) (string, error) {
 	}
 	defer dockerClient.Close()
 
-	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
+	containerList, err := dockerClient.ContainerList(context.Background(), client.ContainerListOptions{
 		All: true,
 	})
 	if err != nil {
@@ -143,7 +142,7 @@ func diagnose(nodeType NodeType) (string, error) {
 	}
 
 	knownContainerMap := GetKnownContainerMap()
-	for _, containerInfo := range containerList {
+	for _, containerInfo := range containerList.Items {
 		// only first index needed as name is specified in our templates
 		// key exists, add value
 		containerName := strings.TrimPrefix(containerInfo.Names[0], "/")

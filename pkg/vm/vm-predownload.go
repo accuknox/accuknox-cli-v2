@@ -17,8 +17,9 @@ import (
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
-	"github.com/docker/docker/api/types/image"
 	"github.com/fatih/color"
+	"github.com/moby/moby/client"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/pterm/pterm"
 	"github.com/regclient/regclient"
@@ -164,9 +165,10 @@ func pullAndSave(dockerImage, arch, outFileName string) error {
 		return err
 	}
 
+	defer dClient.Close()
 	ctx := context.Background()
 
-	inspect, err := dClient.DistributionInspect(ctx, dockerImage, "")
+	inspect, err := dClient.DistributionInspect(ctx, dockerImage, client.DistributionInspectOptions{})
 	if err != nil {
 		fmt.Println("Error inspecting image:", err)
 		return err
@@ -200,8 +202,8 @@ func pullAndSave(dockerImage, arch, outFileName string) error {
 	digest := manifest.GetDescriptor().Digest.String()
 	digestRef := fmt.Sprintf("%s@%s", imgRef.CommonName(), digest)
 
-	pullOptions := image.PullOptions{
-		Platform: runtime.GOOS + "/" + arch,
+	pullOptions := client.ImagePullOptions{
+		Platforms: []ocispec.Platform{{OS: runtime.GOOS, Architecture: arch}},
 	}
 
 	pullReader, err := dClient.ImagePull(ctx, digestRef, pullOptions)
@@ -215,7 +217,7 @@ func pullAndSave(dockerImage, arch, outFileName string) error {
 		return fmt.Errorf("reading pull output failed: %w", err)
 	}
 
-	err = dClient.ImageTag(ctx, digestRef, dockerImage)
+	_, err = dClient.ImageTag(ctx, client.ImageTagOptions{Source: digestRef, Target: dockerImage})
 	if err != nil {
 		return err
 	}
@@ -332,7 +334,7 @@ func downloadSystemdAgents(
 		imgTag := strings.Split(binaryImage, ":")
 		if len(imgTag) != 2 {
 			skipped++
-			return downloaded, skipped, fmt.Errorf("[%v] binary tag is empty for %v", arch, image, 0)
+			return downloaded, skipped, fmt.Errorf("[%v] binary tag is empty for %v", arch, image)
 		}
 
 		_, err := cc.DownloadAgent(image, imgTag[0], imgTag[1], dir)
@@ -381,7 +383,7 @@ func downloadDockerAgents(
 		imgTag := strings.Split(dockerImage, ":")
 		if len(imgTag) != 2 {
 			skipped++
-			return downloaded, skipped, fmt.Errorf("[%v] image tag is empty for %v", arch, image, 0)
+			return downloaded, skipped, fmt.Errorf("[%v] image tag is empty for %v", arch, image)
 		}
 
 		tag := strings.TrimPrefix(imgTag[1], "v")

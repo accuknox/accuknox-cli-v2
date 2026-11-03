@@ -43,18 +43,9 @@ var deboardCpNodeCmd = &cobra.Command{
 		default:
 			logger.Error("vm mode: %s invalid, accepted values (docker/systemd)", vmMode)
 		}
-		if disableVMScan {
-			logger.Info1("Removing RRA installation if it exists")
-			err := deboard.UninstallRRA()
-			if err != nil {
-				if os.IsNotExist(err) {
-					logger.Info1("RRA Installation not found")
-				} else {
-					logger.Error("error removing RRA installation:%s", err.Error())
-					return err
-				}
-			} else {
-				logger.PrintSuccess("RRA uninstalled successfully.")
+		if disableVMScan && !dryRun {
+			if err := deboard.UninstallScannersWithOutput(cmd.Context(), cmd.OutOrStdout()); err != nil {
+				return err
 			}
 		}
 		logger.PrintSuccess("Control plane node deboarded successfully.")
