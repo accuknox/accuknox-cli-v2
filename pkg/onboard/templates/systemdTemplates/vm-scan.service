@@ -1,0 +1,24 @@
+[Unit]
+Description=AccuKnox Knoxctl VM vulnerability scanner
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile={{.EnvironmentFile}}
+ExecStart={{.Command}}
+TimeoutStartSec=infinity
+CPUQuota=10%
+MemoryMax=2G
+{{- if gt .SystemdVersion 240 }}
+StandardOutput=append:{{.LogDirectory}}/omni.log
+StandardError=append:{{.LogDirectory}}/omni-err.log
+{{- else }}
+StandardOutput=file:{{.LogDirectory}}/omni.log
+StandardError=file:{{.LogDirectory}}/omni-err.log
+{{- end }}
+SyslogIdentifier=accuknox-omni
+
+[Install]
+WantedBy=multi-user.target

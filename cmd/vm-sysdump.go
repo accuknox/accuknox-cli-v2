@@ -3,153 +3,166 @@ package cmd
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
+	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
-	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
-var sysdumpVMCmd = &cobra.Command{
-	Use:   "sysdump",
-	Short: "Command to get system debug info",
-	Long:  "Command to get system debug info",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// find out the VM Mode
-		var (
-			installedSystemdServices = []string{"kubearmor", cm.KubeArmorVMAdapter, cm.RelayServer, cm.PEAAgent, cm.SIAAgent, cm.FeederService, cm.SpireAgent, cm.SummaryEngine, cm.DiscoverAgent, cm.HardeningAgent}
-			err                      error
-		)
+var sysdumpVMCmd = newVMSysdumpCmd()
 
-		if vmMode == "" {
-			installedSystemdServices, err = onboard.CheckInstalledSystemdServices()
+func newVMSysdumpCmd() *cobra.Command {
+	var mode, configPath, outputDir string
+	var logTail int
+	var timeout time.Duration
+	c := &cobra.Command{
+		Use:   "sysdump",
+		Short: "Collect VM agent diagnostics from systemd or Docker deployments",
+		Args:  cobra.NoArgs,
+		PersistentPreRunE: func(*cobra.Command, []string) error { return nil },
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if mode != "" && mode != string(onboard.VMMode_Systemd) && mode != string(onboard.VMMode_Docker) {
+				return fmt.Errorf("invalid vm-mode %q: expected docker or systemd", mode)
+			}
+			if logTail < 0 || timeout <= 0 {
+				return fmt.Errorf("log-tail must be nonnegative and timeout must be positive")
+			}
+			selectedMode := mode
+			if selectedMode == "" {
+				services, err := onboard.CheckInstalledSystemdServices()
+				if err != nil {
+					return fmt.Errorf("checking systemd installation: %w", err)
+				}
+				selectedMode = string(onboard.VMMode_Docker)
+				if len(services) > 0 {
+					selectedMode = string(onboard.VMMode_Systemd)
+				}
+			}
+			hostname, err := os.Hostname()
 			if err != nil {
-				return fmt.Errorf(color.RedString("error checking systemd files"))
+				hostname = "unknown-host"
 			}
-
-			if len(installedSystemdServices) > 0 {
-				vmMode = onboard.VMMode_Systemd
-			} else {
-				vmMode = onboard.VMMode_Docker
+			workRoot := ""
+			archiveRoot := "."
+			if outputDir != "" {
+				archiveRoot, err = filepath.Abs(outputDir)
+				if err != nil {
+					return fmt.Errorf("resolving output directory: %w", err)
+				}
+				if err := os.MkdirAll(archiveRoot, 0700); err != nil {
+					return fmt.Errorf("creating output directory: %w", err)
+				}
+				workRoot = archiveRoot
 			}
-		}
-
-		hostname, err := os.Hostname()
-		if err != nil {
-			fmt.Println(color.YellowString("Failed to get hostname", err.Error()))
-		}
-
-		// create directory
-		tmpDirRoot := os.TempDir()
-		sysdumpDir := fmt.Sprintf(fmt.Sprintf("knoxctl-sysdump-%s-", hostname))
-		tmpDir, err := os.MkdirTemp(tmpDirRoot, sysdumpDir)
-		if err != nil {
-			tmpDirRoot = "."
-			tmpDir, err = os.MkdirTemp(tmpDirRoot, sysdumpDir)
-			if err != nil {
-				return err
+			tmpDir, err := os.MkdirTemp(workRoot, "knoxctl-sysdump-"+hostname+"-")
+			if err != nil && outputDir == "" {
+				tmpDir, err = os.MkdirTemp(".", "knoxctl-sysdump-"+hostname+"-")
 			}
-		}
-
-		fmt.Println(color.BlueString("Using temp dir %s", tmpDir))
-
-		switch vmMode {
-		case onboard.VMMode_Systemd:
-			// get logs from all the installed systemd services of our interest
-			// fmt.Println(color.GreenString("Copying logs..."))
-			// onboard.DumpSystemdLogs(tmpDir, installedSystemdServices)
-
-			fmt.Println(color.GreenString("Copying agent installation..."))
-			onboard.DumpSystemdAgentInstallation(tmpDir)
-
-			// additional data
-			fmt.Println(color.GreenString("Copying knoxctl dumps..."))
-			onboard.DumpSystemdKnoxctlDir(tmpDir)
-
-		case onboard.VMMode_Docker:
-			// TODO: sysdump for docker mode
-
-		default:
-			fmt.Printf(color.RedString("vm mode: %s invalid, accepted values (docker/systemd)", vmMode))
-		}
-
-		tarFileName := filepath.Base(tmpDir) + ".tar.gz"
-		tarFile, err := os.OpenFile(filepath.Clean(tarFileName), os.O_CREATE|os.O_WRONLY, 0644) // #nosec G302 file permissions needed for archiving
-		if err != nil {
-			return err
-		}
-
-		gzipWriter := gzip.NewWriter(tarFile)
-		tarWriter := tar.NewWriter(gzipWriter)
-
-		// add logs
-		err = filepath.WalkDir(tmpDir, func(path string, d fs.DirEntry, err error) error {
-			if d == nil {
-				return nil
-			}
-
-			fileInfo, err := d.Info()
 			if err != nil {
 				return err
 			}
-
-			relativePath, err := filepath.Rel(tmpDirRoot, path)
-			if err != nil {
-				return err
-			}
-
-			hdr, err := tar.FileInfoHeader(fileInfo, relativePath)
-			if err != nil {
-				return err
-			}
-			hdr.Name = relativePath
-
-			if err := tarWriter.WriteHeader(hdr); err != nil {
-				return err
-			}
-
-			if !d.IsDir() {
-				fileContent, err := os.ReadFile(filepath.Clean(path))
+			defer os.RemoveAll(tmpDir)
+			fmt.Fprintf(cmd.OutOrStdout(), "Collecting %s VM diagnostics in %s\n", selectedMode, tmpDir)
+			switch selectedMode {
+			case string(onboard.VMMode_Systemd):
+				fmt.Fprintln(cmd.OutOrStdout(), "Copying agent installation and knoxctl dumps...")
+				onboard.DumpSystemdAgentInstallation(tmpDir)
+				onboard.DumpSystemdKnoxctlDir(tmpDir)
+			case string(onboard.VMMode_Docker):
+				ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
+				warnings, err := onboard.DumpDockerDiagnostics(ctx, tmpDir, configPath, logTail)
+				cancel()
 				if err != nil {
 					return err
 				}
-
-				if _, err := tarWriter.Write(fileContent); err != nil {
-					return err
+				for _, warning := range warnings {
+					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: %v\n", warning)
+				}
+				if len(warnings) > 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), "Some diagnostics could not be collected; see docker/errors.log in the archive.")
 				}
 			}
-
+			archive, err := filepath.Abs(filepath.Join(archiveRoot, filepath.Base(tmpDir)+".tar.gz"))
+			if err != nil {
+				return err
+			}
+			if err := archiveVMSysdump(tmpDir, archive); err != nil {
+				return fmt.Errorf("creating sysdump archive: %w", err)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Successfully created %s\n", archive)
 			return nil
-		})
+		},
+	}
+	c.Flags().StringVar(&mode, "vm-mode", "", "installation mode: systemd or docker (automatically detected if omitted)")
+	c.Flags().StringVarP(&outputDir, "output-dir", "o", "", "directory for both working files and the final archive (default: temporary workspace and archive in current directory)")
+	c.Flags().StringVar(&configPath, "config-path", "", "Docker onboarding config directory (automatically detected from agent mounts if omitted)")
+	c.Flags().IntVar(&logTail, "log-tail", 10000, "maximum log lines per Docker container; 0 collects all available logs")
+	c.Flags().DurationVar(&timeout, "timeout", 2*time.Minute, "maximum Docker diagnostic collection time")
+	return c
+}
+
+func archiveVMSysdump(sourceDir, filename string) (result error) {
+	output, err := os.OpenFile(filename, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	gz := gzip.NewWriter(output)
+	tw := tar.NewWriter(gz)
+	defer func() {
+		result = errors.Join(result, tw.Close(), gz.Close(), output.Close())
+		if result != nil {
+			os.Remove(filename)
+		}
+	}()
+	return filepath.WalkDir(sourceDir, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		info, err := entry.Info()
 		if err != nil {
-			return fmt.Errorf(color.RedString("Failed to produce %s: %s"), tarFileName, err.Error())
-		}
-
-		if err := tarWriter.Close(); err != nil {
 			return err
 		}
-
-		if err := gzipWriter.Close(); err != nil {
-			return err
+		if !info.IsDir() && !info.Mode().IsRegular() && info.Mode()&os.ModeSymlink == 0 {
+			return nil
 		}
-
-		fmt.Println(color.BlueString("Removing temp dir %s...", tmpDir))
-		err = os.RemoveAll(tmpDir)
+		link := ""
+		if info.Mode()&os.ModeSymlink != 0 {
+			link, err = os.Readlink(path)
+			if err != nil {
+				return err
+			}
+		}
+		hdr, err := tar.FileInfoHeader(info, link)
 		if err != nil {
 			return err
 		}
-
-		fmt.Println(color.GreenString("Successfully created "))
-
+		relative, err := filepath.Rel(filepath.Dir(sourceDir), path)
+		if err != nil {
+			return err
+		}
+		hdr.Name = filepath.ToSlash(relative)
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if info.Mode().IsRegular() {
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			_, copyErr := io.CopyN(tw, file, info.Size())
+			return errors.Join(copyErr, file.Close())
+		}
 		return nil
-	},
+	})
 }
 
 func init() {
-	sysdumpVMCmd.PersistentFlags().StringVar((*string)(&vmMode), "vm-mode", "", "Mode of installation (systemd/docker)")
 	vmCmd.AddCommand(sysdumpVMCmd)
 }

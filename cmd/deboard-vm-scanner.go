@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/accuknox/accuknox-cli-v2/pkg/deboard"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/spf13/cobra"
@@ -11,32 +9,17 @@ import (
 // deboardNodeCmd represents the deboardNode command
 var deboardRRAScanner = &cobra.Command{
 	Use:   "scanner",
-	Short: "Deboard RRA scanner",
+	Short: "Remove all VM scanners (Omni, RRA, and image scanner)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		err := deboard.UninstallRRA()
-		if err != nil {
-			if os.IsNotExist(err) {
-				logger.Info1("RRA Installation not found")
-			} else {
-				logger.Error("error removing RRA installation:%s", err.Error())
-				return err
-			}
-		} else {
-			logger.PrintSuccess("RRA uninstalled successfully.")
+		if dryRun {
+			logger.Info1("Would remove Omni, RRA, and image scanner installations")
+			return nil
 		}
-
-		if err = deboard.UninstallImagescan(); err != nil {
-			if os.IsNotExist(err) {
-				logger.Info1("Imagescan Installation not found")
-				return nil
-			} else {
-				logger.Error("error removing Imagescan installation:%s", err.Error())
-				return err
-			}
+		if err := deboard.UninstallScannersWithOutput(cmd.Context(), cmd.OutOrStdout()); err != nil {
+			return err
 		}
-
-		logger.PrintSuccess("Imagescan uninstalled successfully.")
+		logger.PrintSuccess("VM scanner cleanup completed.")
 		return nil
 	},
 }

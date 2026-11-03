@@ -19,6 +19,9 @@ var onboardVmScanCmd = &cobra.Command{
 	Short: "sub-command for onboarding RRA(risk assessment tool) and container image scanning",
 	Long:  "sub-command for onboarding RRA(risk assessment tool) and container image scanning",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := validateLegacyRRAFlags(cmd); err != nil {
+			return err
+		}
 
 		if clusterName == "" {
 			return fmt.Errorf("cluster name is required")
@@ -78,7 +81,11 @@ var onboardVmScanCmd = &cobra.Command{
 			cc.LogRotateMaxSize = strings.ToUpper(cc.LogRotateMaxSize)
 		}
 
-		err = cc.InitRRAConfig(authToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, agentsDeployed, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
+		artifactToken, tokenErr := resolveArtifactToken(authToken, authTokenFile)
+		if tokenErr != nil {
+			return tokenErr
+		}
+		err = cc.InitRRAConfig(artifactToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, agentsDeployed, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
 		if err != nil {
 			logger.Error(" failed to initialize RRA config:%s", err.Error())
 			return err
@@ -95,7 +102,7 @@ var onboardVmScanCmd = &cobra.Command{
 		// Install image-scan
 		if imageScan {
 			cc.AgentsResource = agentsResource
-			if err := cc.InitImageScan(authToken, url, tenantID, clusterID, clusterName, label, schedule, allImages); err != nil {
+			if err := cc.InitImageScan(artifactToken, url, tenantID, clusterID, clusterName, label, schedule, allImages); err != nil {
 				logger.Error("failed to initialize image scanner: %s", err.Error())
 				return err
 			}

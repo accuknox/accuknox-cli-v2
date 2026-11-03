@@ -25,10 +25,10 @@ import (
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	se_splunk "github.com/accuknox/dev2/sumengine/pkg/sumengine/kubearmor"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/fatih/color"
 	"github.com/golang-jwt/jwt"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/mod/semver"
 )
@@ -82,20 +82,68 @@ func createDefaultConfigPath() (string, error) {
 	return configPath, nil
 }
 
-// setRecursivePermissions applies directory permissions to the config directory
-// and file permissions to all files below it.
+// setRecursivePermissions prepares config permissions. Permission-denied paths
+// are reported for manual adjustment without failing the onboarding operation.
 func setRecursivePermissions(path string, directoryMode, fileMode os.FileMode) error {
-	return filepath.WalkDir(path, func(currentPath string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
+	_, err := updateConfigPermissions(path, directoryMode, fileMode, os.Chmod)
+	return err
+}
 
+func updateConfigPermissions(path string, directoryMode, fileMode os.FileMode, chmod func(string, os.FileMode) error) ([]error, error) {
+	var warnings []error
+	recordPermissionError := func(err error) error {
+		if os.IsPermission(err) {
+			warnings = append(warnings, err)
+			return nil
+		}
+		return err
+	}
+	root, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		err = recordPermissionError(err)
+		return warnings, err
+	}
+	err = filepath.WalkDir(root, func(currentPath string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return recordPermissionError(walkErr)
+		}
+		if entry.Type()&os.ModeSymlink != 0 || (!entry.IsDir() && !entry.Type().IsRegular()) {
+			warnings = append(warnings, fmt.Errorf("%s: symbolic link or special file was not modified", currentPath))
+			return nil
+		}
+		relative, err := filepath.Rel(root, currentPath)
+		if err != nil {
+			return err
+		}
+		switch relative {
+		case "hostname", "hosts", "resolv.conf":
+			warnings = append(warnings, fmt.Errorf("%s: Docker-managed runtime file was not modified", currentPath))
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
 		mode := fileMode
 		if entry.IsDir() {
 			mode = directoryMode
 		}
-		return os.Chmod(currentPath, mode)
+		info, err := entry.Info()
+		if err != nil {
+			return recordPermissionError(err)
+		}
+		if info.Mode().Perm() == mode.Perm() {
+			return nil
+		}
+		if err := chmod(currentPath, mode); err != nil {
+			if os.IsPermission(err) {
+				warnings = append(warnings, fmt.Errorf("%s: %w", currentPath, err))
+				return nil
+			}
+			return err
+		}
+		return nil
 	})
+	return warnings, err
 }
 
 // parseURL with/without scheme and return host, port or error
@@ -251,90 +299,7 @@ func compareVersionsAndGetComposeCommand(v1, v1Cmd, v2, v2Cmd string) (string, s
 // GetComposeCommand gets the compose command with perfect version
 // caller must check for empty
 func GetComposeCommand() (string, string, error) {
-	var (
-		err            error
-		tryComposeCMDs = []string{"docker-compose", "docker compose"}
-		minVersion     = cm.MinDockerComposeVersion
-		prevCommand    = ""
-	)
-
-	for _, command := range tryComposeCMDs {
-		version, execErr := ExecComposeCommand(false, false, command, "version", "--short")
-		if execErr != nil {
-			if err != nil {
-				err = fmt.Errorf("%s. while executing %s: %s", err.Error(), command, execErr.Error())
-			} else {
-				err = fmt.Errorf("while executing %s: %s", command, execErr.Error())
-			}
-
-			continue
-		}
-
-		composeCmd, finalVersion := compareVersionsAndGetComposeCommand(version, command, minVersion, prevCommand)
-		if composeCmd != "" {
-			return composeCmd, finalVersion, nil
-		}
-
-		// use command with latest version
-		prevCommand = command
-	}
-
-	if err != nil {
-		return "", "", fmt.Errorf("docker requirements not met: %s", err.Error())
-	}
-
-	return "", "", fmt.Errorf("docker requirements not met")
-}
-
-func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (string, error) {
-	if !strings.Contains(tryCmd, "docker") {
-		return "", fmt.Errorf("Command %s not supported", tryCmd)
-	}
-
-	composeCmd := new(exec.Cmd)
-
-	cmd := strings.Split(tryCmd, " ")
-	if len(cmd) == 1 {
-
-		composeCmd = exec.Command(cmd[0]) // #nosec G204
-		if dryRun {
-			composeCmd.Args = append(composeCmd.Args, "--dry-run")
-		}
-		composeCmd.Args = append(composeCmd.Args, args...)
-
-	} else if len(cmd) > 1 {
-
-		// need this to handle docker compose command
-		composeCmd = exec.Command(cmd[0], cmd[1]) // #nosec G204
-		if dryRun {
-			composeCmd.Args = append(composeCmd.Args, "--dry-run")
-		}
-		composeCmd.Args = append(composeCmd.Args, args...)
-
-	} else {
-		return "", fmt.Errorf("unknown compose command")
-	}
-	if setStdOut {
-		composeCmd.Stdout = os.Stdout
-		composeCmd.Stderr = os.Stderr
-
-		err := composeCmd.Run()
-		if err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok && len(exitErr.Stderr) > 0 {
-				return "", errors.New(string(exitErr.Stderr))
-			}
-			return "", err
-		}
-
-		return "", nil
-	}
-
-	stdout, err := composeCmd.CombinedOutput()
-	if err != nil {
-		return string(stdout), err
-	}
-
-	return string(stdout), nil
+	return getComposeCommand(cm.MinDockerComposeVersion)
 }
 
 func ExecDockerCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (string, error) {
@@ -416,7 +381,7 @@ func GetDockerLogDriver() string {
 }
 
 func CreateDockerClient() (*client.Client, error) {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	dockerClient, err := client.New(client.FromEnv)
 	if err != nil {
 		return nil, err
 	}
@@ -762,9 +727,9 @@ func loadImage(ctx context.Context, dClient *client.Client, path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to load image %s: %w", path, err)
 	}
-	defer resp.Body.Close()
+	defer resp.Close()
 
-	_, err = io.Copy(io.Discard, resp.Body)
+	_, err = io.Copy(io.Discard, resp)
 	return err
 }
 
@@ -850,11 +815,12 @@ func IsDeployed(mode VMMode) bool {
 
 	switch mode {
 	case VMMode_Docker:
-		client, err := CreateDockerClient()
+		dockerClient, err := CreateDockerClient()
 		if err != nil {
 			return false
 		}
-		containers, err := client.ContainerList(context.Background(), container.ListOptions{})
+		defer dockerClient.Close()
+		containers, err := dockerClient.ContainerList(context.Background(), client.ContainerListOptions{})
 		if err != nil {
 			return false
 		}
@@ -863,7 +829,7 @@ func IsDeployed(mode VMMode) bool {
 			targetSet[img] = struct{}{}
 		}
 
-		for _, c := range containers {
+		for _, c := range containers.Items {
 			if c.State != container.StateRunning {
 				continue
 			}

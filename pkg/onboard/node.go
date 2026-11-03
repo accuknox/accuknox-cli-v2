@@ -29,6 +29,8 @@ func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr
 }
 
 func (jc *JoinConfig) CreateBaseNodeConfig() error {
+	jc.validateIMA()
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		return err
@@ -133,6 +135,7 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		KubeArmorCapPosture:     jc.DefaultCapPosture,
 
 		KubeArmorAlertThrottling: jc.AlertThrottling,
+		KubeArmorEnableIMA:       jc.EnableIMA,
 		KubeArmorMaxAlertsPerSec: jc.MaxAlertsPerSec,
 		KubeArmorThrottleSec:     jc.ThrottleSec,
 

@@ -11,15 +11,17 @@ import (
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
-	dockerTypes "github.com/docker/docker/api/types"
-	dockerContainerTypes "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/volume"
-	"github.com/docker/docker/client"
 	"github.com/fatih/color"
+	dockerContainerTypes "github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 )
 
 func Deboard(nodeType onboard.NodeType, vmMode onboard.VMMode, dryRun bool) (string, error) {
 	fmt.Println(color.MagentaString("Deboarding VM in mode %s...", vmMode))
+	if dryRun {
+		fmt.Println("Dry run: no installed resources will be removed.")
+		return "", nil
+	}
 
 	// check for systemd installation
 	switch vmMode {
@@ -112,15 +114,16 @@ func GetInstalledObjects() (map[string]dockerContainerTypes.Summary, []string, e
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to create docker client. %s", err.Error())
 	}
+	defer dockerClient.Close()
 
-	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
+	containerList, err := dockerClient.ContainerList(context.Background(), client.ContainerListOptions{
 		All: true,
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to list containers. %s", err.Error())
 	}
 
-	for _, container := range containerList {
+	for _, container := range containerList.Items {
 		if len(container.Names) <= 0 {
 			continue
 		}
@@ -136,12 +139,12 @@ func GetInstalledObjects() (map[string]dockerContainerTypes.Summary, []string, e
 	}
 	installedVolumes := make([]string, 0)
 
-	volumeList, err := dockerClient.VolumeList(context.Background(), volume.ListOptions{})
+	volumeList, err := dockerClient.VolumeList(context.Background(), client.VolumeListOptions{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to list volumes. %s", err.Error())
 	}
 
-	for _, volume := range volumeList.Volumes {
+	for _, volume := range volumeList.Items {
 		if _, ok := allVolumes[volume.Name]; ok {
 			installedVolumes = append(installedVolumes, volume.Name)
 		}
@@ -150,11 +153,12 @@ func GetInstalledObjects() (map[string]dockerContainerTypes.Summary, []string, e
 	return installedContainers, installedVolumes, nil
 }
 
-func removeInstalledObjects(installedContainers map[string]dockerTypes.Container, installedVolumes, orderedContainerNames []string) error {
+func removeInstalledObjects(installedContainers map[string]dockerContainerTypes.Summary, installedVolumes, orderedContainerNames []string) error {
 	dockerClient, err := onboard.CreateDockerClient()
 	if err != nil {
 		return fmt.Errorf("Failed to create docker client. %s", err.Error())
 	}
+	defer dockerClient.Close()
 
 	for _, name := range orderedContainerNames {
 		if container, ok := installedContainers[name]; ok {
@@ -168,7 +172,7 @@ func removeInstalledObjects(installedContainers map[string]dockerTypes.Container
 	}
 	for _, volume := range installedVolumes {
 		fmt.Printf("Removing volume %s...\n", volume)
-		if err := dockerClient.VolumeRemove(context.Background(), volume, true); err != nil {
+		if _, err := dockerClient.VolumeRemove(context.Background(), volume, client.VolumeRemoveOptions{Force: true}); err != nil {
 			fmt.Println(color.YellowString("Failed to remove volume %s: %s", volume, err.Error()))
 		}
 	}
@@ -179,13 +183,13 @@ func removeInstalledObjects(installedContainers map[string]dockerTypes.Container
 func removeContainer(dockerClient *client.Client, containerName string, containerID string) {
 	containerName = strings.TrimPrefix(containerName, "/")
 	fmt.Printf("Stopping container %s...\n", containerName)
-	err := dockerClient.ContainerStop(context.Background(), containerID, dockerContainerTypes.StopOptions{})
+	_, err := dockerClient.ContainerStop(context.Background(), containerID, client.ContainerStopOptions{})
 	if err != nil {
 		fmt.Println(color.YellowString("Failed to stop container %s: %s", containerName, err.Error()))
 	}
 
 	fmt.Printf("Removing container %s...\n", containerName)
-	err = dockerClient.ContainerRemove(context.Background(), containerID, dockerContainerTypes.RemoveOptions{})
+	_, err = dockerClient.ContainerRemove(context.Background(), containerID, client.ContainerRemoveOptions{})
 	if err != nil {
 		fmt.Println(color.YellowString("Failed to remove container %s: %s", containerName, err.Error()))
 	}
@@ -212,11 +216,7 @@ func UninstallRRA() error {
 		return err
 	}
 
-	if err = deleteContainer(cm.RRA); err != nil {
-		return err
-	}
-
-	return os.ErrNotExist
+	return deleteContainer(cm.RRA)
 }
 
 func UninstallImagescan() error {
@@ -243,11 +243,7 @@ func UninstallImagescan() error {
 	}
 
 	// Delete docker service
-	if err = deleteContainer(cm.Imagescan); err != nil {
-		return err
-	}
-
-	return os.ErrNotExist
+	return deleteContainer(cm.Imagescan)
 }
 
 func deleteContainer(serviceName string) error {
@@ -316,20 +312,21 @@ func deleteContainer(serviceName string) error {
 	return nil
 }
 
-func getContainerObjects(containerNames []string) (map[string]dockerTypes.Container, error) {
-	installedContainers := make(map[string]dockerTypes.Container, 0)
+func getContainerObjects(containerNames []string) (map[string]dockerContainerTypes.Summary, error) {
+	installedContainers := make(map[string]dockerContainerTypes.Summary, 0)
 	dockerClient, err := onboard.CreateDockerClient()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create docker client. %s", err.Error())
 	}
-	containerList, err := dockerClient.ContainerList(context.Background(), dockerContainerTypes.ListOptions{
+	defer dockerClient.Close()
+	containerList, err := dockerClient.ContainerList(context.Background(), client.ContainerListOptions{
 		All: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to list containers. %s", err.Error())
 	}
 
-	for _, container := range containerList {
+	for _, container := range containerList.Items {
 		containerName := strings.TrimPrefix(container.Names[0], "/")
 		if slices.Contains(containerNames, containerName) {
 			installedContainers[containerName] = container
