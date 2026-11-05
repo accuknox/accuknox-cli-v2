@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"golang.org/x/mod/semver"
+	"golang.org/x/term"
 )
 
 func getComposeCommand(minVersion string) (string, string, error) {
@@ -204,8 +205,14 @@ func ExecComposeCommand(setStdOut, dryRun bool, command string, args ...string) 
 	cmd.Stdout = &output
 	cmd.Stderr = &output
 	if setStdOut {
-		cmd.Stdout = io.MultiWriter(os.Stdout, &output)
-		cmd.Stderr = io.MultiWriter(os.Stderr, &output)
+		if term.IsTerminal(int(os.Stdout.Fd())) || term.IsTerminal(int(os.Stderr.Fd())) {
+			// Give Compose the real terminal descriptors so its automatic ANSI
+			// progress renderer stays interactive. MultiWriter creates pipes.
+			cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+		} else {
+			cmd.Stdout = io.MultiWriter(os.Stdout, &output)
+			cmd.Stderr = io.MultiWriter(os.Stderr, &output)
+		}
 	}
 	if err := cmd.Run(); err != nil {
 		return output.String(), fmt.Errorf("%s failed: %w: %s", command, err, strings.TrimSpace(output.String()))
