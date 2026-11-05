@@ -15,6 +15,7 @@ const (
 )
 
 type Config struct {
+	Schedule           string
 	Endpoint           string
 	Token              string
 	TenantID           uint

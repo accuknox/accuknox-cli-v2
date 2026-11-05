@@ -1,13 +1,18 @@
 package version
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
+	"github.com/accuknox/accuknox-cli-v2/pkg/privilege"
 	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/moby/moby/client"
 )
 
 var (
@@ -20,13 +25,22 @@ const (
 )
 
 type Option struct {
+	Long          bool
+	VMMode        string
 	GitPATPath    string
 	LatestRelease bool
 }
 
 // PrintVersion displays the current version and checks for updates
 func PrintVersion(c *k8s.Client, o Option) error {
-	fmt.Printf("knoxctl's version: %s (Built on %s)\n", GitSummary, BuildDate)
+	if o.VMMode != "" && o.VMMode != "auto" && o.VMMode != "docker" && o.VMMode != "systemd" {
+		return fmt.Errorf("--vm-mode must be auto, docker, or systemd")
+	}
+	if o.Long {
+		fmt.Printf("knoxctl's version: %s (Built on %s)\n", GitSummary, BuildDate)
+	} else {
+		fmt.Printf("knoxctl's version: %s\n", GitSummary)
+	}
 	fmt.Println()
 
 	if o.LatestRelease {
@@ -37,7 +51,25 @@ func PrintVersion(c *k8s.Client, o Option) error {
 		fmt.Printf("knoxctl release version: [%v]\n", releaseVer)
 	}
 
-	return onboard.DetermineAgentVersions()
+	if o.VMMode != "systemd" {
+		found, err := onboard.PrintDockerAgentVersions(context.Background(), os.Stdout, o.Long)
+		if o.VMMode == "docker" {
+			if err != nil {
+				return err
+			}
+			if !found {
+				fmt.Println("No Docker agents found.")
+			}
+			return nil
+		}
+		if err != nil && (errors.Is(err, os.ErrPermission) || !client.IsErrConnectionFailed(err)) {
+			if privilege.IsPermissionError(err) {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "Warning: Docker agent versions unavailable: %v\n", err)
+		}
+	}
+	return onboard.DetermineAgentVersions(o.Long)
 
 	/*
 		// knoxctl based kubernetes installation is not done right now

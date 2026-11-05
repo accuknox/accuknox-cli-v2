@@ -2,15 +2,18 @@ package deboard
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
+	"github.com/accuknox/accuknox-cli-v2/pkg/privilege"
 	"github.com/fatih/color"
 	dockerContainerTypes "github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -200,7 +203,7 @@ func UninstallRRA() error {
 
 	exists, err := onboard.CheckRRASystemdInstallation()
 	if err != nil {
-		fmt.Println(color.RedString("error checking RRA systemd installation"))
+		return fmt.Errorf("checking RRA systemd installation: %w", err)
 	}
 	if exists {
 		fmt.Println(color.BlueString("RRA found running in systemd mode"))
@@ -224,7 +227,7 @@ func UninstallImagescan() error {
 
 	exists, err := onboard.CheckImagescanSystemdInstallation()
 	if err != nil {
-		fmt.Println(color.RedString("error checking imagescan systemd installation"))
+		return fmt.Errorf("checking image scanner systemd installation: %w", err)
 	}
 
 	// Delete systemd service
@@ -247,69 +250,82 @@ func UninstallImagescan() error {
 }
 
 func deleteContainer(serviceName string) error {
-	var cc onboard.ClusterConfig
-
-	// validate docker environment
-	_, err := cc.ValidateEnv()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cli, err := onboard.CreateDockerClient()
 	if err != nil {
-		return os.ErrNotExist
+		return err
 	}
-
-	// check for docker installation for the provided service name
-	containerObj, err := getContainerObjects([]string{serviceName})
-	if err != nil {
-		logger.Warn("error:%s", err.Error())
+	defer cli.Close()
+	err = deleteDockerScanner(ctx, cli, serviceName)
+	removed := err == nil
+	if err != nil && !os.IsNotExist(err) {
+		if client.IsErrConnectionFailed(err) && !privilege.IsPermissionError(err) {
+			return os.ErrNotExist
+		}
+		return err
 	}
-
-	// No containers found for the provided service name prefix
-	if len(containerObj) == 0 {
-		return os.ErrNotExist // exit
-	}
-
-	// logic for deleting the docker container
-	fmt.Println(color.BlueString("%s docker installation found", serviceName))
-
 	configPath, err := cm.GetDefaultConfigPath()
 	if err != nil {
 		return err
 	}
-
 	composeFilePath := filepath.Join(configPath, fmt.Sprintf("docker-compose_%s.yaml", serviceName))
-	_, err = os.Stat(composeFilePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			err = removeInstalledObjects(containerObj, nil, nil)
-			if err != nil {
-				fmt.Println("error", err.Error())
-			}
-			return err
-		} else {
+	if err := os.Remove(composeFilePath); err != nil {
+		if !os.IsNotExist(err) {
 			return err
 		}
+	} else {
+		removed = true
 	}
-
-	composeCmd, _, err := onboard.GetComposeCommand()
-	if err != nil {
+	if !removed {
+		return os.ErrNotExist
+	}
+	if err := os.Remove(configPath); err != nil && !os.IsNotExist(err) && !isDirNotEmpty(err) {
 		return err
 	}
-
-	if _, err = onboard.ExecComposeCommand(true, false, composeCmd,
-		"-f", composeFilePath, "--profile", "accuknox-agents", "down"); err != nil {
-		return fmt.Errorf("error: %s", err.Error())
-	}
-
-	if err = os.Remove(composeFilePath); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	// delete configdir if it is empty(for cases if only RRA is installed)
-	if err = os.Remove(configPath); err != nil {
-		if !os.IsNotExist(err) && !isDirNotEmpty(err) {
-			return err
-		}
-	}
-
 	return nil
+}
+
+type scannerDockerClient interface {
+	ContainerList(context.Context, client.ContainerListOptions) (client.ContainerListResult, error)
+	ContainerStop(context.Context, string, client.ContainerStopOptions) (client.ContainerStopResult, error)
+	ContainerRemove(context.Context, string, client.ContainerRemoveOptions) (client.ContainerRemoveResult, error)
+}
+
+// Remove only the named scanner. Compose down would also act on shared
+// services/networks defined in the scanner's Compose project.
+func deleteDockerScanner(ctx context.Context, cli scannerDockerClient, name string) error {
+	result, err := cli.ContainerList(ctx, client.ContainerListOptions{All: true})
+	if err != nil {
+		return fmt.Errorf("listing Docker scanners: %w", err)
+	}
+	found := false
+	var failures []error
+	for _, item := range result.Items {
+		matched := false
+		for _, candidate := range item.Names {
+			if strings.TrimPrefix(candidate, "/") == name {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			continue
+		}
+		found = true
+		if item.State == dockerContainerTypes.StateRunning {
+			if _, err := cli.ContainerStop(ctx, item.ID, client.ContainerStopOptions{}); err != nil {
+				failures = append(failures, fmt.Errorf("stopping %s: %w", name, err))
+			}
+		}
+		if _, err := cli.ContainerRemove(ctx, item.ID, client.ContainerRemoveOptions{}); err != nil {
+			failures = append(failures, fmt.Errorf("removing %s: %w", name, err))
+		}
+	}
+	if !found {
+		return os.ErrNotExist
+	}
+	return errors.Join(failures...)
 }
 
 func getContainerObjects(containerNames []string) (map[string]dockerContainerTypes.Summary, error) {

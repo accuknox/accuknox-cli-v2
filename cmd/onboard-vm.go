@@ -184,7 +184,7 @@ func init() {
 	onboardVMCmd.PersistentFlags().BoolVarP(&enableVMScan, "enable-vmscan", "", false, " Set to true to install RRA along with other kubearmor and accuknox-agents ")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&profile), "profile", "", "ubuntu,rhel")
 	onboardVMCmd.PersistentFlags().StringVar((*string)(&benchmark), "benchmark", "", "security benchmark (stig,soc2)")
-	onboardVMCmd.PersistentFlags().StringVar((*string)(&schedule), "schedule", "", "schedule for RRA to run")
+	onboardVMCmd.PersistentFlags().StringVar((*string)(&schedule), "schedule", "", "cron schedule for selected RRA, image, and native VM scanners (VM/image default: daily)")
 	onboardVMCmd.PersistentFlags().StringVarP(&authToken, "auth-token", "t", "", "artifact API token (alias: --token; defaults to OMNI_ARTIFACT_API_TOKEN)")
 	onboardVMCmd.PersistentFlags().StringVar(&authTokenFile, "token-file", "", "read artifact API token from a file (aliases: --auth-token-file, --artifact-token-file)")
 	onboardVMCmd.MarkFlagsMutuallyExclusive("auth-token", "token-file")
@@ -246,8 +246,9 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&fromSource, "from-source", "", "use agents from url or local path")
 
 	// Optional scanners for control-plane and worker node onboarding
-	onboardVMCmd.PersistentFlags().BoolVar(&enableOmniVMScan, "enable-vm-scan", false, "install Omni VM vulnerability scanner (daily native agent)")
+	onboardVMCmd.PersistentFlags().BoolVar(&enableOmniVMScan, "enable-vm-scan", false, "install Omni VM vulnerability scanner (scheduled native agent)")
 	onboardVMCmd.PersistentFlags().BoolVar(&onboardVMScanUseScript, "use-script", false, "use the external Omni installer when --enable-vm-scan is enabled")
+	onboardVMCmd.PersistentFlags().BoolVar(&onboardVMScanSkipSchedule, "vm-scan-skip-schedule", false, "ignore --schedule for the VM scanner and use its daily default; RRA and image scanners keep --schedule")
 	onboardVMCmd.PersistentFlags().BoolVar(&imageScan, "enable-image-scan", false, "deploy container image scanner")
 	onboardVMCmd.PersistentFlags().StringVar(&onboardVMScannerOptions.ScriptURL, "vm-scan-script-url", vmscan.InstallerURL, "Omni installer URL")
 	onboardVMCmd.PersistentFlags().StringVar(&onboardVMScannerOptions.ScriptPath, "vm-scan-script-path", "", "local Omni installer file (requires --use-script)")
