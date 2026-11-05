@@ -1,12 +1,15 @@
 [Unit]
-Description=Run AccuKnox VM vulnerability scanning daily
+Description=Run AccuKnox VM vulnerability scanning on schedule
 
 [Timer]
-OnCalendar=daily
+OnCalendar={{.Schedule}}
 Unit=omni.service
 Persistent=true
-AccuracySec=1h
+{{if .CustomSchedule}}AccuracySec=1s
+RandomizedDelaySec=0
+{{else}}AccuracySec=1h
 RandomizedDelaySec=10m
+{{end}}
 
 [Install]
 WantedBy=timers.target

@@ -13,18 +13,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var onboardRRAScan bool
+
 // onboardVM scan represents the sub-command to onboard VM clusters
 var onboardVmScanCmd = &cobra.Command{
 	Use:   "scanner",
-	Short: "sub-command for onboarding RRA(risk assessment tool) and container image scanning",
-	Long:  "sub-command for onboarding RRA(risk assessment tool) and container image scanning",
+	Short: "Install RRA, VM vulnerability, and container image scanners",
+	Long:  "Install RRA by default. Use --rra-scan=false to disable RRA, --vm-scanner=true to install the scheduled VM vulnerability scanner, --malware-scan=true to include malware scanning, and --image-scan=true to install the container image scanner.",
+	Example: `  # Install only the VM vulnerability scanner with malware scanning
+  sudo knoxctl onboard vm scanner --rra-scan=false --vm-scanner=true --malware-scan=true --schedule="0 */6 * * *" \
+    --url=https://cspm.accuknox.com/api/v1/artifact/ --tenant-id=123 --label=LABEL --token-file=/path/to/token
+
+  # Add VM and container image scanning to the default RRA installation
+  sudo knoxctl onboard vm scanner --vm-scanner=true --image-scan=true \
+    --url=https://cspm.accuknox.com/api/v1/artifact/ --tenant-id=123 --label=LABEL \
+    --token-file=/path/to/token --cluster-name=CLUSTER --profile=ubuntu --benchmark=stig --schedule="0 0 * * *"`,
+	Args:              cobra.NoArgs,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := validateLegacyRRAFlags(cmd); err != nil {
+		if err := validateScannerSelection(cmd); err != nil {
 			return err
 		}
 
-		if clusterName == "" {
-			return fmt.Errorf("cluster name is required")
+		if dryRun {
+			if onboardRRAScan {
+				fmt.Fprintln(cmd.OutOrStdout(), "Would install the RRA scanner")
+			}
+			return installOnboardScanners(cmd, &onboard.ClusterConfig{DryRun: true})
+		}
+		// A standalone VM scanner does not need RRA's Docker/SPIRE setup.
+		if !onboardRRAScan && !imageScan {
+			return installOnboardScanners(cmd, &onboard.ClusterConfig{})
 		}
 
 		// create cluster config
@@ -70,7 +89,7 @@ var onboardVmScanCmd = &cobra.Command{
 			cc.AdditionalArgs["NetworkCIDR"] = cc.CIDR
 		}
 
-		cc.EnableVMScan = true
+		cc.EnableVMScan = onboardRRAScan
 		// create RRA config
 		cc.Mode = vmMode
 		cc.LogRotateMaxFile = logRotateMaxFile
@@ -85,42 +104,51 @@ var onboardVmScanCmd = &cobra.Command{
 		if tokenErr != nil {
 			return tokenErr
 		}
-		err = cc.InitRRAConfig(artifactToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, agentsDeployed, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
-		if err != nil {
-			logger.Error(" failed to initialize RRA config:%s", err.Error())
-			return err
-		}
-
-		err = cc.InstallRRA()
-		if err != nil {
-			logger.Error("failed to install RRA: %s", err.Error())
-			return err
-		}
-
-		logger.PrintSuccess("RRA installed successfully!!")
-
-		// Install image-scan
-		if imageScan {
-			cc.AgentsResource = agentsResource
-			if err := cc.InitImageScan(artifactToken, url, tenantID, clusterID, clusterName, label, schedule, allImages); err != nil {
-				logger.Error("failed to initialize image scanner: %s", err.Error())
+		if onboardRRAScan {
+			err = cc.InitRRAConfig(artifactToken, url, tenantID, clusterID, clusterName, label, schedule, profile, benchmark, registry, registryConfigPath, insecure, plainHTTP, imageVersions.RRAImage, imageVersions.RRAImageTag, releaseVersion, preserveUpstream, agentsDeployed, imageVersions.SpireImage, spireHost, spireDir, knoxGateway)
+			if err != nil {
+				logger.Error(" failed to initialize RRA config:%s", err.Error())
 				return err
 			}
 
-			if err := cc.InstallImagescan(); err != nil {
-				logger.Error("failed to installing image scanner: %s", err.Error())
+			err = cc.InstallRRA()
+			if err != nil {
+				logger.Error("failed to install RRA: %s", err.Error())
 				return err
 			}
 
-			logger.PrintSuccess("Image scanner installed successfully!!")
+			logger.PrintSuccess("RRA installed successfully!!")
 		}
 
-		return nil
+		cc.AgentsResource = agentsResource
+		return installOnboardScanners(cmd, &cc)
 	},
+}
+
+func validateScannerSelection(cmd *cobra.Command) error {
+	if !onboardRRAScan && !enableOmniVMScan && !imageScan {
+		return fmt.Errorf("enable at least one scanner: --rra-scan, --vm-scanner, or --image-scan")
+	}
+	if onboardVMScannerOptions.MalwareScan && !enableOmniVMScan {
+		return fmt.Errorf("--malware-scan requires --vm-scanner=true")
+	}
+	if onboardRRAScan {
+		if err := validateLegacyRRAFlags(cmd); err != nil {
+			return err
+		}
+	}
+	if (onboardRRAScan || imageScan) && clusterName == "" {
+		return fmt.Errorf("cluster name is required for RRA or image scanning")
+	}
+	return validateOnboardScanners(cmd)
 }
 
 func init() {
 	onboardVmScanCmd.PersistentFlags().StringVarP(&releaseVersion, "version", "v", "", "agents release version to use")
+	onboardVmScanCmd.Flags().BoolVar(&onboardRRAScan, "rra-scan", true, "install the RRA risk assessment scanner")
+	onboardVmScanCmd.Flags().BoolVar(&enableOmniVMScan, "vm-scanner", false, "install the daily Omni VM vulnerability scanner (alias: --enable-vm-scan)")
+	onboardVmScanCmd.Flags().BoolVar(&onboardVMScannerOptions.MalwareScan, "malware-scan", false, "include malware scanning with --vm-scanner; requires ClamAV and signatures")
+	onboardVmScanCmd.Flags().StringVar(&onboardVMScannerOptions.MalwareDBDirectory, "malware-db-directory", "/var/lib/clamav", "ClamAV signature database directory")
 
 	// all flags are optional
 	onboardVMCmd.AddCommand(onboardVmScanCmd)

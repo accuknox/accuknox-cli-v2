@@ -27,6 +27,7 @@ const (
 )
 
 type VMScannerServiceConfig struct {
+	Schedule       string
 	Executable     string
 	Arguments      []string
 	Token          string
@@ -51,18 +52,24 @@ func InstallVMScanner(ctx context.Context, c VMScannerServiceConfig, stdout, std
 		stderr = io.Discard
 	}
 	run := func(ctx context.Context, args ...string) (string, error) {
-		cmd := exec.CommandContext(ctx, "systemctl", args...)
-		var output bytes.Buffer
-		if len(args) > 0 && args[0] == "show" {
-			cmd.Stdout = &output
-		} else {
-			cmd.Stdout = io.MultiWriter(stdout, &output)
-		}
-		cmd.Stderr = stderr
-		err := cmd.Run()
-		return output.String(), err
+		return runVMScannerSystemctl(ctx, stdout, stderr, args...)
 	}
 	return installVMScannerWithLegacy(ctx, c, VMScannerSystemdDirectory, "/var/lib/knoxctl/vm-scan", "/etc/systemd/system", run)
+}
+
+func runVMScannerSystemctl(ctx context.Context, stdout, stderr io.Writer, args ...string) (string, error) {
+	cmd := exec.CommandContext(ctx, "systemctl", args...)
+	var output, diagnostics bytes.Buffer
+	if len(args) > 0 && args[0] == "show" {
+		cmd.Stdout = &output
+	} else {
+		cmd.Stdout = io.MultiWriter(stdout, &output)
+	}
+	cmd.Stderr = io.MultiWriter(stderr, &diagnostics)
+	if err := cmd.Run(); err != nil {
+		return output.String(), fmt.Errorf("systemctl %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(diagnostics.String()))
+	}
+	return output.String(), nil
 }
 
 func systemdArgument(value string) string {
@@ -76,6 +83,10 @@ func installVMScanner(ctx context.Context, c VMScannerServiceConfig, unitDir, st
 }
 
 func installVMScannerWithLegacy(ctx context.Context, c VMScannerServiceConfig, unitDir, stateDir, legacyDir string, run vmScannerCommand) error {
+	schedule, err := ConvertCronToSystemd(c.Schedule)
+	if err != nil {
+		return err
+	}
 	if !filepath.IsAbs(c.Executable) {
 		return fmt.Errorf("knoxctl executable path must be absolute")
 	}
@@ -94,6 +105,8 @@ func installVMScannerWithLegacy(ctx context.Context, c VMScannerServiceConfig, u
 	}
 	envPath := filepath.Join(c.AgentDirectory, "scanner.env")
 	values := map[string]any{
+		"Schedule":        schedule,
+		"CustomSchedule":  c.Schedule != "",
 		"EnvironmentFile": strings.ReplaceAll(envPath, "%", "%%"),
 		"Command":         strings.Join(args, " "),
 		"LogDirectory":    strings.ReplaceAll(c.AgentDirectory, "%", "%%"),
@@ -206,7 +219,7 @@ func legacyVMScannerUnits(legacyDir, unitDir string) (map[string][]byte, error) 
 	}
 	for unit, descriptions := range map[string][]string{
 		"omni.service": {"Description=AccuKnox Omni", "Description=AccuKnox Knoxctl VM vulnerability scanner"},
-		"omni.timer":   {"Description=Run AccuKnox Omni periodically", "Description=Run AccuKnox VM vulnerability scanning daily"},
+		"omni.timer":   {"Description=Run AccuKnox Omni periodically", "Description=Run AccuKnox VM vulnerability scanning daily", "Description=Run AccuKnox VM vulnerability scanning on schedule"},
 	} {
 		path := filepath.Join(legacyDir, unit)
 		if target, err := filepath.EvalSymlinks(path); err == nil {

@@ -31,6 +31,9 @@ func Install(ctx context.Context, c Config, stdout, stderr io.Writer) error {
 
 // ValidateInstall checks local assets before any installer execution or download.
 func (c Config) ValidateInstall() error {
+	if c.Schedule != "" {
+		return fmt.Errorf("custom VM scanner schedules require native installation; omit --use-script")
+	}
 	if c.ClusterID != nil || c.ClusterName != "" {
 		return fmt.Errorf("cluster metadata requires native scanning; omit --use-script")
 	}
