@@ -167,6 +167,28 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
 
 /* ── Signing panel ─────────────────────────────────────────────────────────── */
 .sign-toggle{margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+.enrich-section{margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+.enrich-section>summary{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);user-select:none;list-style:none}
+.enrich-section>summary::-webkit-details-marker{display:none}
+.enrich-section[open]>summary{margin-bottom:4px}
+.enrich-body{padding-top:4px}
+.enrich-grouphdr{margin:16px 0 8px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--text)}
+.enrich-grouphdr span{font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)}
+.en-badge{margin-left:8px;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none;vertical-align:middle}
+.en-badge.en-off{background:rgba(127,127,127,.15);color:var(--text-muted);border:1px solid var(--border)}
+.en-badge.en-on{background:rgba(22,163,74,.14);color:#16a34a;border:1px solid rgba(22,163,74,.35)}
+.enrich-subhdr{margin:14px 0 6px;font-size:11.5px;font-weight:700;color:var(--text-muted)}
+.enrich-subhdr code{font-size:11px;color:var(--brand)}
+.hint-dim{font-weight:400;color:var(--text-muted);font-size:11px}
+.purl-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.purl-preview{display:block;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-sunken,rgba(127,127,127,.06));font-size:11.5px;color:var(--text);word-break:break-all}
+.auto-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px}
+.auto-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-sunken,rgba(127,127,127,.06));font-size:12.5px}
+.auto-row .auto-ok{color:#16a34a;font-weight:700;flex:none}
+.auto-row .auto-ok.auto-cond{color:#d97706}
+.auto-row .auto-name{font-weight:600;color:var(--text)}
+.auto-row code{margin-left:auto;font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48%}
+.tip{flex:none;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--border);color:var(--text-muted);font-size:10px;font-style:italic;cursor:help;user-select:none}
 .sign-check{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);user-select:none}
 .sign-check input[type=checkbox]{width:15px;height:15px;accent-color:var(--brand);cursor:pointer}
 .sign-opts{margin-top:12px;padding:12px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
@@ -462,6 +484,174 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
           Dependency Depth <span style="font-weight:400;text-transform:none;color:var(--text-muted)">— include the full dependency graph (deep filesystem scan)</span>
         </label>
       </div>
+
+      <!-- CERT-In metadata enrichment (CycloneDX only) -->
+      <details class="enrich-section" id="sbom-enrich" ontoggle="if(this.open)prefillCompName()">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--brand)"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/></svg>
+          CERT-In SBOM Coverage
+          <span id="sbom-en-status" class="en-badge en-off">Off</span>
+          <span style="font-weight:400;text-transform:none;color:var(--text-muted);margin-left:6px">— CERT-In Technical Guidelines fields (CycloneDX)</span>
+        </summary>
+        <div class="enrich-body">
+          <div class="alert alert-info" style="margin-top:12px">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>All 21 CERT-In fields. <strong>Derived</strong> fields come from the generated file; <strong>provided</strong> fields are injected after generation. Leave any blank to skip it.</div>
+          </div>
+
+          <!-- Group 1: derived from the generated file -->
+          <div class="enrich-grouphdr">Derived from the generated file
+            <span>— no input needed</span>
+          </div>
+          <div class="auto-grid">
+            <div class="auto-row"><span class="auto-ok">✓</span><span class="auto-name">Component Dependencies</span><code>dependencies[]</code><span class="tip" title="Produced by generation per component (ref + dependsOn) for the full graph.">ℹ</span></div>
+            <div class="auto-row"><span class="auto-ok">✓</span><span class="auto-name">Timestamp</span><code>metadata.timestamp</code><span class="tip" title="Set at generation. You can override it below.">ℹ</span></div>
+            <div class="auto-row"><span class="auto-ok auto-cond">◐</span><span class="auto-name">Vulnerabilities</span><code>vulnerabilities[]</code><span class="tip" title="Present only when vulnerability scanning is enabled; CycloneDX export disables it by default.">ℹ</span></div>
+          </div>
+
+          <!-- Group 2: provided by you -->
+          <div class="enrich-grouphdr">Provided by you
+            <span>— CERT-In fields the scanner cannot infer; injected after generation</span>
+          </div>
+
+          <div class="enrich-subhdr">Product — <code>metadata.component</code></div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Component Name <span class="hint-dim">(from scan path)</span></label>
+              <input type="text" id="sbom-en-comp-name" placeholder="lobe-chat-main" oninput="refreshPurl()"/>
+            </div>
+            <div class="field">
+              <label>Component Version</label>
+              <input type="text" id="sbom-en-comp-version" placeholder="9.0.71" oninput="refreshPurl()"/>
+            </div>
+            <div class="field">
+              <label>Component Description</label>
+              <input type="text" id="sbom-en-comp-description" placeholder="Short description of the product"/>
+            </div>
+            <div class="field">
+              <label>Component License</label>
+              <input type="text" id="sbom-en-comp-license" placeholder="Apache-2.0"/>
+            </div>
+            <div class="field">
+              <label>Component Origin <span class="hint-dim">(author)</span></label>
+              <input type="text" id="sbom-en-comp-origin" placeholder="Apache Software Foundation"/>
+            </div>
+            <div class="field">
+              <label>Supplier — Name</label>
+              <input type="text" id="sbom-en-supplier-name" placeholder="ACME Corp" oninput="refreshPurl()"/>
+            </div>
+            <div class="field">
+              <label>Supplier — URL</label>
+              <input type="text" id="sbom-en-supplier-url" placeholder="https://acme.example.com"/>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Unique Identifier <span class="hint-dim">(Package URL — built from supplier / name / version)</span></label>
+              <div class="purl-row">
+                <input type="text" id="sbom-en-purl-qualifiers" placeholder="qualifiers e.g. arch=x86_64&amp;os=linux" oninput="refreshPurl()"/>
+                <input type="text" id="sbom-en-purl-subpath" placeholder="subpath e.g. server/webapps" oninput="refreshPurl()"/>
+              </div>
+              <code class="purl-preview" id="sbom-en-purl-preview">— enter a component name —</code>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Checksums / Hashes <span class="hint-dim">(auto-filled from <code>components[]</code> if left blank)</span></label>
+              <div class="purl-row">
+                <select id="sbom-en-hash-alg">
+                  <option value="SHA-256">SHA-256</option>
+                  <option value="SHA-512">SHA-512</option>
+                  <option value="SHA-384">SHA-384</option>
+                  <option value="SHA-1">SHA-1</option>
+                  <option value="MD5">MD5</option>
+                </select>
+                <input type="text" id="sbom-en-hash-value" placeholder="hex digest"/>
+              </div>
+            </div>
+          </div>
+
+          <div class="enrich-subhdr">SBOM document &amp; CERT-In properties</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>SBOM Author — Name</label>
+              <input type="text" id="sbom-en-author-name" placeholder="Security Team"/>
+            </div>
+            <div class="field">
+              <label>SBOM Author — Email</label>
+              <input type="text" id="sbom-en-author-email" placeholder="security@example.com"/>
+            </div>
+            <div class="field">
+              <label>Criticality</label>
+              <select id="sbom-en-criticality">
+                <option value="">— not set —</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Release Date</label>
+              <input type="date" id="sbom-en-release"/>
+            </div>
+            <div class="field">
+              <label>End-of-Life (EOL) Date</label>
+              <input type="date" id="sbom-en-eol"/>
+              <label class="sign-check" style="margin-top:4px"><input type="checkbox" id="sbom-en-eol-na" onchange="toggleEolNA()"> No EOL / Not applicable</label>
+            </div>
+            <div class="field">
+              <label>Patch Status</label>
+              <input type="text" id="sbom-en-patch" placeholder="Up to date"/>
+            </div>
+            <div class="field">
+              <label>Executable Property</label>
+              <select id="sbom-en-executable" onchange="toggleCertinFile('sbom-en-executable','sbom-en-exec-files-wrap')">
+                <option value="">— not set —</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="field" id="sbom-en-exec-files-wrap" style="display:none">
+              <label>Executable file(s)</label>
+              <input type="text" id="sbom-en-exec-files" placeholder="catalina.sh, startup.bat"/>
+            </div>
+            <div class="field">
+              <label>Archive Property</label>
+              <select id="sbom-en-archive" onchange="toggleCertinFile('sbom-en-archive','sbom-en-archive-files-wrap')">
+                <option value="">— not set —</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="field" id="sbom-en-archive-files-wrap" style="display:none">
+              <label>Archive file(s)</label>
+              <input type="text" id="sbom-en-archive-files" placeholder="twilio-python.tar.gz, twilio-java.jar"/>
+            </div>
+            <div class="field">
+              <label>Structured Property</label>
+              <select id="sbom-en-structured" onchange="toggleCertinFile('sbom-en-structured','sbom-en-structured-files-wrap')">
+                <option value="">— not set —</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="field" id="sbom-en-structured-files-wrap" style="display:none">
+              <label>Structured file(s)</label>
+              <input type="text" id="sbom-en-structured-files" placeholder="schema.sql, main.cf, master.cf"/>
+            </div>
+            <div class="field">
+              <label>Usage Restrictions</label>
+              <input type="text" id="sbom-en-usage" placeholder="None / export-controlled / requires account"/>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Comments / Notes</label>
+              <input type="text" id="sbom-en-notes" placeholder="Additional notes or annotations for this SBOM"/>
+            </div>
+          </div>
+          <div class="sign-toggle">
+            <label class="sign-check"><input type="checkbox" id="sbom-en-timestamp-now">
+              Override <code>metadata.timestamp</code> with the current time
+            </label>
+          </div>
+        </div>
+      </details>
 
       <div class="sign-toggle">
         <label class="sign-check"><input type="checkbox" id="sbom-sign" onchange="toggleSignOpts('sbom')">
@@ -1710,6 +1900,70 @@ function opEnd(startId, stopId) {
   const x = document.getElementById(stopId);  if (x) x.style.display = 'none';
 }
 
+/* ── CERT-In enrichment helpers ───────────────────────────────────────────── */
+/* Derive a component name from a scan source: last path segment, with a .git
+   suffix or an image :tag stripped. */
+function basename(src) {
+  src = (src || '').trim().replace(/[\/\\]+$/, '');
+  if (!src) return '';
+  let seg = src.split(/[\/\\]/).pop() || src;
+  seg = seg.replace(/\.git$/i, '');          // git repo URL
+  if (!src.includes('/') && seg.includes(':')) seg = seg.split(':')[0]; // image ref name:tag
+  return seg;
+}
+/* Build the CERT-In "Unique Identifier" purl:
+   pkg:supplier/<Org>/<Name>@<Version>?<qualifiers>#<subpath> */
+function buildPurl() {
+  const name = v('sbom-en-comp-name') || basename(v('sbom-source'));
+  if (!name) return '';
+  const org = (v('sbom-en-supplier-name') || 'unknown').replace(/\s+/g, '');
+  let p = 'pkg:supplier/' + encodeURIComponent(org) + '/' + encodeURIComponent(name);
+  const ver = v('sbom-en-comp-version');
+  if (ver) p += '@' + encodeURIComponent(ver);
+  const q = v('sbom-en-purl-qualifiers'); if (q) p += '?' + q.replace(/^\?/, '');
+  const sp = v('sbom-en-purl-subpath');   if (sp) p += '#' + sp.replace(/^#/, '');
+  return p;
+}
+function refreshPurl() {
+  const el = document.getElementById('sbom-en-purl-preview');
+  if (el) el.textContent = buildPurl() || '— enter a component name —';
+}
+/* Prefill Component Name from the scan path when the section opens (only if the
+   user has not already typed one), then refresh the purl preview. */
+function prefillCompName() {
+  const n = document.getElementById('sbom-en-comp-name');
+  if (n && !n.value) n.value = basename(v('sbom-source'));
+  refreshPurl();
+  updateEnrichStatus();
+}
+/* Reveal the file-name input when an Executable/Archive/Structured select = Yes. */
+function toggleCertinFile(selId, wrapId) {
+  const w = document.getElementById(wrapId);
+  if (w) w.style.display = (document.getElementById(selId)?.value === 'Yes') ? '' : 'none';
+}
+/* Disable the EOL date when "No EOL / Not applicable" is ticked. */
+function toggleEolNA() {
+  const na = document.getElementById('sbom-en-eol-na')?.checked;
+  const d  = document.getElementById('sbom-en-eol');
+  if (d) d.disabled = !!na;
+  updateEnrichStatus();
+}
+/* Reflect CERT-In coverage state in the header badge: count filled fields and
+   show "Active · N fields" (green) or "Off" (grey). */
+function updateEnrichStatus() {
+  const root = document.getElementById('sbom-enrich');
+  const b = document.getElementById('sbom-en-status');
+  if (!root || !b) return;
+  let n = 0;
+  root.querySelectorAll('input, select').forEach(el => {
+    if (el.id === 'sbom-en-hash-alg') return;        // only meaningful with a value
+    if (el.type === 'checkbox') { if (el.checked) n++; return; }
+    if ((el.value || '').trim() !== '') n++;
+  });
+  if (n > 0) { b.textContent = 'Active · ' + n + (n === 1 ? ' field' : ' fields'); b.className = 'en-badge en-on'; }
+  else { b.textContent = 'Off'; b.className = 'en-badge en-off'; }
+}
+
 /* ── SBOM ──────────────────────────────────────────────────────────────────── */
 function runSBOM() {
   if (_cmdLocked['sbom']) { runEditedCmd('sbom-btn','sbom-stop','sbom', document.getElementById('preview-sbom')?.value||''); return; }
@@ -1728,6 +1982,35 @@ function runSBOM() {
       token:    v('sbom-git-token'),
       ref:      v('sbom-git-ref'),
     },
+    enrich: {
+      authorName:   v('sbom-en-author-name'),
+      authorEmail:  v('sbom-en-author-email'),
+      supplierName: v('sbom-en-supplier-name'),
+      supplierUrl:  v('sbom-en-supplier-url'),
+      timestampNow: !!document.getElementById('sbom-en-timestamp-now')?.checked,
+      componentName:        v('sbom-en-comp-name') || basename(v('sbom-source')),
+      componentVersion:     v('sbom-en-comp-version'),
+      componentDescription: v('sbom-en-comp-description'),
+      componentLicense:     v('sbom-en-comp-license'),
+      componentOrigin:      v('sbom-en-comp-origin'),
+      uniqueIdentifier:     buildPurl(),
+      hashAlg:              v('sbom-en-hash-alg'),
+      hashValue:            v('sbom-en-hash-value'),
+      pullHashes:           (v('sbom-format') || 'cyclonedx-json') === 'cyclonedx-json',
+      criticality:  v('sbom-en-criticality'),
+      releaseDate:  v('sbom-en-release'),
+      eolDate:      v('sbom-en-eol'),
+      eolNotApplicable: !!document.getElementById('sbom-en-eol-na')?.checked,
+      executable:   v('sbom-en-executable'),
+      executableFiles: v('sbom-en-executable') === 'Yes' ? v('sbom-en-exec-files') : '',
+      archive:      v('sbom-en-archive'),
+      archiveFiles: v('sbom-en-archive') === 'Yes' ? v('sbom-en-archive-files') : '',
+      structured:   v('sbom-en-structured'),
+      structuredFiles: v('sbom-en-structured') === 'Yes' ? v('sbom-en-structured-files') : '',
+      patchStatus:  v('sbom-en-patch'),
+      usageRestrictions: v('sbom-en-usage'),
+      notes:        v('sbom-en-notes'),
+    },
     ...getSignParams('sbom'),
   },
   'sbom',
@@ -1737,6 +2020,7 @@ function runSBOM() {
     showOutput('sbom', data.result || '(no output)');
     const cnt = document.getElementById('sbom-count');
     if (cnt && data.count !== undefined) cnt.textContent = data.count + ' components';
+    showValidation('sbom', data.validation);
     showSignResult('sbom', data);
     if (data.signError) showOutput('sbom', (data.result||'') + '\n\n⚠ Signing failed: ' + data.signError);
     showPublishPanel('sbom', data.result || '');
@@ -1744,6 +2028,32 @@ function runSBOM() {
     opEnd('sbom-btn', 'sbom-stop');
   },
   err => { showOutput('sbom', '⚠ Error: ' + err); opEnd('sbom-btn', 'sbom-stop'); });
+}
+
+/* Render a CycloneDX validation badge next to the component count. */
+function showValidation(key, val) {
+  const cnt = document.getElementById(key + '-count');
+  if (!cnt) return;
+  const prev = document.getElementById(key + '-valid-badge');
+  if (prev) prev.remove();
+  if (!val) return;
+  const b = document.createElement('span');
+  b.id = key + '-valid-badge';
+  b.className = 'badge';
+  b.style.marginLeft = '8px';
+  if (val.skipped) {
+    b.classList.add('badge-warn');
+    b.textContent = 'validation skipped';
+    b.title = val.output || '';
+  } else if (val.valid) {
+    b.classList.add('badge-ok');
+    b.textContent = '✓ CycloneDX ' + (val.specVersion || 'v1.6') + ' valid';
+  } else {
+    b.classList.add('badge-err');
+    b.textContent = '✗ CycloneDX invalid';
+    b.title = val.output || '';
+  }
+  cnt.parentNode.insertBefore(b, cnt.nextSibling);
 }
 
 /* ── CBOM source ───────────────────────────────────────────────────────────── */
@@ -2621,6 +2931,13 @@ function v(id) { const el = document.getElementById(id); return el ? el.value.tr
     if (icon) icon.innerHTML = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
   }
   startConnectionPolling();
+  // Live CERT-In coverage badge: recompute whenever any enrich field changes.
+  const enrichRoot = document.getElementById('sbom-enrich');
+  if (enrichRoot) {
+    enrichRoot.addEventListener('input',  updateEnrichStatus);
+    enrichRoot.addEventListener('change', updateEnrichStatus);
+    updateEnrichStatus();
+  }
   // Wire up command previews — each watches its own card container.
   watchPreview('sec-sbom',    buildCmdSBOM,    'sbom');
   watchPreview('cbom-source-panel', buildCmdCBOMSrc, 'cbom-src');
