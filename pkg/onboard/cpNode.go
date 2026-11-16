@@ -49,6 +49,9 @@ func InitCPNodeConfig(cc ClusterConfig, joinToken, spireHost, ppsHost, knoxGatew
 }
 
 func (ic *InitConfig) CreateBaseTemplateConfig() error {
+	if err := ic.ValidateSummarySchema(); err != nil {
+		return err
+	}
 	ic.validateIMA()
 
 	hostname, err := os.Hostname()
@@ -142,12 +145,15 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 
 		EnableHostPolicyDiscovery: ic.EnableHostPolicyDiscovery,
 
-		ProcessOperation:     ic.ProcessOperation,
-		FileOperation:        ic.FileOperation,
-		NetworkOperation:     ic.NetworkOperation,
-		RRAConfigObject:      ic.RRAConfigObject,
-		SumEngineCronTime:    ic.SumEngineCronTime,
-		NodeStateRefreshTime: ic.NodeStateRefreshTime,
+		ProcessOperation:       ic.ProcessOperation,
+		FileOperation:          ic.FileOperation,
+		NetworkOperation:       ic.NetworkOperation,
+		RRAConfigObject:        ic.RRAConfigObject,
+		SumEngineCronTime:      ic.SumEngineCronTime,
+		SummarySchemaVersion:   ic.summarySchema(),
+		SummaryTopic:           ic.summaryTopic(),
+		DiscoveryEngineVersion: strings.TrimPrefix(ic.summarySchema(), "v"),
+		NodeStateRefreshTime:   ic.NodeStateRefreshTime,
 
 		SpireCert:      ic.SpireCert,
 		SpireEnabled:   ic.SpireEnabled,
@@ -304,7 +310,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 		}
 		// generate kmux config only if it exists for this agent
 		if agentObj.kmuxConfigPath != "" {
-			populateKmuxArgs(&kmuxConfigArgs, agentObj.agentName, agentObj.kmuxConfigFileName, ic.TCArgs.RMQTopicPrefix, tcArgs.Hostname, ic.RMQConnectionName)
+			populateKmuxArgs(&kmuxConfigArgs, agentObj.agentName, agentObj.kmuxConfigFileName, ic.TCArgs.RMQTopicPrefix, tcArgs.Hostname, ic.RMQConnectionName, ic.summarySchema())
 			kmuxConfigArgs.UseCaFile = useCaFile(&tcArgs, agentObj.agentName, "")
 			if _, err := copyOrGenerateFile(ic.UserConfigPath, agentConfigPath, agentObj.kmuxConfigFileName, sprigFuncs, agentObj.kmuxConfigTemplateString, kmuxConfigArgs); err != nil {
 				return err
@@ -407,7 +413,7 @@ func populateAgentArgs(tcArgs *TemplateConfigArgs, configDir string) {
 	tcArgs.PoliciesListKmuxConfig = fmt.Sprintf("%s/%s/%s", common.InContainerConfigDir, configDir, common.KmuxPoliciesListFileName)
 }
 
-func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFile, prefix, hostname, connName string) {
+func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFile, prefix, hostname, connName string, schema ...string) {
 	if prefix == "" {
 		prefix = "agents"
 	}
@@ -430,6 +436,9 @@ func populateKmuxArgs(kmuxConfigArgs *KmuxConfigTemplateArgs, agentName, kmuxFil
 	}
 
 	if qn, ok := common.QueueName[kmuxFile]; ok {
+		if kmuxFile == common.KmuxSummaryFileName && len(schema) > 0 && schema[0] == "v3" {
+			qn = "summary-v3"
+		}
 		kmuxConfigArgs.QueueName = fmt.Sprintf("%s-%s", prefix, qn)
 	}
 

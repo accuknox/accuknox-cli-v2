@@ -200,7 +200,7 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 		}
 		// copy kmux config
 		if obj.KmuxConfigPath != "" {
-			populateKmuxArgs(&kmuxConfigArgs, obj.AgentName, obj.KmuxConfigFileName, ic.TCArgs.RMQTopicPrefix, ic.TCArgs.Hostname, ic.RMQConnectionName)
+			populateKmuxArgs(&kmuxConfigArgs, obj.AgentName, obj.KmuxConfigFileName, ic.TCArgs.RMQTopicPrefix, ic.TCArgs.Hostname, ic.RMQConnectionName, ic.summarySchema())
 			kmuxConfigArgs.UseCaFile = useCaFile(&ic.TCArgs, obj.AgentName, obj.AgentImage)
 			_, err = copyOrGenerateFile(ic.UserConfigPath, obj.AgentDir, obj.KmuxConfigFileName, ic.TemplateFuncs, obj.KmuxConfigTemplateString, kmuxConfigArgs)
 			if err != nil {
