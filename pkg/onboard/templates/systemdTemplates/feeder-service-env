@@ -21,11 +21,11 @@ SPIRE_ENABLED=true
 {{ end }}
 
 DISCOVERYENGINE_ENABLED=true
-DISCOVERYENGINE_VERSION=2
+DISCOVERYENGINE_VERSION={{.DiscoveryEngineVersion}}
 TLS_CERT_FILE="/opt/cert/encoded.pem"
 TLS_ENABLED={{ or .TlsEnabled .RMQEnabled }}
 POLICY_TOPIC={{.PolicyV1Topic}}
-SUMMARY_TOPIC={{.SummaryV2Topic}}
+SUMMARY_TOPIC={{.SummaryTopic}}
 DEPLOY_MODE="vm"
 RABBITMQ_ENABLED={{ or .TlsEnabled .RMQEnabled }}
 RABBITMQ_ALERTS_TOPIC={{.AlertsTopic}}

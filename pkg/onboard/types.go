@@ -103,7 +103,8 @@ type ClusterConfig struct {
 	FileOperation    bool `json:"file_operation,omitempty"`
 	NetworkOperation bool `json:"network_operation,omitempty"`
 
-	SumEngineCronTime time.Duration `json:"sumengine_cron_time,omitempty"`
+	SummarySchemaVersion string        `json:"summary_schema_version,omitempty"`
+	SumEngineCronTime    time.Duration `json:"sumengine_cron_time,omitempty"`
 
 	CIDR string `json:"cidr,omitempty"`
 
@@ -361,14 +362,16 @@ type TemplateConfigArgs struct {
 	TlsCertFile string `json:"tls_cert_file,omitempty"`
 
 	// topic config
-	PoliciesTopic     string `json:"policies_topic,omitempty"`
-	StateEventTopic   string `json:"state_event_topic,omitempty"`
-	LogsTopic         string `json:"logs_topic,omitempty"`
-	AlertsTopic       string `json:"alerts_topic,omitempty"`
-	PolicyV1Topic     string `json:"policyv1_topic,omitempty"`
-	SummaryV2Topic    string `json:"summaryv2_topic,omitempty"`
-	AnnotationTopic   string `json:"annotation_topic,omitempty"`
-	PoliciesListTopic string `json:"policies_list_topic,omitempty"`
+	PoliciesTopic          string `json:"policies_topic,omitempty"`
+	StateEventTopic        string `json:"state_event_topic,omitempty"`
+	LogsTopic              string `json:"logs_topic,omitempty"`
+	AlertsTopic            string `json:"alerts_topic,omitempty"`
+	PolicyV1Topic          string `json:"policyv1_topic,omitempty"`
+	SummaryTopic           string `json:"summary_topic,omitempty"`
+	DiscoveryEngineVersion string `json:"discovery_engine_version,omitempty"`
+	SummaryV2Topic         string `json:"summaryv2_topic,omitempty"`
+	AnnotationTopic        string `json:"annotation_topic,omitempty"`
+	PoliciesListTopic      string `json:"policies_list_topic,omitempty"`
 
 	// rra configs
 	RRAConfigObject RRAConfig `json:"-"`
@@ -376,7 +379,8 @@ type TemplateConfigArgs struct {
 	// splunk config
 	SplunkConfigObject SplunkConfig `json:"-"`
 
-	SumEngineCronTime time.Duration `json:"sumengine_cron_time,omitempty"`
+	SummarySchemaVersion string        `json:"summary_schema_version,omitempty"`
+	SumEngineCronTime    time.Duration `json:"sumengine_cron_time,omitempty"`
 
 	NodeStateRefreshTime int `json:"node_state_refresh_time,omitempty"`
 

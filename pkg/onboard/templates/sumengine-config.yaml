@@ -45,6 +45,7 @@ watcher:
 {{- end }}
 
 summary-engine:
+  schema-version: {{.SummarySchemaVersion}}
   kubearmor:
     enabled: true
     cron-interval: {{.SumEngineCronTime}}
@@ -58,7 +59,7 @@ summary-engine:
     exclude-namespaces:
       kubearmor: true
   topic:
-    summary-event: {{.SummaryV2Topic}}
+    summary-event: {{.SummaryTopic}}
   kmux-config:
     summary-event: {{.SummaryKmuxConfig}}
   k8s:

@@ -141,6 +141,10 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 
+		vmConfigs.SummarySchemaVersion = summarySchemaVersion
+		if err := vmConfigs.ValidateSummarySchema(); err != nil {
+			return err
+		}
 		vmConfigs.ForceRecreate = forceRecreate
 		vmConfigs.EnableIMA = enableIMA
 
