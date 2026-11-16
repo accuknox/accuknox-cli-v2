@@ -139,6 +139,10 @@ var cpNodeCmd = &cobra.Command{
 			return err
 		}
 
+		vmConfig.SummarySchemaVersion = summarySchemaVersion
+		if err := vmConfig.ValidateSummarySchema(); err != nil {
+			return err
+		}
 		vmConfig.ForceRecreate = forceRecreate
 		vmConfig.EnableIMA = enableIMA
 

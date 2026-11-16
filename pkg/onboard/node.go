@@ -29,6 +29,9 @@ func JoinClusterConfig(cc ClusterConfig, kubeArmorAddr, relayServerAddr, siaAddr
 }
 
 func (jc *JoinConfig) CreateBaseNodeConfig() error {
+	if err := jc.ValidateSummarySchema(); err != nil {
+		return err
+	}
 	jc.validateIMA()
 
 	hostname, err := os.Hostname()
@@ -164,18 +167,21 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 
 		EnableHostPolicyDiscovery: jc.EnableHostPolicyDiscovery,
 
-		ProcessOperation:     jc.ProcessOperation,
-		FileOperation:        jc.FileOperation,
-		NetworkOperation:     jc.NetworkOperation,
-		SumEngineCronTime:    jc.SumEngineCronTime,
-		NodeStateRefreshTime: jc.NodeStateRefreshTime,
-		SpireEnabled:         jc.SpireEnabled,
-		SpireCert:            jc.SpireCert,
-		ProxyExtraArgs:       jc.Proxy.ExtraArgs,
-		ProxyEnabled:         jc.Proxy.Enabled,
-		ProxyAddress:         jc.Proxy.Address,
-		ProxySaaSAddr:        jc.Proxy.SaaSAddr,
-		RMQEnabled:           jc.Tls.RMQEnabled,
+		ProcessOperation:       jc.ProcessOperation,
+		FileOperation:          jc.FileOperation,
+		NetworkOperation:       jc.NetworkOperation,
+		SumEngineCronTime:      jc.SumEngineCronTime,
+		SummarySchemaVersion:   jc.summarySchema(),
+		SummaryTopic:           jc.summaryTopic(),
+		DiscoveryEngineVersion: strings.TrimPrefix(jc.summarySchema(), "v"),
+		NodeStateRefreshTime:   jc.NodeStateRefreshTime,
+		SpireEnabled:           jc.SpireEnabled,
+		SpireCert:              jc.SpireCert,
+		ProxyExtraArgs:         jc.Proxy.ExtraArgs,
+		ProxyEnabled:           jc.Proxy.Enabled,
+		ProxyAddress:           jc.Proxy.Address,
+		ProxySaaSAddr:          jc.Proxy.SaaSAddr,
+		RMQEnabled:             jc.Tls.RMQEnabled,
 	}
 
 	jc.TCArgs.PoliciesKmuxConfig = common.KmuxPoliciesFileName
@@ -330,7 +336,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	for filePath, templateString := range kmuxConfigFileTemplateMap {
 		agentName, file := strings.Split(filePath, "/")[0], strings.Split(filePath, "/")[1]
 		populateAgentArgs(&jc.TCArgs, "kubearmor-vm-adapter")
-		populateKmuxArgs(&kmuxConfigArgs, agentName, file, jc.RMQTopicPrefix, jc.TCArgs.Hostname, jc.RMQConnectionName)
+		populateKmuxArgs(&kmuxConfigArgs, agentName, file, jc.RMQTopicPrefix, jc.TCArgs.Hostname, jc.RMQConnectionName, jc.summarySchema())
 		kmuxConfigArgs.UseCaFile = useCaFile(&jc.TCArgs, agentName, "")
 		if _, err := copyOrGenerateFile(jc.UserConfigPath, configPath, filePath, sprigFuncs, templateString, kmuxConfigArgs); err != nil {
 			return err
