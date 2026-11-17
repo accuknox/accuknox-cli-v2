@@ -7,7 +7,7 @@ discover:
       network: 100
       system: 1000
     time-limit: 1
-    topic: {{.SummaryV2Topic}}
+    topic: {{.SummaryTopic}}
     kmux-config: {{.SummaryKmuxConfig}}
   policy-client:
     server: 127.0.0.1:8090

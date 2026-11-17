@@ -432,7 +432,7 @@ services:
       - "HUBBLE_ENABLED=false"
       - "KAFKA_ENABLED=false"
       - "DISCOVERYENGINE_ENABLED=true"
-      - "DISCOVERYENGINE_VERSION=2"
+      - "DISCOVERYENGINE_VERSION={{.DiscoveryEngineVersion}}"
 
       - "KUBEARMOR_ENABLED=true"
       - "KUBEARMOR_URL={{.RelayServerAddr}}"
@@ -462,7 +462,7 @@ services:
       - "RABBITMQ_ALERTS_TOPIC={{.AlertsTopic}}"
       - "RABBITMQ_LOGS_TOPIC={{.LogsTopic}}"
       - "POLICY_TOPIC={{.PolicyV1Topic}}"
-      - "SUMMARY_TOPIC={{.SummaryV2Topic}}"
+      - "SUMMARY_TOPIC={{.SummaryTopic}}"
       - "DEPLOY_MODE=vm"
       - "RABBITMQ_ALERTS_KMUX_CONFIG=/opt/feeder-service/{{.AlertsKmuxConfig}}"
       - "RABBITMQ_LOGS_KMUX_CONFIG=/opt/feeder-service/{{.LogsKmuxConfig}}"

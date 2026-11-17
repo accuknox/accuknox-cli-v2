@@ -60,6 +60,7 @@ var (
 
 	sumEngineVisibility  string
 	sumEngineCronTime    string
+	summarySchemaVersion string
 	nodeStateRefreshTime int
 
 	joinToken string
@@ -151,6 +152,7 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.SumEngineImage, "sumengine-image", "", "summary-engine image to use")
 	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.SumEngineTag, "sumengine-version", "", "summary-engine version to use")
 
+	onboardVMCmd.PersistentFlags().StringVar(&summarySchemaVersion, "summary-schema-version", "v2", "Summary wire format: v2 or v3 (default: v2)")
 	onboardVMCmd.PersistentFlags().StringVar(&sumEngineCronTime, "sumengine-cron-time", "15m", "cron time for summary-engine in minutes (default: 15m)")
 
 	onboardVMCmd.PersistentFlags().BoolVar(&tls.Enabled, "tls", false, "enable TLS for rabbitmq connection")

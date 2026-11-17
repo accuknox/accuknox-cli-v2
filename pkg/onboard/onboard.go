@@ -253,7 +253,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 // prints join command - currently only with the default ports
 // TODO: handle complex configuration
 func (cc *ClusterConfig) PrintJoinCommand() {
-	command := "knoxctl onboard vm node"
+	command := "knoxctl onboard vm node --summary-schema-version=" + cc.summarySchema()
 
 	cpNodeAddr := cc.CPNodeAddr
 	if cc.CPNodeAddr == "" {

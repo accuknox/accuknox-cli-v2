@@ -153,7 +153,7 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 		}
 		// copy kmux config
 		if obj.KmuxConfigPath != "" {
-			populateKmuxArgs(&kmuxConfigArgs, obj.AgentName, obj.KmuxConfigFileName, jc.RMQTopicPrefix, jc.TCArgs.Hostname, jc.RMQConnectionName)
+			populateKmuxArgs(&kmuxConfigArgs, obj.AgentName, obj.KmuxConfigFileName, jc.RMQTopicPrefix, jc.TCArgs.Hostname, jc.RMQConnectionName, jc.summarySchema())
 			kmuxConfigArgs.UseCaFile = useCaFile(&jc.TCArgs, obj.AgentName, obj.AgentImage)
 			// copy generic config files
 			_, err = copyOrGenerateFile(jc.UserConfigPath, obj.AgentDir, obj.KmuxConfigFileName, jc.TemplateFuncs, obj.KmuxConfigTemplateString, kmuxConfigArgs)
