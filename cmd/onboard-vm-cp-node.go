@@ -139,6 +139,9 @@ var cpNodeCmd = &cobra.Command{
 			return err
 		}
 
+		vmConfig.FeederMessageStore = feederMessageStore
+		vmConfig.VMAdapterMessageStore = vmAdapterMessageStore
+		vmConfig.SumengineMessageStore = sumengineMessageStore
 		vmConfig.SummarySchemaVersion = summarySchemaVersion
 		if err := vmConfig.ValidateSummarySchema(); err != nil {
 			return err
