@@ -24,10 +24,10 @@ func (cc *ClusterConfig) ValidateSummarySchema() error {
 	return nil
 }
 
-// Sumengine v3 fixes the routing key; the RabbitMQ exchange remains prefixed.
+// Apply the configured topic prefix consistently to both summary schemas.
 func (cc *ClusterConfig) summaryTopic() string {
 	if cc.summarySchema() == "v3" {
-		return "summary-v3"
+		return getTopicName(cc.RMQTopicPrefix, "summary-v3")
 	}
 	return getTopicName(cc.RMQTopicPrefix, "summary-v2")
 }
