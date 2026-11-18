@@ -172,6 +172,9 @@ func (jc *JoinConfig) CreateBaseNodeConfig() error {
 		NetworkOperation:       jc.NetworkOperation,
 		SumEngineCronTime:      jc.SumEngineCronTime,
 		SummarySchemaVersion:   jc.summarySchema(),
+		FeederMessageStore:     jc.FeederMessageStore,
+		VMAdapterMessageStore:  jc.VMAdapterMessageStore,
+		SumengineMessageStore:  jc.SumengineMessageStore,
 		SummaryTopic:           jc.summaryTopic(),
 		DiscoveryEngineVersion: strings.TrimPrefix(jc.summarySchema(), "v"),
 		NodeStateRefreshTime:   jc.NodeStateRefreshTime,
@@ -228,6 +231,9 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 
 	configPath, err := createDefaultConfigPath()
 	if err != nil {
+		return err
+	}
+	if err := prepareSumengineMessageStore(configPath, jc.SumengineMessageStore && jc.DeploySumengine); err != nil {
 		return err
 	}
 

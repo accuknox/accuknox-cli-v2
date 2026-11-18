@@ -272,6 +272,7 @@ services:
       KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
+      - "--message-store-enabled={{.VMAdapterMessageStore}}"
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
       - "--node-state-refresh={{.NodeStateRefreshTime}}"
       {{- end }}
@@ -428,6 +429,7 @@ services:
     restart: always
     environment:
       - "ENABLE_VM=true"
+      - "MESSAGE_STORE_ENABLED={{.FeederMessageStore}}"
       - "CLUSTER_NAME=default"
       - "HUBBLE_ENABLED=false"
       - "KAFKA_ENABLED=false"

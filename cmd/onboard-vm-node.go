@@ -141,6 +141,9 @@ var joinNodeCmd = &cobra.Command{
 			return err
 		}
 
+		vmConfigs.FeederMessageStore = feederMessageStore
+		vmConfigs.VMAdapterMessageStore = vmAdapterMessageStore
+		vmConfigs.SumengineMessageStore = sumengineMessageStore
 		vmConfigs.SummarySchemaVersion = summarySchemaVersion
 		if err := vmConfigs.ValidateSummarySchema(); err != nil {
 			return err
