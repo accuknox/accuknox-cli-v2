@@ -72,6 +72,7 @@ func (ic *InitConfig) InitializeControlPlaneSD() error {
 
 	// copy config files according to custom configuration specified by the user
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
+		InsecureTLS:    ic.InsecureTLS,
 		ReleaseVersion: ic.AgentsVersion,
 		StreamName:     "knox-gateway",
 		ServerURL:      ic.KnoxGateway,

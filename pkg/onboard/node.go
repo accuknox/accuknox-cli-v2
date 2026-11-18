@@ -292,6 +292,7 @@ func (jc *JoinConfig) JoinWorkerNode() error {
 	}
 
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
+		InsecureTLS:    jc.InsecureTLS,
 		ReleaseVersion: jc.AgentsVersion,
 		RMQServer:      jc.RMQServer,
 		RMQUsername:    jc.TCArgs.RMQUsername,

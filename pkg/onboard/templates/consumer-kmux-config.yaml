@@ -32,7 +32,7 @@ rabbitmq:
     {{- else }}
     cert-file: {{.TlsCertFile}}
     {{- end }}
-    skip-verify: false
+    skip-verify: {{.InsecureTLS}}
   connection-name: {{.ConnectionName}}
   proxy:
     enabled: {{.ProxyEnabled}}
