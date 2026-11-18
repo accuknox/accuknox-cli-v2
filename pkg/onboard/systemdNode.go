@@ -98,6 +98,7 @@ func (jc *JoinConfig) JoinSystemdNode() error {
 
 	// config services
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
+		InsecureTLS:    jc.InsecureTLS,
 		ReleaseVersion: jc.AgentsVersion,
 		RMQServer:      jc.RMQServer,
 		RMQUsername:    jc.TCArgs.RMQUsername,
