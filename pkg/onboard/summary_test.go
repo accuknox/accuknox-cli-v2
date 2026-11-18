@@ -38,7 +38,7 @@ func TestSummaryTemplates(t *testing.T) {
 			args := ic.TCArgs
 			expectedTopic := "test-summary-v2"
 			if schema == "v3" {
-				expectedTopic = "summary-v3"
+				expectedTopic = "test-summary-v3"
 			}
 			if args.SummaryTopic != expectedTopic {
 				t.Fatalf("topic %q, want %q", args.SummaryTopic, expectedTopic)
@@ -88,5 +88,20 @@ func TestSummaryTemplates(t *testing.T) {
 				t.Fatal(kmux.QueueName)
 			}
 		})
+	}
+}
+
+func TestSummaryTopicPrefix(t *testing.T) {
+	for _, tc := range []struct{ schema, prefix, want string }{
+		{"", "cluster-a", "cluster-a-summary-v2"},
+		{"v2", "cluster-a", "cluster-a-summary-v2"},
+		{"v3", "cluster-a", "cluster-a-summary-v3"},
+		{"v2", "", "summary-v2"},
+		{"v3", "", "summary-v3"},
+	} {
+		cc := ClusterConfig{SummarySchemaVersion: tc.schema, RMQTopicPrefix: tc.prefix}
+		if got := cc.summaryTopic(); got != tc.want {
+			t.Errorf("schema=%q prefix=%q: got %q, want %q", tc.schema, tc.prefix, got, tc.want)
+		}
 	}
 }
