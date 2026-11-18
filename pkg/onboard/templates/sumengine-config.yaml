@@ -45,6 +45,12 @@ watcher:
 {{- end }}
 
 summary-engine:
+  message-store:
+    enable: {{.SumengineMessageStore}}
+    path: "/opt/accuknox-sumengine/message-store"
+    max-storage-bytes: 10000000
+    retry-interval-seconds: 10
+    gc-interval-minutes: 10
   schema-version: {{.SummarySchemaVersion}}
   kubearmor:
     enabled: true

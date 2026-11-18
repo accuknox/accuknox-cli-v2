@@ -1,4 +1,5 @@
 ENABLE_VM=true
+MESSAGE_STORE_ENABLED={{.FeederMessageStore}}
 CLUSTER_NAME="default"
 HUBBLE_ENABLED=false
 KAFKA_ENABLED=false
