@@ -58,10 +58,13 @@ var (
 
 	rmqConnectionName string
 
-	sumEngineVisibility  string
-	sumEngineCronTime    string
-	summarySchemaVersion string
-	nodeStateRefreshTime int
+	sumEngineVisibility   string
+	sumEngineCronTime     string
+	feederMessageStore    bool
+	vmAdapterMessageStore bool
+	sumengineMessageStore bool
+	summarySchemaVersion  string
+	nodeStateRefreshTime  int
 
 	joinToken string
 	spireHost string
@@ -152,6 +155,9 @@ func init() {
 	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.SumEngineImage, "sumengine-image", "", "summary-engine image to use")
 	onboardVMCmd.PersistentFlags().StringVar(&imageVersions.SumEngineTag, "sumengine-version", "", "summary-engine version to use")
 
+	onboardVMCmd.PersistentFlags().BoolVar(&feederMessageStore, "feeder-message-store", false, "Enable or disable Feeder message-store via MESSAGE_STORE_ENABLED (requires image support); disabled by default")
+	onboardVMCmd.PersistentFlags().BoolVar(&vmAdapterMessageStore, "vm-adapter-message-store", false, "Enable or disable VM-adapter message-store; disabled by default")
+	onboardVMCmd.PersistentFlags().BoolVar(&sumengineMessageStore, "sumengine-message-store", false, "Enable or disable summary-engine message-store; disabled by default")
 	onboardVMCmd.PersistentFlags().StringVar(&summarySchemaVersion, "summary-schema-version", "v2", "Summary wire format: v2 or v3 (default: v2)")
 	onboardVMCmd.PersistentFlags().StringVar(&sumEngineCronTime, "sumengine-cron-time", "15m", "cron time for summary-engine in minutes (default: 15m)")
 

@@ -103,8 +103,12 @@ type ClusterConfig struct {
 	FileOperation    bool `json:"file_operation,omitempty"`
 	NetworkOperation bool `json:"network_operation,omitempty"`
 
-	SummarySchemaVersion string        `json:"summary_schema_version,omitempty"`
-	SumEngineCronTime    time.Duration `json:"sumengine_cron_time,omitempty"`
+	// Message stores are disabled unless explicitly enabled.
+	FeederMessageStore    bool          `json:"feeder_message_store,omitempty"`
+	VMAdapterMessageStore bool          `json:"vm_adapter_message_store,omitempty"`
+	SumengineMessageStore bool          `json:"sumengine_message_store,omitempty"`
+	SummarySchemaVersion  string        `json:"summary_schema_version,omitempty"`
+	SumEngineCronTime     time.Duration `json:"sumengine_cron_time,omitempty"`
 
 	CIDR string `json:"cidr,omitempty"`
 
@@ -379,8 +383,12 @@ type TemplateConfigArgs struct {
 	// splunk config
 	SplunkConfigObject SplunkConfig `json:"-"`
 
-	SummarySchemaVersion string        `json:"summary_schema_version,omitempty"`
-	SumEngineCronTime    time.Duration `json:"sumengine_cron_time,omitempty"`
+	// Message stores are disabled unless explicitly enabled.
+	FeederMessageStore    bool          `json:"feeder_message_store,omitempty"`
+	VMAdapterMessageStore bool          `json:"vm_adapter_message_store,omitempty"`
+	SumengineMessageStore bool          `json:"sumengine_message_store,omitempty"`
+	SummarySchemaVersion  string        `json:"summary_schema_version,omitempty"`
+	SumEngineCronTime     time.Duration `json:"sumengine_cron_time,omitempty"`
 
 	NodeStateRefreshTime int `json:"node_state_refresh_time,omitempty"`
 

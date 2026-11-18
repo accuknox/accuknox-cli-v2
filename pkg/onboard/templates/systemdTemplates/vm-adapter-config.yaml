@@ -54,3 +54,5 @@ policy-list-relay-frequency: "{{.PoliciesListRefresh}}"
 {{- if gt .KubeArmorHealthPort 0 }}
 kubearmor-health-port: {{ .KubeArmorHealthPort }}
 {{- end }}
+
+message-store-enabled: {{.VMAdapterMessageStore}}

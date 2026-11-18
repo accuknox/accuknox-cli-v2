@@ -234,6 +234,7 @@ services:
     - "KUBEARMOR_CFG=/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
+      - "--message-store-enabled={{.VMAdapterMessageStore}}"
       - "--relay-server-addr={{.RelayServerURL}}"
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
       - "--node-state-refresh={{.NodeStateRefreshTime}}"

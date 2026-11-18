@@ -151,6 +151,9 @@ func (ic *InitConfig) CreateBaseTemplateConfig() error {
 		RRAConfigObject:        ic.RRAConfigObject,
 		SumEngineCronTime:      ic.SumEngineCronTime,
 		SummarySchemaVersion:   ic.summarySchema(),
+		FeederMessageStore:     ic.FeederMessageStore,
+		VMAdapterMessageStore:  ic.VMAdapterMessageStore,
+		SumengineMessageStore:  ic.SumengineMessageStore,
 		SummaryTopic:           ic.summaryTopic(),
 		DiscoveryEngineVersion: strings.TrimPrefix(ic.summarySchema(), "v"),
 		NodeStateRefreshTime:   ic.NodeStateRefreshTime,
@@ -176,6 +179,9 @@ func (ic *InitConfig) InitializeControlPlane() error {
 
 	configPath, err := createDefaultConfigPath()
 	if err != nil {
+		return err
+	}
+	if err := prepareSumengineMessageStore(configPath, ic.SumengineMessageStore); err != nil {
 		return err
 	}
 	if ic.DeployRMQ {
