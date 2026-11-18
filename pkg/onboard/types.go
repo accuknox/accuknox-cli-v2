@@ -410,6 +410,7 @@ type TemplateConfigArgs struct {
 }
 
 type KmuxConfigTemplateArgs struct {
+	InsecureTLS     bool   `json:"insecure_tls,omitempty"`
 	ReleaseVersion  string `json:"release_version,omitempty"`
 	StreamName      string `json:"stream_name,omitempty"`
 	ServerURL       string `json:"server_url,omitempty"`

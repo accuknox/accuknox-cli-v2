@@ -230,6 +230,7 @@ func (ic *InitConfig) InitializeControlPlane() error {
 	}
 
 	kmuxConfigArgs := KmuxConfigTemplateArgs{
+		InsecureTLS:    ic.InsecureTLS,
 		ReleaseVersion: ic.AgentsVersion,
 		StreamName:     "knox-gateway",
 		ServerURL:      ic.KnoxGateway,

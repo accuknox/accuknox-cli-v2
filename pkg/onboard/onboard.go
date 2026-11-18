@@ -33,6 +33,7 @@ func CreateClusterConfig(clusterType ClusterType, userConfigPath string, vmMode 
 	rmqAddr string, deploySumengine bool, registry, registryConfigPath string, insecureRegistryConnection, httpRegistryConnection, preserveUpstream bool, topicPrefix, connName, sumEngineCronTime string, tls TLS, enableHostPolicyDiscovery bool, splunk SplunkConfig, stateRefreshTime int, spireEnabled, spireCert bool, logRotate string, parallel int, hardeningService bool, releaseFile string, proxy Proxy, deployDiscover, skipDownload bool, fromSource string,
 ) (*ClusterConfig, error) {
 	cc := new(ClusterConfig)
+	cc.InsecureTLS = insecureRegistryConnection
 
 	if splunk.Enabled {
 		if err := validateSplunkCredential(splunk); err != nil {
