@@ -249,7 +249,7 @@ func (s *Server) handleFetchProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	apiURL := strings.TrimRight(bs.ControlPlane, "/") +
-		"/api/v1/sbom/projects?page=1&page_size=100"
+		"/api/v1/xbom/projects?page=1&page_size=100"
 
 	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, apiURL, nil) // #nosec G107
 	if err != nil {
@@ -369,10 +369,10 @@ func publishBOMBytes(ctx context.Context, bs BOMSettings, bomType string, data [
 	mw.Close()
 
 	apiURL := strings.TrimRight(bs.ControlPlane, "/") +
-		"/api/v1/sbom/bomfiles/upload" +
+		"/api/v1/xbom/upload" +
 		"?project_id=" + url.QueryEscape(bs.Project) +
 		"&label_id=" + url.QueryEscape(bs.Label) +
-		"&save_to_s3=true"
+		"&xbom_type=" + url.QueryEscape(bomType)
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, &buf) // #nosec G107
 	if err != nil {
