@@ -2869,10 +2869,10 @@ function updatePublishPreview(type, bomJson) {
   const cp = _bomSettings.control_plane.replace(/\/$/, '');
   const masked = _bomSettings.token ? _bomSettings.token.slice(0,4) + '••••' + _bomSettings.token.slice(-4) : '<token>';
   el.value = [
-    'POST ' + cp + '/api/v1/sbom/bomfiles/upload',
+    'POST ' + cp + '/api/v1/xbom/upload',
     '  ?project_id=' + (_bomSettings.project || '<project>'),
     '  &label_id='   + (_bomSettings.label   || '<label>'),
-    '  &save_to_s3=true',
+    '  &xbom_type='  + type,
     '',
     'Authorization: Bearer ' + masked,
     'Content-Type: multipart/form-data',
