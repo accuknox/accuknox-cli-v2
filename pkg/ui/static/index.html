@@ -705,7 +705,7 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
         <div class="output-label">SBOM Output <span id="sbom-count" class="badge badge-info" style="margin-left:8px"></span></div>
         <div class="output-actions" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-sm" onclick="copyOutput('sbom-out')">Copy</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadOutput('sbom-out','sbom.json')">Download</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadOutput('sbom-out', _bomFilenames['sbom'] || 'sbom.json')">Download</button>
         </div>
       </div>
       <div class="output-body">
@@ -912,7 +912,7 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
         <div class="output-label">CBOM Output <span id="cbom-count" class="badge badge-info" style="margin-left:8px"></span></div>
         <div class="output-actions" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-sm" onclick="copyOutput('cbom-out')">Copy</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadOutput('cbom-out','cbom.json')">Download</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadOutput('cbom-out', _bomFilenames['cbom'] || 'cbom.json')">Download</button>
         </div>
       </div>
       <div class="output-body">
@@ -1096,7 +1096,7 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
         <div class="output-label">AIBOM Output <span id="aibom-count" class="badge badge-info" style="margin-left:8px"></span></div>
         <div class="output-actions" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-sm" onclick="copyOutput('aibom-out')">Copy</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadOutput('aibom-out','aibom.json')">Download</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadOutput('aibom-out', _bomFilenames['aibom'] || 'aibom.json')">Download</button>
         </div>
       </div>
       <div class="output-body">
@@ -1153,34 +1153,34 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
           <input type="url" id="cfg-cp" placeholder="https://your-tenant.accuknox.com"/>
           <small>Base URL of your AccuKnox control plane (no trailing slash)</small>
         </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>API Token</label>
+          <input type="password" id="cfg-token" placeholder="Paste your bearer token here"/>
+          <small>Sent as <code>Authorization: Bearer &lt;token&gt;</code></small>
+        </div>
         <div class="field">
           <label>Project</label>
           <div style="display:flex;gap:8px;align-items:center">
             <select id="cfg-project" style="flex:1">
-              <option value="">— save URL &amp; token, then click ↻ —</option>
+              <option value="">— enter URL &amp; token, then click ↻ to fetch —</option>
             </select>
             <button class="btn btn-ghost btn-sm" id="cfg-projects-btn" onclick="loadProjects()" title="Fetch projects from control plane" style="flex-shrink:0;padding:6px 10px">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             </button>
           </div>
-          <small id="cfg-project-hint">Select your AccuKnox project — click ↻ to load the list</small>
+          <small id="cfg-project-hint">Enter the Control Plane URL and API Token above, then click ↻ to fetch your projects.</small>
         </div>
         <div class="field">
           <label>Label</label>
           <div style="display:flex;gap:8px;align-items:center">
             <select id="cfg-label" style="flex:1">
-              <option value="">— save URL &amp; token, then click ↻ —</option>
+              <option value="">— enter URL &amp; token, then click ↻ to fetch —</option>
             </select>
             <button class="btn btn-ghost btn-sm" id="cfg-labels-btn" onclick="loadLabels()" title="Fetch labels from control plane" style="flex-shrink:0;padding:6px 10px">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             </button>
           </div>
-          <small id="cfg-label-hint">Select a label — click ↻ to load the list</small>
-        </div>
-        <div class="field" style="grid-column:1/-1">
-          <label>API Token</label>
-          <input type="password" id="cfg-token" placeholder="Paste your bearer token here"/>
-          <small>Sent as <code>Authorization: Bearer &lt;token&gt;</code></small>
+          <small id="cfg-label-hint">Enter the Control Plane URL and API Token above, then click ↻ to fetch your labels.</small>
         </div>
       </div>
       <div class="btn-row">
@@ -1746,6 +1746,38 @@ function errorProgress(prefix, msg) {
 // Keyed by prefix ('sbom', 'cbom', 'aibom'). Cleared on clearOutput.
 const _bomResults = {};
 
+// Cross-platform-safe download/upload filenames, keyed by prefix. Built once at
+// generation time (buildBomFilename) so the Download button, publish preview and
+// the actual upload all use one identical, timestamped name.
+const _bomFilenames = {};
+
+const _WIN_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i;
+
+// sanitizeFilePart keeps a conservative allowlist valid on Windows + macOS/Linux.
+function sanitizeFilePart(s) {
+  let out = (s || '').replace(/[^A-Za-z0-9._-]/g, '-')
+                     .replace(/-+/g, '-')
+                     .replace(/^[-. ]+|[-. ]+$/g, '');
+  if (out.length > 80) out = out.slice(0, 80).replace(/[-. ]+$/, '');
+  if (_WIN_RESERVED.test(out)) out = '_' + out;
+  return out;
+}
+
+// bomTimestamp → compact UTC stamp "YYYYMMDD-HHMMSS" (no ':' — Windows-safe).
+function bomTimestamp() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return '' + d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) +
+         '-' + p(d.getUTCHours()) + p(d.getUTCMinutes()) + p(d.getUTCSeconds());
+}
+
+// buildBomFilename → "<component>-<type>-<UTCstamp>.json"; component comes from
+// metadata.component.name, falling back to "<type>-<stamp>.json" when absent.
+function buildBomFilename(type, content) {
+  let comp = '';
+  try { comp = sanitizeFilePart(JSON.parse(content)?.metadata?.component?.name || ''); } catch (_) {}
+  return (comp ? comp + '-' : '') + type + '-' + bomTimestamp() + '.json';
+}
+
 // Display cap for the <pre> preview — keeps DOM memory low for large BOMs.
 const _PREVIEW_CAP = 64 * 1024; // 64 KB
 
@@ -1755,6 +1787,7 @@ function showOutput(prefix, content) {
   if (wrap) wrap.classList.add('show');
   if (box) {
     _bomResults[prefix] = content; // store full content off-DOM
+    _bomFilenames[prefix] = buildBomFilename(prefix, content); // traceable name
     if (content.length <= _PREVIEW_CAP) {
       // Small enough — pretty-print safely
       let display = content;
@@ -1776,6 +1809,7 @@ function clearOutput(prefix) {
   if (wrap) wrap.classList.remove('show');
   if (box) box.textContent = '';
   delete _bomResults[prefix];
+  delete _bomFilenames[prefix];
   const pw = document.getElementById(`${prefix}-publish-wrap`);
   if (pw) pw.style.display = 'none';
   if (prog) { prog.classList.remove('show'); const f = document.getElementById(`${prefix}-prog-fill`); if(f){f.style.width='0';f.style.background='';} }
@@ -1797,6 +1831,7 @@ function clearLog(prefix) {
   if (box) box.innerHTML = '';
   if (wrap) wrap.classList.remove('show');
   delete _bomResults[prefix];
+  delete _bomFilenames[prefix];
   hideProgress(prefix);
   clearExecLog(prefix);
 }
@@ -2849,6 +2884,7 @@ function saveSettings() {
     .then(r => r.json())
     .then(res => {
       if (st) { st.textContent = res.error ? '⚠ ' + res.error : '✓ Settings saved to ' + (navigator.userAgent.includes('Win') ? 'knoxctl-cfg.yaml' : '~/.knoxctl-cfg.yaml'); st.style.color = res.error ? 'var(--error)' : 'var(--success)'; }
+      if (!res.error) refreshPublishPanels();
     })
     .catch(e => { if (st) { st.textContent = '⚠ ' + e; st.style.color = 'var(--error)'; } })
     .finally(() => { if (btn) btn.disabled = false; });
@@ -2876,7 +2912,7 @@ function updatePublishPreview(type, bomJson) {
     '',
     'Authorization: Bearer ' + masked,
     'Content-Type: multipart/form-data',
-    'file: ' + type + '.json (' + (bomJson ? Math.round(bomJson.length/1024) + ' KB' : '—') + ')',
+    'file: ' + (_bomFilenames[type] || type + '.json') + ' (' + (bomJson ? Math.round(bomJson.length/1024) + ' KB' : '—') + ')',
   ].join('\n');
   el.style.height = 'auto';
   el.style.height = (el.scrollHeight + 2) + 'px';
@@ -2892,6 +2928,15 @@ function showPublishPanel(type, bomJson) {
   if (st) st.textContent = '';
 }
 
+// refreshPublishPanels re-renders every already-generated publish panel so the
+// API preview (project_id, label_id, control plane) tracks BOM Settings changes
+// in real time, instead of showing stale values until the next BOM generation.
+function refreshPublishPanels() {
+  ['sbom', 'cbom', 'aibom'].forEach(type => {
+    if (_bomResults[type]) showPublishPanel(type, _bomResults[type]);
+  });
+}
+
 function copyPreviewEl(id) {
   const el = document.getElementById(id);
   if (el) navigator.clipboard.writeText(el.value).catch(() => {});
@@ -2905,7 +2950,7 @@ function publishBOM(type) {
   const st  = document.getElementById(type + '-publish-status');
   if (btn) btn.disabled = true;
   if (st)  { st.textContent = 'Publishing…'; st.style.color = 'var(--text-muted)'; }
-  fetch('/api/' + type + '/publish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bom }) })
+  fetch('/api/' + type + '/publish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bom, filename: _bomFilenames[type] || '' }) })
     .then(r => r.json())
     .then(res => {
       if (res.error) {
