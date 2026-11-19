@@ -401,12 +401,13 @@ func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Source  string `json:"source"`
-		Scheme  string `json:"scheme"`
-		Format  string `json:"format"`
-		Exclude string `json:"exclude"`
-		Depth   bool   `json:"depth"`
-		Git     gitReq `json:"git"`
+		Source  string              `json:"source"`
+		Scheme  string              `json:"scheme"`
+		Format  string              `json:"format"`
+		Exclude string              `json:"exclude"`
+		Depth   bool                `json:"depth"`
+		Git     gitReq              `json:"git"`
+		Enrich  bomgen.EnrichParams `json:"enrich"`
 		signReq
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -513,8 +514,6 @@ func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count := bomgen.CountComponents(bomJSON)
-
 	// Strip scanner-engine branding so the underlying tool is never surfaced.
 	// Depth-scan output is rebranded per format; the standard package scan keeps
 	// its existing syft/Anchore → knoxctl/AccuKnox rebranding.
@@ -524,8 +523,103 @@ func (s *Server) handleSBOM(w http.ResponseWriter, r *http.Request) {
 		bomJSON = rebrandSBOM(bomJSON)
 	}
 
-	send("complete", buildComplete(count, bomJSON, req.signReq))
+	// Enrich CERT-In metadata the scanner engine does not emit natively
+	// (author, supplier, timestamp, and metadata.component CERT-In properties).
+	// No-op for non-CycloneDX formats or when the user supplied nothing.
+	if req.Enrich.HasAny() {
+		send("progress", progress(85, "Enriching CERT-In metadata…"))
+		flush()
+		bomJSON = bomgen.EnrichCycloneDX(bomJSON, req.Enrich)
+	}
+
+	count := bomgen.CountComponents(bomJSON)
+
+	payload := buildComplete(count, bomJSON, req.signReq)
+
+	// Validate the final document against the CycloneDX spec. Only CycloneDX
+	// JSON output is validatable by the `cyclonedx` CLI.
+	if req.Format == "cyclonedx-json" {
+		send("progress", progress(92, "Validating CycloneDX "+bomgen.CycloneDXSpecVersion+"…"))
+		flush()
+		payload["validation"] = validateCycloneDX(ctx, bomJSON, send, flush)
+	}
+
+	send("complete", payload)
 	flush()
+}
+
+// validateCycloneDX writes the final SBOM to a temp file and runs
+// `cyclonedx validate --input-version v1.6 --input-file <file>`, streaming the
+// CLI output as log lines. It returns a result map describing the outcome:
+//
+//	{ "valid": bool, "skipped": bool, "output": string, "specVersion": "v1.6" }
+//
+// A missing `cyclonedx` binary is reported as skipped (not an error) so SBOM
+// generation never fails solely because the validator is not installed.
+func validateCycloneDX(ctx context.Context, bomJSON []byte, send func(string, interface{}), flush func()) map[string]interface{} {
+	result := map[string]interface{}{
+		"specVersion": bomgen.CycloneDXSpecVersion,
+		"valid":       false,
+		"skipped":     false,
+	}
+
+	bin := resolveCycloneDX()
+	if bin == "" {
+		result["skipped"] = true
+		result["output"] = "cyclonedx CLI not found on PATH (set KNOXCTL_CYCLONEDX_BIN); skipping validation"
+		send("log", map[string]interface{}{"line": "⚠ " + result["output"].(string)})
+		flush()
+		return result
+	}
+
+	f, err := os.CreateTemp("", "knoxctl-validate-*.json")
+	if err != nil {
+		result["skipped"] = true
+		result["output"] = "could not stage SBOM for validation: " + err.Error()
+		return result
+	}
+	defer func() { _ = os.Remove(f.Name()) }()
+	if _, err := f.Write(bomJSON); err != nil {
+		_ = f.Close()
+		result["skipped"] = true
+		result["output"] = "could not write SBOM for validation: " + err.Error()
+		return result
+	}
+	_ = f.Close()
+
+	args := bomgen.CycloneDXValidateArgs(bomgen.CycloneDXSpecVersion, f.Name())
+	cmd := exec.CommandContext(ctx, bin, args...) // #nosec G204 — fixed args, temp file path
+	out, runErr := cmd.CombinedOutput()
+	outStr := strings.TrimSpace(string(out))
+	result["output"] = outStr
+	result["valid"] = runErr == nil
+
+	if runErr == nil {
+		send("log", map[string]interface{}{"line": "✓ CycloneDX " + bomgen.CycloneDXSpecVersion + " validation passed"})
+	} else {
+		send("log", map[string]interface{}{"line": "✗ CycloneDX validation failed: " + outStr})
+	}
+	flush()
+	return result
+}
+
+// resolveCycloneDX locates the external CycloneDX CLI, honouring the
+// KNOXCTL_CYCLONEDX_BIN override before falling back to PATH. Returns "" when
+// no runnable binary is found.
+func resolveCycloneDX() string {
+	if override := os.Getenv("KNOXCTL_CYCLONEDX_BIN"); override != "" {
+		if _, err := os.Stat(override); err == nil {
+			return override
+		}
+	}
+	binary := "cyclonedx"
+	if runtime.GOOS == "windows" {
+		binary = "cyclonedx.exe"
+	}
+	if path, err := exec.LookPath(binary); err == nil {
+		return path
+	}
+	return ""
 }
 
 // sbomReplacer performs all vendor-name substitutions in a single pass over the
