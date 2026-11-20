@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -42,9 +43,17 @@ func GenerateFromSource(opts *Options) (*cdx.BOM, error) {
 	// Embedded binary scanner (certificates, secrets, OpenSSL config, …).
 	binBOM, binErr := ScanDir(opts)
 
+	// Component name for metadata.component.name: prefer the caller-supplied
+	// name, otherwise the basename of the scanned path (e.g. "KubeArmor"),
+	// never the full local filesystem path. Resolve to an absolute path first
+	// so "." becomes the real directory name rather than a literal ".".
 	name := opts.Name
 	if name == "" {
-		name = opts.Path
+		p := filepath.Clean(opts.Path)
+		if abs, err := filepath.Abs(p); err == nil {
+			p = abs
+		}
+		name = filepath.Base(p)
 	}
 
 	// Merge: start from the binary scanner BOM (if available) and append
@@ -66,7 +75,7 @@ func GenerateFromSource(opts *Options) (*cdx.BOM, error) {
 			}
 		}
 		binBOM.Components = &merged
-		sanitizeBOM(binBOM, opts.Path, "", opts)
+		sanitizeBOM(binBOM, name, "", opts)
 		return binBOM, nil
 	}
 
