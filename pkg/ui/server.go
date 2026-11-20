@@ -42,10 +42,29 @@ type Server struct {
 // AppConfig is the persistent application configuration stored in
 // ~/.knoxctl-cfg.yaml (Linux/macOS) or knoxctl-cfg.yaml (Windows).
 type AppConfig struct {
-	BOM       BOMSettings    `yaml:"bom"       json:"bom"`
-	Git       GitSettings    `yaml:"git"       json:"git"`
-	Dashboard DashboardStats `yaml:"dashboard" json:"dashboard"`
-	Jobs      []ScheduledJob `yaml:"jobs"      json:"jobs"`
+	BOM       BOMSettings    `yaml:"bom"             json:"bom"`
+	Git       GitSettings    `yaml:"git"             json:"git"`
+	Dashboard DashboardStats `yaml:"dashboard"       json:"dashboard"`
+	Jobs      []ScheduledJob `yaml:"jobs"            json:"jobs"`
+	Enrich    EnrichDefaults `yaml:"enrich_defaults" json:"enrich_defaults"`
+}
+
+// EnrichDefaults is a reusable template of CERT-In enrichment values saved so
+// they are not re-typed for every scan. Only org-identity fields and the two
+// low-risk per-artifact fields (license, description) are templated. Fields
+// that must be unique to each BOM — component name/version/origin, purl,
+// hashes, release/EOL dates, executable/archive/structured file lists and
+// patch status — are deliberately never stored here, because applying a stale
+// value to a different artifact would silently produce an incorrect BOM.
+type EnrichDefaults struct {
+	AuthorName           string `yaml:"author_name"           json:"authorName"`
+	AuthorEmail          string `yaml:"author_email"          json:"authorEmail"`
+	SupplierName         string `yaml:"supplier_name"         json:"supplierName"`
+	SupplierURL          string `yaml:"supplier_url"          json:"supplierUrl"`
+	UsageRestrictions    string `yaml:"usage_restrictions"    json:"usageRestrictions"`
+	Criticality          string `yaml:"criticality"           json:"criticality"`
+	ComponentLicense     string `yaml:"component_license"      json:"componentLicense"`
+	ComponentDescription string `yaml:"component_description"  json:"componentDescription"`
 }
 
 // GitSettings holds personal access tokens for cloning private Git repositories
@@ -150,6 +169,7 @@ func (s *Server) registerRoutes() {
 
 	// API — config (GET=load, POST=save)
 	s.mux.HandleFunc("/api/config", cors(s.handleConfig))
+	s.mux.HandleFunc("/api/config/enrich-defaults", cors(s.handleEnrichDefaults))
 	s.mux.HandleFunc("/api/config/projects", cors(s.handleFetchProjects))
 	s.mux.HandleFunc("/api/config/labels", cors(s.handleFetchLabels))
 
@@ -225,9 +245,12 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, "invalid request: "+err.Error())
 			return
 		}
-		// Scheduled jobs are managed exclusively through the /api/schedule/*
-		// endpoints; never let a settings/counters save clobber them.
-		cfg.Jobs = loadAppConfig().Jobs
+		// Scheduled jobs and enrichment defaults are managed through their own
+		// endpoints (/api/schedule/*, /api/config/enrich-defaults); never let a
+		// settings/counters save clobber them.
+		prev := loadAppConfig()
+		cfg.Jobs = prev.Jobs
+		cfg.Enrich = prev.Enrich
 		if err := saveAppConfig(cfg); err != nil {
 			writeErr(w, "failed to save config: "+err.Error())
 			return
@@ -236,6 +259,28 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// handleEnrichDefaults persists the CERT-In enrichment template. Enrichment
+// defaults are saved independently of BOM Settings / counters so neither save
+// path clobbers the other (see handleConfig). GET is served by /api/config.
+func (s *Server) handleEnrichDefaults(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var ed EnrichDefaults
+	if err := json.NewDecoder(r.Body).Decode(&ed); err != nil {
+		writeErr(w, "invalid request: "+err.Error())
+		return
+	}
+	cfg := loadAppConfig()
+	cfg.Enrich = ed
+	if err := saveAppConfig(cfg); err != nil {
+		writeErr(w, "failed to save enrichment defaults: "+err.Error())
+		return
+	}
+	writeJSON(w, map[string]string{"status": "saved"})
 }
 
 // handleFetchProjects proxies a project-list request to the AccuKnox control
