@@ -188,7 +188,7 @@ func RunJobByID(ctx context.Context, id string, logw io.Writer) error {
 
 	data, err := generateSBOMBytes(ctx, job.SBOM, job.Git, logw)
 	if err == nil {
-		_, _, err = publishBOMBytes(ctx, job.Publish, "sbom", data)
+		_, _, err = publishBOMBytes(ctx, job.Publish, "sbom", data, "")
 	}
 
 	status := "success"

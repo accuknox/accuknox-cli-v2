@@ -322,7 +322,8 @@ func (s *Server) handlePublishBOM(w http.ResponseWriter, r *http.Request, bomTyp
 		return
 	}
 	var req struct {
-		BOM string `json:"bom"`
+		BOM      string `json:"bom"`
+		Filename string `json:"filename"` // optional client-proposed name; re-sanitised server-side
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErr(w, "invalid request: "+err.Error())
@@ -334,7 +335,7 @@ func (s *Server) handlePublishBOM(w http.ResponseWriter, r *http.Request, bomTyp
 	}
 
 	bs := loadAppConfig().BOM
-	code, body, err := publishBOMBytes(r.Context(), bs, bomType, []byte(req.BOM))
+	code, body, err := publishBOMBytes(r.Context(), bs, bomType, []byte(req.BOM), req.Filename)
 	if err != nil {
 		writeErr(w, err.Error())
 		return
@@ -346,10 +347,108 @@ func (s *Server) handlePublishBOM(w http.ResponseWriter, r *http.Request, bomTyp
 	})
 }
 
+// bomUploadFilename builds the multipart filename for a published BOM as
+// "<component>-<bomType>-<UTC timestamp>.json", so uploads are traceable to the
+// scanned component and the moment they were produced. The component name comes
+// from the client-proposed name when supplied (re-sanitised here — the client is
+// never trusted) and otherwise from metadata.component.name in the BOM. The
+// result is sanitised to a conservative allowlist valid on Windows and
+// macOS/Linux; when no usable component name exists it falls back to
+// "<bomType>-<timestamp>.json".
+func bomUploadFilename(bomType string, data []byte, clientName string) string {
+	if n := sanitizeUploadName(clientName); n != "" {
+		return n
+	}
+	ts := time.Now().UTC().Format("20060102-150405")
+	comp := sanitizeFilenamePart(componentNameFromBOM(data))
+	if comp == "" {
+		return bomType + "-" + ts + ".json"
+	}
+	return comp + "-" + bomType + "-" + ts + ".json"
+}
+
+// sanitizeUploadName makes a client-proposed filename safe: it drops any path,
+// applies the allowlist, and guarantees a .json extension. Returns "" when the
+// input yields nothing usable, so the caller falls back to a derived name.
+func sanitizeUploadName(name string) string {
+	if name == "" {
+		return ""
+	}
+	name = sanitizeFilenamePart(filepath.Base(name))
+	if name == "" {
+		return ""
+	}
+	if !strings.HasSuffix(strings.ToLower(name), ".json") {
+		name += ".json"
+	}
+	return name
+}
+
+// componentNameFromBOM returns metadata.component.name from a CycloneDX JSON
+// document, or "" when it is absent or the document cannot be parsed.
+func componentNameFromBOM(data []byte) string {
+	var doc struct {
+		Metadata struct {
+			Component struct {
+				Name string `json:"name"`
+			} `json:"component"`
+		} `json:"metadata"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return ""
+	}
+	return doc.Metadata.Component.Name
+}
+
+// sanitizeFilenamePart reduces an arbitrary string to one filename segment that
+// is valid on Windows and macOS/Linux: an allowlist of [A-Za-z0-9._-], collapsed
+// dashes, trimmed separators, a length cap, and a guard against Windows reserved
+// device names. Returns "" when nothing usable remains.
+func sanitizeFilenamePart(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9',
+			r == '.', r == '_', r == '-':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('-')
+		}
+	}
+	out := b.String()
+	for strings.Contains(out, "--") {
+		out = strings.ReplaceAll(out, "--", "-")
+	}
+	out = strings.Trim(out, "-. ")
+	if len(out) > 80 {
+		out = strings.Trim(out[:80], "-. ")
+	}
+	if isWindowsReservedName(out) {
+		out = "_" + out
+	}
+	return out
+}
+
+// isWindowsReservedName reports whether s (ignoring case, extension stripped) is
+// one of the reserved Windows device names that cannot be used as a filename.
+func isWindowsReservedName(s string) bool {
+	base := s
+	if i := strings.IndexByte(base, '.'); i >= 0 {
+		base = base[:i]
+	}
+	switch strings.ToLower(base) {
+	case "con", "prn", "aux", "nul",
+		"com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
+		"lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9":
+		return true
+	}
+	return false
+}
+
 // publishBOMBytes uploads a BOM document to the AccuKnox control plane using the
 // given settings. It is shared by the interactive publish handler and scheduled
 // jobs. Returns the HTTP status code and response body, or an error.
-func publishBOMBytes(ctx context.Context, bs BOMSettings, bomType string, data []byte) (int, string, error) {
+func publishBOMBytes(ctx context.Context, bs BOMSettings, bomType string, data []byte, clientName string) (int, string, error) {
 	if bs.ControlPlane == "" || bs.Project == "" || bs.Label == "" || bs.Token == "" {
 		return 0, "", fmt.Errorf("BOM/publish settings are incomplete (control plane, project, label, token)")
 	}
@@ -359,7 +458,7 @@ func publishBOMBytes(ctx context.Context, bs BOMSettings, bomType string, data [
 
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
-	fw, err := mw.CreateFormFile("file", bomType+".json")
+	fw, err := mw.CreateFormFile("file", bomUploadFilename(bomType, data, clientName))
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to create multipart field: %w", err)
 	}
