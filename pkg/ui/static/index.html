@@ -764,15 +764,15 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
         <div class="form-grid">
           <div class="field">
             <label>Source Path</label>
-            <input type="text" id="cs-path" placeholder=".  (current directory)" value="."/>
-          </div>
-          <div class="field">
-            <label>Project Name</label>
-            <input type="text" id="cs-name" placeholder="my-project"/>
+            <input type="text" id="cs-path" placeholder=".  (current directory)" value="." oninput="cbomNamePlaceholder()"/>
           </div>
           <div class="field">
             <label>Group / Module</label>
             <input type="text" id="cs-group" placeholder="com.example"/>
+          </div>
+          <div class="field">
+            <label>Component Name <span class="hint-dim">(metadata.component.name)</span></label>
+            <input type="text" id="cs-name" placeholder="Defaults to folder name"/>
           </div>
           <div class="field">
             <label>Version</label>
@@ -783,7 +783,7 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
             <input type="text" id="cs-desc" placeholder="Short project description"/>
           </div>
           <div class="field">
-            <label>License (SPDX)</label>
+            <label>License</label>
             <input type="text" id="cs-license" placeholder="Apache-2.0"/>
           </div>
         </div>
@@ -843,11 +843,11 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
         <div class="form-grid">
           <div class="field span2">
             <label>Image Reference</label>
-            <input type="text" id="ci-image" placeholder="nginx:latest  or  registry.io/org/app:v1.2"/>
+            <input type="text" id="ci-image" placeholder="nginx:latest  or  registry.io/org/app:v1.2" oninput="cbomNamePlaceholder()"/>
           </div>
           <div class="field">
-            <label>Project Name</label>
-            <input type="text" id="ci-name" placeholder="my-app"/>
+            <label>Component Name <span class="hint-dim">(metadata.component.name)</span></label>
+            <input type="text" id="ci-name" placeholder="Defaults to image name"/>
           </div>
           <div class="field">
             <label>Scanner Plugins</label>
@@ -1945,6 +1945,21 @@ function basename(src) {
   seg = seg.replace(/\.git$/i, '');          // git repo URL
   if (!src.includes('/') && seg.includes(':')) seg = seg.split(':')[0]; // image ref name:tag
   return seg;
+}
+/* Reflect the derived default Component Name live in the CBOM name placeholders:
+   source → basename of the Source Path (what cbom uses when the name is blank),
+   image → the entered image reference. Falls back to the static hint when empty. */
+function cbomNamePlaceholder() {
+  const src = document.getElementById('cs-name');
+  if (src) {
+    const b = basename(v('cs-path'));
+    src.placeholder = (b && b !== '.') ? b : 'Defaults to folder name';
+  }
+  const img = document.getElementById('ci-name');
+  if (img) {
+    const ref = (v('ci-image') || '').trim();
+    img.placeholder = ref || 'Defaults to image name';
+  }
 }
 /* Build the CERT-In "Unique Identifier" purl:
    pkg:supplier/<Org>/<Name>@<Version>?<qualifiers>#<subpath> */
