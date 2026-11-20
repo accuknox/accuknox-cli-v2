@@ -180,6 +180,9 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
 .enrich-subhdr{margin:14px 0 6px;font-size:11.5px;font-weight:700;color:var(--text-muted)}
 .enrich-subhdr code{font-size:11px;color:var(--brand)}
 .hint-dim{font-weight:400;color:var(--text-muted);font-size:11px}
+.enrich-template-bar{display:flex;align-items:center;gap:8px;margin:12px 0 4px;padding:8px 10px;border:1px dashed var(--border);border-radius:8px;background:var(--bg-subtle,rgba(127,127,127,.05))}
+.enrich-template-label{font-size:12px;font-weight:600;color:var(--text)}
+.enrich-template-status{font-size:11.5px;color:var(--text-muted)}
 .purl-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
 .purl-preview{display:block;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-sunken,rgba(127,127,127,.06));font-size:11.5px;color:var(--text);word-break:break-all}
 .auto-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px}
@@ -497,6 +500,17 @@ pre,code{font-family:'SF Mono','Fira Code',Consolas,monospace}
           <div class="alert alert-info" style="margin-top:12px">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <div>All 21 CERT-In fields. <strong>Derived</strong> fields come from the generated file; <strong>provided</strong> fields are injected after generation. Leave any blank to skip it.</div>
+          </div>
+
+          <!-- Reusable template: org-identity + license/description, saved so they
+               are not re-typed each scan. Per-artifact fields stay fill-each-time. -->
+          <div class="enrich-template-bar">
+            <span class="enrich-template-label">Template <span class="hint-dim">(author · supplier · usage · criticality · license · description)</span></span>
+            <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+              <span id="enrich-template-status" class="enrich-template-status"></span>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="applyEnrichDefaults(true)" title="Fill these fields from your saved default">↺ Apply default</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="saveEnrichDefaults()" title="Save the current values as your reusable default">💾 Save as default</button>
+            </span>
           </div>
 
           <!-- Group 1: derived from the generated file -->
@@ -1961,6 +1975,61 @@ function cbomNamePlaceholder() {
     img.placeholder = ref || 'Defaults to image name';
   }
 }
+/* ── CERT-In enrichment template (reusable defaults) ──────────────────────────
+   Maps the saved template fields to their enrich-form input ids. Only org-identity
+   plus the two low-risk per-artifact fields (license, description) are included;
+   per-artifact fields (component name/version, hash, EOL, …) are intentionally
+   absent so a stale value can never be auto-applied to a different BOM. */
+const _ENRICH_TPL = {
+  authorName:           'sbom-en-author-name',
+  authorEmail:          'sbom-en-author-email',
+  supplierName:         'sbom-en-supplier-name',
+  supplierUrl:          'sbom-en-supplier-url',
+  usageRestrictions:    'sbom-en-usage',
+  criticality:          'sbom-en-criticality',
+  componentLicense:     'sbom-en-comp-license',
+  componentDescription: 'sbom-en-comp-description',
+};
+let _enrichDefaults = {};
+
+/* Apply the saved template into the enrich form. force=false only fills blank
+   fields (non-destructive, used on load); force=true overwrites (Apply button). */
+function applyEnrichDefaults(force) {
+  const d = _enrichDefaults || {};
+  let n = 0;
+  for (const k in _ENRICH_TPL) {
+    const el = document.getElementById(_ENRICH_TPL[k]);
+    const val = d[k];
+    if (!el || !val) continue;
+    if (force || !el.value) {
+      el.value = val;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      n++;
+    }
+  }
+  refreshPurl();
+  updateEnrichStatus();
+  const st = document.getElementById('enrich-template-status');
+  if (st && force) {
+    st.textContent = n ? ('↺ Applied ' + n + ' field' + (n > 1 ? 's' : '')) : 'Nothing to apply';
+    st.style.color = 'var(--text-muted)';
+  }
+}
+
+/* Persist the current values of the template fields as the reusable default. */
+function saveEnrichDefaults() {
+  const payload = {};
+  for (const k in _ENRICH_TPL) payload[k] = v(_ENRICH_TPL[k]) || '';
+  const st = document.getElementById('enrich-template-status');
+  fetch('/api/config/enrich-defaults', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(res => {
+      if (!res.error) _enrichDefaults = payload;
+      if (st) { st.textContent = res.error ? ('⚠ ' + res.error) : '✓ Saved as default'; st.style.color = res.error ? 'var(--error)' : 'var(--success)'; }
+    })
+    .catch(e => { if (st) { st.textContent = '⚠ ' + e; st.style.color = 'var(--error)'; } });
+}
+
 /* Build the CERT-In "Unique Identifier" purl:
    pkg:supplier/<Org>/<Name>@<Version>?<qualifiers>#<subpath> */
 function buildPurl() {
@@ -2799,6 +2868,9 @@ function loadConfig() {
     document.getElementById('dash-cbom').textContent  = counters.cbom;
     document.getElementById('dash-aibom').textContent = counters.aibom;
     document.getElementById('dash-scan').textContent  = counters.scan;
+    // CERT-In enrichment template: prefill blank fields from the saved default.
+    _enrichDefaults = cfg.enrich_defaults || {};
+    applyEnrichDefaults(false);
   }).catch(() => {});
 }
 
