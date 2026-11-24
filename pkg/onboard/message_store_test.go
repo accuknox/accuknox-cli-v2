@@ -38,6 +38,7 @@ func TestMessageStoreTemplates(t *testing.T) {
 			for _, args := range []TemplateConfigArgs{ic.TCArgs, jc.TCArgs} {
 				// Worker rendering sets release metadata after base configuration.
 				args.ReleaseVersion = cc.AgentsVersion
+				args.KubeArmorVMAdapterImage = "accuknox/kubearmor-vm-adapter:v0.2.0"
 				for _, tc := range []struct{ file, key string }{
 					{"templates/docker-compose_cp-node.yaml", "--message-store-enabled="},
 					{"templates/docker-compose_cp-node.yaml", "MESSAGE_STORE_ENABLED="},
@@ -67,6 +68,51 @@ func TestMessageStoreTemplates(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestVMAdapterMessageStoreVersion(t *testing.T) {
+	for _, file := range []string{"templates/docker-compose_cp-node.yaml", "templates/docker-compose_node.yaml"} {
+		raw, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tmpl, err := template.New(file).Funcs(sprig.GenericFuncMap()).Parse(string(raw))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, tc := range []struct {
+			image string
+			want  bool
+		}{
+			{"accuknox/kubearmor-vm-adapter:v0.1.99", false},
+			{"accuknox/kubearmor-vm-adapter:v0.2.0-rc.1", false},
+			{"accuknox/kubearmor-vm-adapter:v0.2.0", true},
+			{"accuknox/kubearmor-vm-adapter:0.2.1", true},
+			{"registry.example:5000/kubearmor-vm-adapter:v0.3.0", true},
+			{"accuknox/kubearmor-vm-adapter:latest", false},
+			{"accuknox/kubearmor-vm-adapter", false},
+		} {
+			for _, setting := range []bool{false, true} {
+				t.Run(file+"/"+tc.image+"/"+fmt.Sprint(setting), func(t *testing.T) {
+					args := TemplateConfigArgs{
+						ReleaseVersion:          "v0.12.8",
+						KubeArmorVMAdapterImage: tc.image,
+						VMAdapterMessageStore:   setting,
+					}
+					var out bytes.Buffer
+					if err := tmpl.Execute(&out, args); err != nil {
+						t.Fatal(err)
+					}
+					if got := strings.Contains(out.String(), "--message-store-enabled="); got != (tc.want || setting) {
+						t.Fatalf("flag present = %v, want %v", got, tc.want || setting)
+					}
+					if (tc.want || setting) && !strings.Contains(out.String(), "--message-store-enabled="+fmt.Sprint(setting)) {
+						t.Fatal("incorrect message store setting")
+					}
+				})
+			}
+		}
 	}
 }
 
