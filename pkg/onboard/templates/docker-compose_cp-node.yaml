@@ -272,7 +272,10 @@ services:
       KUBEARMOR_CFG: "/opt/kubearmor/config/kubearmor_config.yaml"
     command:
       - "--kubearmor-addr={{.KubeArmorURL}}"
+      {{- $vmAdapterVersion := regexFind `^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$` (.KubeArmorVMAdapterImage | splitList ":" | last) | default "0.0.0" }}
+      {{- if or .VMAdapterMessageStore (semverCompare ">=0.2.0" $vmAdapterVersion) }}
       - "--message-store-enabled={{.VMAdapterMessageStore}}"
+      {{- end }}
       {{- if trimPrefix "v" .ReleaseVersion | semverCompare ">0.9.1" }}
       - "--node-state-refresh={{.NodeStateRefreshTime}}"
       {{- end }}

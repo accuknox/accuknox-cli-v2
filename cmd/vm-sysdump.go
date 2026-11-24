@@ -23,9 +23,9 @@ func newVMSysdumpCmd() *cobra.Command {
 	var logTail int
 	var timeout time.Duration
 	c := &cobra.Command{
-		Use:   "sysdump",
-		Short: "Collect VM agent diagnostics from systemd or Docker deployments",
-		Args:  cobra.NoArgs,
+		Use:               "sysdump",
+		Short:             "Collect VM agent diagnostics from systemd or Docker deployments",
+		Args:              cobra.NoArgs,
 		PersistentPreRunE: func(*cobra.Command, []string) error { return nil },
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if mode != "" && mode != string(onboard.VMMode_Systemd) && mode != string(onboard.VMMode_Docker) {
