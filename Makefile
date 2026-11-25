@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2022 Authors of KubeArmor
 CURDIR     := $(shell pwd)
+# Trivy v0.72.0 uses the Go 1.26 jsonv2 API removed in Go 1.27.
+GOTOOLCHAIN ?= go1.26.5
+export GOTOOLCHAIN
 INSTALLDIR := $(shell go env GOPATH)/bin/
 GOOS   ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
@@ -36,7 +39,7 @@ endif
 .DEFAULT_GOAL := build
 
 prebuild:
-	git submodule update --init --recursive
+	@if git submodule status --recursive | grep -Eq '^[-+U]'; then git submodule update --init --recursive; fi
 	cd $(RRADIR)/RRA; go mod tidy; CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-w -s ${GIT_INFO}" -o $(RRADIR)/rra-agent
 	cd $(CBOMDIR)/cbomkit-theia; go mod tidy; CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-w -s" -o $(CBOMDIR)/cbomkit-theia-bin
 	cd $(IMGSCANDIR)/trivy; go mod tidy; CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-w -s" -o $(CURDIR)/pkg/tools/bins/$(IMGSCAN_BIN) ./cmd/trivy/
