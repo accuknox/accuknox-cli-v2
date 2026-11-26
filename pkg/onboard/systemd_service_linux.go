@@ -28,16 +28,20 @@ func PrintAgentRestartCounts(ctx context.Context, out io.Writer, exclude map[str
 	defer conn.Close()
 	read := func(ctx context.Context, service string) (map[string]any, error) {
 		properties, err := conn.GetAllPropertiesContext(ctx, service)
-		var dbusErr godbus.Error
-		if errors.As(err, &dbusErr) {
-			switch dbusErr.Name {
-			case "org.freedesktop.systemd1.NoSuchUnit", "org.freedesktop.DBus.Error.UnknownObject":
-				return nil, errRestartUnitNotLoaded
-			}
+		if isSystemdUnitNotLoaded(err) {
+			return nil, errRestartUnitNotLoaded
 		}
 		return properties, err
 	}
 	return printAgentRestartCounts(ctx, out, agentRestartServices(), exclude, read)
+}
+
+func isSystemdUnitNotLoaded(err error) bool {
+	var dbusErr godbus.Error
+	if errors.As(err, &dbusErr) {
+		return dbusErr.Name == "org.freedesktop.systemd1.NoSuchUnit" || dbusErr.Name == "org.freedesktop.DBus.Error.UnknownObject"
+	}
+	return false
 }
 
 func StartSystemdService(serviceName string) error {
@@ -194,28 +198,49 @@ func ResetRestartCounter(service string) error {
 	}
 	defer dConn.Close()
 
-	err = dConn.ResetFailedUnitContext(ctx, service)
-	if err != nil {
-		fmt.Printf("failed to reset restart counter for %s: %v\n", service, err)
+	return resetRestartCounter(ctx, service, dConn)
+}
+
+type restartCounterConnection interface {
+	GetUnitPropertyContext(context.Context, string, string) (*dbus.Property, error)
+	ResetFailedUnitContext(context.Context, string) error
+	StartUnitContext(context.Context, string, string, chan<- string) (int, error)
+}
+
+func resetRestartCounter(ctx context.Context, service string, conn restartCounterConnection) error {
+	loadState, err := conn.GetUnitPropertyContext(ctx, service, "LoadState")
+	if isSystemdUnitNotLoaded(err) {
 		return nil
 	}
-
-	err = dConn.ReloadContext(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to reload systemd configuration: %v", err)
+		return fmt.Errorf("checking %s: %w", service, err)
+	}
+	if loadState.Value.Value() == "not-found" {
+		return nil
+	}
+	if err := conn.ResetFailedUnitContext(ctx, service); err != nil {
+		if isSystemdUnitNotLoaded(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to reset restart counter for %s: %w", service, err)
 	}
 
 	ch := make(chan string, 1)
-	_, err = dConn.StartUnitContext(ctx, service, "replace", ch)
+	_, err = conn.StartUnitContext(ctx, service, "replace", ch)
 	if err != nil {
-		return fmt.Errorf("failed to start %s: %v", service, err)
+		if isSystemdUnitNotLoaded(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to start %s: %w", service, err)
 	}
 
 	select {
 	case msg := <-ch:
 		if msg != "done" {
-			return fmt.Errorf("failed to start %s: %v", service, err)
+			return fmt.Errorf("failed to start %s: job result %q", service, msg)
 		}
+	case <-ctx.Done():
+		return ctx.Err()
 	case <-time.After(20 * time.Second):
 		return fmt.Errorf("timeout waiting for %s to start", service)
 	}

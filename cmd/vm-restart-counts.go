@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
@@ -29,7 +30,11 @@ counters and start agents that are not running, matching the existing reset beha
 				excluded[strings.TrimSuffix(service, ".service")+".service"] = true
 			}
 			if reset {
-				return onboard.ResetRestartCount(excluded)
+				if err := onboard.ResetRestartCount(excluded); err != nil {
+					return err
+				}
+				_, err := fmt.Fprintln(cmd.OutOrStdout(), "Agent restart counters reset successfully.")
+				return err
 			}
 			return onboard.PrintAgentRestartCounts(cmd.Context(), cmd.OutOrStdout(), excluded)
 		},

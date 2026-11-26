@@ -1029,17 +1029,19 @@ func agentRestartServices() []string {
 }
 
 func ResetRestartCount(exclude map[string]bool) error {
-	pseudoCC := new(ClusterConfig)
-	pseudoCC.CreateSystemdServiceObjects()
+	if runtime.GOOS == "linux" && os.Geteuid() != 0 {
+		return fmt.Errorf("resetting systemd restart counters requires administrator privileges: %w", os.ErrPermission)
+	}
 
-	for _, obj := range pseudoCC.SystemdServiceObjects {
-		if obj.ServiceName == "" || exclude[obj.ServiceName] {
+	var failures []error
+	for _, service := range agentRestartServices() {
+		if exclude[service] || exclude[strings.TrimSuffix(service, ".service")] {
 			continue
 		}
-		if err := ResetRestartCounter(obj.ServiceName); err != nil {
-			fmt.Printf("failed to reset restart counter for %v : %v\n", obj.ServiceName, err)
+		if err := ResetRestartCounter(service); err != nil {
+			failures = append(failures, err)
 		}
 	}
 
-	return nil
+	return errors.Join(failures...)
 }
