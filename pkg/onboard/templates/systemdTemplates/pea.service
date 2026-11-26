@@ -3,17 +3,17 @@ Description=accuknox-policy-enforcement-agent
 After=kubearmor.service kubearmor-vm-adapter.service spire-agent.service
 
 {{- if ge .SystemdVersion 230 }}
-# limit to 4 restarts in 60 seconds
+# Allow up to 10 starts in 5 minutes, including failure retries.
 # for newer systemd versions
 # https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#StartLimitIntervalSec=interval
-StartLimitIntervalSec=90
-StartLimitBurst=3
+StartLimitIntervalSec=300
+StartLimitBurst=10
 {{- else if ge .SystemdVersion 220 }}
-# limit to 4 restarts in 60 seconds
+# Allow up to 10 starts in 5 minutes, including failure retries.
 # for newer systemd versions
 # https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#StartLimitIntervalSec=interval
-StartLimitInterval=90
-StartLimitBurst=3
+StartLimitInterval=300
+StartLimitBurst=10
 {{- end }}
 
 [Service]
@@ -60,11 +60,11 @@ OOMPolicy=kill
 {{- end }}
 
 {{- if lt .SystemdVersion 220 }}
-# limit to 4 restarts in 60 seconds 
+# Allow up to 10 starts in 5 minutes, including failure retries.
 # for older systemd versions
 # https://www.freedesktop.org/software/systemd/man/systemd.service.html
-StartLimitInterval=90
-StartLimitBurst=3
+StartLimitInterval=300
+StartLimitBurst=10
 {{- end }}
 
 [Install]

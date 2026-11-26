@@ -1015,6 +1015,19 @@ func ConvertCronToSystemd(schedule string) (string, error) {
 	return finalSchedule, nil
 }
 
+func agentRestartServices() []string {
+	var config ClusterConfig
+	config.CreateSystemdServiceObjects()
+	services := []string{"omni.service"}
+	for _, service := range config.SystemdServiceObjects {
+		if service.ServiceName != "" {
+			services = append(services, service.ServiceName)
+		}
+	}
+	slices.Sort(services)
+	return slices.Compact(services)
+}
+
 func ResetRestartCount(exclude map[string]bool) error {
 	pseudoCC := new(ClusterConfig)
 	pseudoCC.CreateSystemdServiceObjects()

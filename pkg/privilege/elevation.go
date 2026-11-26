@@ -60,33 +60,14 @@ func Run(ctx context.Context, executable string, args []string, input io.Reader,
 	if err != nil {
 		return fmt.Errorf("administrator privileges are required; install sudo or rerun Knoxctl from an administrator/root terminal")
 	}
-	if err := authorize(ctx, sudo, stderr); err != nil {
-		return err
-	}
 	cmd, err := command(ctx, sudo, executable, NewRequest(args), input)
 	if err != nil {
 		return err
 	}
 	cmd.Stdout, cmd.Stderr = output, stderr
+	fmt.Fprintln(stderr, "This operation needs administrator privileges. sudo will ask for your password if required.")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("elevated Knoxctl command failed: %w", err)
-	}
-	return nil
-}
-
-func authorize(ctx context.Context, sudo string, stderr io.Writer) error {
-	if exec.CommandContext(ctx, sudo, "-n", "-v").Run() == nil {
-		fmt.Fprintln(stderr, "This operation needs administrator privileges; using your existing sudo authorization.")
-		return nil
-	}
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	fmt.Fprintln(stderr, "This operation needs administrator privileges. sudo will ask for your password if required.")
-	cmd := exec.CommandContext(ctx, sudo, "-v")
-	cmd.Stdout, cmd.Stderr = stderr, stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("administrator authorization failed: %w; authorize sudo or rerun Knoxctl as root", err)
 	}
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 )
@@ -15,8 +16,10 @@ import (
 // ValidateScheduled validates native installation without requiring a script
 // or a separate Omni executable. Offline mode needs only local databases.
 func (c Config) ValidateScheduled() error {
-	if _, err := onboard.ConvertCronToSystemd(c.Schedule); err != nil {
-		return err
+	if strings.TrimSpace(c.Schedule) != "" {
+		if _, err := onboard.ConvertCronToSystemd(c.Schedule); err != nil {
+			return err
+		}
 	}
 	if c.UploadTimeout < 0 {
 		return fmt.Errorf("upload timeout must be positive")

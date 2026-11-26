@@ -3,14 +3,37 @@ Description=AccuKnox Knoxctl VM vulnerability scanner
 Wants=network-online.target
 After=network-online.target
 
+{{- if ge .SystemdVersion 230 }}
+# Allow up to 10 starts in 5 minutes, including failure retries.
+StartLimitIntervalSec=300
+StartLimitBurst=10
+{{- else if ge .SystemdVersion 220 }}
+StartLimitInterval=300
+StartLimitBurst=10
+{{- end }}
+
 [Service]
 Type=simple
 User=root
+KillMode=control-group
 EnvironmentFile={{.EnvironmentFile}}
 ExecStart={{.Command}}
 TimeoutStartSec=infinity
+# Successful scans wait for the next timer activation.
+Restart=on-failure
+RestartSec=10
 CPUQuota=10%
+{{- if ge .SystemdVersion 230 }}
 MemoryMax=2G
+{{- else }}
+MemoryLimit=2G
+{{- end }}
+{{- if gt .SystemdVersion 241 }}
+CPUWeight=50
+{{- end }}
+{{- if ge .SystemdVersion 243 }}
+OOMPolicy=kill
+{{- end }}
 {{- if gt .SystemdVersion 240 }}
 StandardOutput=append:{{.LogDirectory}}/omni.log
 StandardError=append:{{.LogDirectory}}/omni-err.log
@@ -19,6 +42,11 @@ StandardOutput=file:{{.LogDirectory}}/omni.log
 StandardError=file:{{.LogDirectory}}/omni-err.log
 {{- end }}
 SyslogIdentifier=accuknox-omni
+
+{{- if lt .SystemdVersion 220 }}
+StartLimitInterval=300
+StartLimitBurst=10
+{{- end }}
 
 [Install]
 WantedBy=multi-user.target

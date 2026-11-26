@@ -4,17 +4,41 @@ package onboard
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"syscall"
 	"time"
 
 	dbus "github.com/coreos/go-systemd/v22/dbus"
+	godbus "github.com/godbus/dbus/v5"
 
 	cm "github.com/accuknox/accuknox-cli-v2/pkg/common"
 	"github.com/accuknox/accuknox-cli-v2/pkg/logger"
 )
+
+// PrintAgentRestartCounts reads counters without starting or resetting services.
+func PrintAgentRestartCounts(ctx context.Context, out io.Writer, exclude map[string]bool) error {
+	conn, err := dbus.NewWithContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to connect to systemd: %w", err)
+	}
+	defer conn.Close()
+	read := func(ctx context.Context, service string) (map[string]any, error) {
+		properties, err := conn.GetAllPropertiesContext(ctx, service)
+		var dbusErr godbus.Error
+		if errors.As(err, &dbusErr) {
+			switch dbusErr.Name {
+			case "org.freedesktop.systemd1.NoSuchUnit", "org.freedesktop.DBus.Error.UnknownObject":
+				return nil, errRestartUnitNotLoaded
+			}
+		}
+		return properties, err
+	}
+	return printAgentRestartCounts(ctx, out, agentRestartServices(), exclude, read)
+}
 
 func StartSystemdService(serviceName string) error {
 	if serviceName == "" {

@@ -83,9 +83,14 @@ func installVMScanner(ctx context.Context, c VMScannerServiceConfig, unitDir, st
 }
 
 func installVMScannerWithLegacy(ctx context.Context, c VMScannerServiceConfig, unitDir, stateDir, legacyDir string, run vmScannerCommand) error {
-	schedule, err := ConvertCronToSystemd(c.Schedule)
-	if err != nil {
-		return err
+	schedule := "daily"
+	customSchedule := strings.TrimSpace(c.Schedule) != ""
+	if customSchedule {
+		var err error
+		schedule, err = ConvertCronToSystemd(c.Schedule)
+		if err != nil {
+			return err
+		}
 	}
 	if !filepath.IsAbs(c.Executable) {
 		return fmt.Errorf("knoxctl executable path must be absolute")
@@ -106,7 +111,7 @@ func installVMScannerWithLegacy(ctx context.Context, c VMScannerServiceConfig, u
 	envPath := filepath.Join(c.AgentDirectory, "scanner.env")
 	values := map[string]any{
 		"Schedule":        schedule,
-		"CustomSchedule":  c.Schedule != "",
+		"CustomSchedule":  customSchedule,
 		"EnvironmentFile": strings.ReplaceAll(envPath, "%", "%%"),
 		"Command":         strings.Join(args, " "),
 		"LogDirectory":    strings.ReplaceAll(c.AgentDirectory, "%", "%%"),

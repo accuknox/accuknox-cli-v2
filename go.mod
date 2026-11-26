@@ -334,7 +334,7 @@ require (
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/gocsaf/csaf/v3 v3.5.1 // indirect
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
-	github.com/godbus/dbus/v5 v5.1.0 // indirect
+	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/golang/glog v1.2.5 // indirect

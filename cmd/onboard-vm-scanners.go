@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	neturl "net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -124,7 +125,7 @@ func validateOnboardScanners(cmd *cobra.Command) error {
 			return fmt.Errorf("invalid image scan schedule: %w", err)
 		}
 	}
-	return nil
+	return nativeScannerPrivilegeError(enableOmniVMScan, onboardVMScanUseScript, dryRun, os.Geteuid())
 }
 
 func installOnboardScanners(cmd *cobra.Command, cc *onboard.ClusterConfig) error {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"runtime"
 	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/deboard"
@@ -15,6 +17,10 @@ import (
 var deboardRRAScanner = newDeboardScannerCmd(deboard.UninstallSelectedScannersWithOutput)
 
 func newDeboardScannerCmd(uninstall func(context.Context, io.Writer, deboard.ScannerSelection) error) *cobra.Command {
+	return newDeboardScannerCmdWithUID(uninstall, os.Geteuid)
+}
+
+func newDeboardScannerCmdWithUID(uninstall func(context.Context, io.Writer, deboard.ScannerSelection) error, uid func() int) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "scanner",
 		Short:             "Remove all or selected VM scanners (Omni, RRA, and image scanner)",
@@ -29,6 +35,9 @@ func newDeboardScannerCmd(uninstall func(context.Context, io.Writer, deboard.Sca
 			if dryRun {
 				fmt.Fprintf(cmd.OutOrStdout(), "Would remove: %s\n", strings.Join(selected.Names(), ", "))
 				return nil
+			}
+			if err := nativeScannerPrivilegeError(selected.VM, false, false, uid()); err != nil {
+				return err
 			}
 			if err := uninstall(cmd.Context(), cmd.OutOrStdout(), selected); err != nil {
 				return err
@@ -72,4 +81,11 @@ func deboardScannerSelection(cmd *cobra.Command) (deboard.ScannerSelection, erro
 
 func init() {
 	deboardVMCmd.AddCommand(deboardRRAScanner)
+}
+
+func nativeScannerPrivilegeError(enabled, useScript, dryRun bool, uid int) error {
+	if enabled && !useScript && !dryRun && runtime.GOOS == "linux" && uid != 0 {
+		return fmt.Errorf("managing the native VM scanner requires administrator privileges: %w", os.ErrPermission)
+	}
+	return nil
 }
