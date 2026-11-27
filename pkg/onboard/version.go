@@ -12,9 +12,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/common"
+	"github.com/accuknox/accuknox-cli-v2/pkg/privilege"
 )
 
 const kubearmorBinaryPath = "/opt/kubearmor/kubearmor"
@@ -56,13 +59,16 @@ type configJSONObj struct {
 	ClusterConfig `json:"cluster_config"`
 }
 
-func DetermineAgentVersions() error {
+func DetermineAgentVersions(long bool) error {
 
 	knoxctlConfigPath := filepath.Clean(filepath.Join(common.SystemdKnoxctlDir, common.KnoxctlConfigFilename))
 
 	imageMap, err := buildImageMap(knoxctlConfigPath)
 	if err != nil {
 		return err
+	}
+	if len(imageMap) == 0 {
+		return nil
 	}
 
 	manifest := common.GetChecksumsInfo()
@@ -72,6 +78,9 @@ func DetermineAgentVersions() error {
 		path := binNames[binName]
 		info, ok, err := GetAgentVersion(binName, path, manifest, imageMap)
 		if err != nil {
+			if privilege.IsPermissionError(err) {
+				return fmt.Errorf("reading %s version: %w", binName, err)
+			}
 			fmt.Println("failed to get version", binName, err)
 			continue
 		}
@@ -83,16 +92,35 @@ func DetermineAgentVersions() error {
 	}
 
 	if len(infos) > 0 {
-		printVersionInfo(infos)
+		writeVersionInfo(os.Stdout, infos, long)
 	}
 
 	return nil
 }
 
-func printVersionInfo(infos []*VersionInfo) {
-	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+// AgentImageVersion extracts a tag without mistaking registry ports or image
+// digests for versions. Digest-only and untagged images have no known version.
+func AgentImageVersion(image string) string {
+	image, _, _ = strings.Cut(image, "@")
+	if strings.HasPrefix(image, "sha256:") {
+		return "unknown"
+	}
+	colon := strings.LastIndexByte(image, ':')
+	if colon <= strings.LastIndexByte(image, '/') || colon == len(image)-1 {
+		return "unknown"
+	}
+	return strings.TrimSuffix(image[colon+1:], common.SystemdTagSuffix)
+}
 
-	fmt.Fprintf(w, "AGENT\tIMAGE\tSTATUS\n")
+func writeVersionInfo(output io.Writer, infos []*VersionInfo, long bool) {
+	w := tabwriter.NewWriter(output, 0, 4, 2, ' ', 0)
+	sort.Slice(infos, func(i, j int) bool { return infos[i].Agent < infos[j].Agent })
+
+	if long {
+		fmt.Fprintln(w, "AGENT\tIMAGE\tSTATUS")
+	} else {
+		fmt.Fprintln(w, "NAME\tVERSION\tSTATUS")
+	}
 
 	var unverified []*VersionInfo
 
@@ -114,19 +142,25 @@ func printVersionInfo(infos []*VersionInfo) {
 		if image == "" {
 			image = "unknown"
 		}
+		if !long {
+			image = AgentImageVersion(image)
+		}
 
 		fmt.Fprintf(w, "%s\t%s\t%s\n", info.Agent, image, status)
 	}
 
 	w.Flush()
-
-	if len(unverified) == 0 {
-		fmt.Println("\nAll agents are MD5 checksum verified.")
+	if !long {
 		return
 	}
 
-	fmt.Println("\nUnverified Agents — MD5 Checksums:")
-	w2 := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+	if len(unverified) == 0 {
+		fmt.Fprintln(output, "\nAll agents are MD5 checksum verified.")
+		return
+	}
+
+	fmt.Fprintln(output, "\nUnverified Agents — MD5 Checksums:")
+	w2 := tabwriter.NewWriter(output, 0, 4, 2, ' ', 0)
 	fmt.Fprintf(w2, "AGENT\tMD5\n")
 	for _, info := range unverified {
 		md5Val := info.MD5

@@ -42,10 +42,16 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 		return err
 	}
 
-	if !agentsDeployed && spireHost != "" {
+	// A standalone RRA scan only needs SPIRE when a server was configured.
+	// Existing agent deployments manage their own SPIRE installation.
+	installSpire := !agentsDeployed && spireHost != ""
+	if installSpire {
 		host, port, _, err := getSpireDetails(spireHost, "")
 		if err != nil {
 			return err
+		}
+		if cc.AdditionalArgs == nil {
+			cc.AdditionalArgs = make(map[string]any)
 		}
 		cc.AdditionalArgs["SpireHostAddr"] = host
 		cc.AdditionalArgs["SpireHostPort"] = port
@@ -81,7 +87,7 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 			return err
 		}
 
-		if !agentsDeployed {
+		if installSpire {
 			cc.SPIREAgentImage, err = getImage(VMMode_Docker, registry, cm.DefaultDockerRegistry,
 				cm.DefaultAccuKnoxRepo, spireImage, cm.DefaultSPIREAgentImage,
 				"latest", releaseInfo.SPIREAgentImageTag, "", "", preserveUpstream)
@@ -112,7 +118,7 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 			return err
 		}
 
-		if !agentsDeployed {
+		if installSpire {
 			cc.SPIREAgentImage, err = getImage(VMMode_Systemd, registry, cm.DefaultDockerRegistry,
 				cm.DefaultAccuKnoxRepo, spireImage, cm.AgentRepos[cm.SpireAgent],
 				"", releaseInfo.SPIREAgentImageTag, "v", cm.SystemdTagSuffix, preserveUpstream)
@@ -135,7 +141,7 @@ func (cc *ClusterConfig) InitRRAConfig(authToken, url, tenantID, clusterID, clus
 			},
 		)
 
-		if !agentsDeployed {
+		if installSpire {
 
 			cc.AdditionalArgs["PartOfVMScan"] = true
 

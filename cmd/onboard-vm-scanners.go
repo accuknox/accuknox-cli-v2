@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	neturl "net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -14,9 +15,10 @@ import (
 )
 
 var (
-	enableOmniVMScan        bool
-	onboardVMScannerOptions vmscan.Config
-	onboardVMScanUseScript  bool
+	enableOmniVMScan          bool
+	onboardVMScannerOptions   vmscan.Config
+	onboardVMScanUseScript    bool
+	onboardVMScanSkipSchedule bool
 )
 
 func onboardScannerConfig() (vmscan.Config, error) {
@@ -33,6 +35,10 @@ func onboardScannerConfig() (vmscan.Config, error) {
 		return vmscan.Config{}, fmt.Errorf("VM scanning requires a positive numeric --tenant-id")
 	}
 	c := onboardVMScannerOptions
+	c.Schedule = schedule
+	if onboardVMScanSkipSchedule {
+		c.Schedule = ""
+	}
 	c.Endpoint, c.Token, c.TenantID, c.Label = endpoint, token, uint(id), label
 	if enableOmniVMScan && !onboardVMScanUseScript {
 		c.ClusterName = clusterName
@@ -99,7 +105,7 @@ func validateOnboardScanners(cmd *cobra.Command) error {
 		return err
 	}
 	if onboardVMScanUseScript && !enableOmniVMScan {
-		return fmt.Errorf("--use-script requires --enable-vm-scan during VM onboarding")
+		return fmt.Errorf("--use-script requires --enable-vm-scan (or --vm-scanner=true on onboard vm scanner)")
 	}
 	if !enableOmniVMScan && !imageScan {
 		return nil
@@ -119,7 +125,7 @@ func validateOnboardScanners(cmd *cobra.Command) error {
 			return fmt.Errorf("invalid image scan schedule: %w", err)
 		}
 	}
-	return nil
+	return nativeScannerPrivilegeError(enableOmniVMScan, onboardVMScanUseScript, dryRun, os.Geteuid())
 }
 
 func installOnboardScanners(cmd *cobra.Command, cc *onboard.ClusterConfig) error {
@@ -132,10 +138,18 @@ func installOnboardScanners(cmd *cobra.Command, cc *onboard.ClusterConfig) error
 	}
 	if cc.DryRun {
 		if enableOmniVMScan {
+			scanSchedule := c.Schedule
+			if scanSchedule == "" {
+				scanSchedule = "@daily"
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "VM scanner schedule: %s\n", scanSchedule)
 			if onboardVMScanUseScript {
-				fmt.Fprintln(cmd.OutOrStdout(), "Would install Omni's daily VM scanner using the external installer")
+				fmt.Fprintln(cmd.OutOrStdout(), "Would install Omni's scheduled VM scanner using the external installer")
 			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "Would install Omni's daily VM scanner using Knoxctl's native service and timer templates")
+				fmt.Fprintln(cmd.OutOrStdout(), "Would install Omni's scheduled VM scanner using Knoxctl's native service and timer templates")
+			}
+			if c.MalwareScan {
+				fmt.Fprintf(cmd.OutOrStdout(), "Would enable malware scanning using ClamAV signatures in %s (requires clamscan and populated signatures)\n", c.MalwareDBDirectory)
 			}
 		}
 		if imageScan {

@@ -5,6 +5,8 @@
 package cmd
 
 import (
+	"os"
+
 	//"github.com/accuknox/accuknox-cli/cmd/license"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/rs/zerolog/log"
@@ -31,6 +33,7 @@ var rootCmd = &cobra.Command{
 	Long: `
 Interact with KubeArmor and AccuKnox enterprise feature including license management, system summary and policy management.
 Harness the capabilites of AccuKnox eco-system with ease right from the command line. 
+Requests administrator privileges automatically when a local operation requires them.
 	`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -50,5 +53,6 @@ func init() {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	cobra.CheckErr(rootCmd.Execute())
+	command, err := rootCmd.ExecuteC()
+	cobra.CheckErr(handlePrivilegeError(command, err, os.Geteuid(), elevateCommand))
 }

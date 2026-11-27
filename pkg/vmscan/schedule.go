@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/accuknox/accuknox-cli-v2/pkg/onboard"
 )
@@ -15,6 +16,11 @@ import (
 // ValidateScheduled validates native installation without requiring a script
 // or a separate Omni executable. Offline mode needs only local databases.
 func (c Config) ValidateScheduled() error {
+	if strings.TrimSpace(c.Schedule) != "" {
+		if _, err := onboard.ConvertCronToSystemd(c.Schedule); err != nil {
+			return err
+		}
+	}
 	if c.UploadTimeout < 0 {
 		return fmt.Errorf("upload timeout must be positive")
 	}
@@ -38,7 +44,7 @@ func (c Config) ValidateScheduled() error {
 }
 
 // InstallScheduled uses Knoxctl's service and timer templates to run Omni's
-// packages daily, with the same initial-scan behavior as Omni's installer.
+// packages on the configured schedule, with an initial scan after installation.
 func InstallScheduled(ctx context.Context, c Config, stdout, stderr io.Writer) error {
 	if err := c.ValidateScheduled(); err != nil {
 		return err
@@ -52,6 +58,7 @@ func InstallScheduled(ctx context.Context, c Config, stdout, stderr io.Writer) e
 		Executable: executable,
 		Arguments:  scheduledArguments(c),
 		Token:      c.Token,
+		Schedule:   c.Schedule,
 	}, stdout, stderr)
 }
 

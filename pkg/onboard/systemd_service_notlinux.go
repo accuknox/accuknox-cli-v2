@@ -2,7 +2,15 @@
 
 package onboard
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"io"
+)
+
+func PrintAgentRestartCounts(ctx context.Context, out io.Writer, exclude map[string]bool) error {
+	return fmt.Errorf("systemd is not available on this platform")
+}
 
 func StartSystemdService(serviceName string) error {
 	return fmt.Errorf("systemd is not available on this platform")

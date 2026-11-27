@@ -32,9 +32,11 @@ func newOmniVMScanCmdWithLifecycle(schedule func(context.Context, vmscan.Config,
 	c := &cobra.Command{
 		PersistentPreRunE: func(*cobra.Command, []string) error { return nil },
 		Use:               "vm-scan",
-		Short:             "Install Omni's scheduled VM vulnerability scanner",
-		Long:              "Use Knoxctl's templates to install omni.service and a daily omni.timer, and trigger an initial scan through Omni's Go packages. Onboarding uses the same native installation. Use --use-script to run the external installer instead, --run-once for a single package scan, or --uninstall to remove the VM scanner.",
-		Args:              cobra.NoArgs,
+		// Native timers still invoke vm-scan --run-once internally.
+		Hidden: true,
+		Short:  "Install Omni's scheduled VM vulnerability scanner",
+		Long:   "Use Knoxctl's templates to install omni.service and an omni.timer (daily by default; configurable with --schedule), and trigger an initial scan through Omni's Go packages. Onboarding uses the same native installation. Use --use-script to run the external installer instead, --run-once for a single package scan, or --uninstall to remove the VM scanner.",
+		Args:   cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if removeScanner {
 				if err := uninstall(cmd.Context()); os.IsNotExist(err) {
@@ -75,6 +77,9 @@ func newOmniVMScanCmdWithLifecycle(schedule func(context.Context, vmscan.Config,
 				}
 			}
 			if runOnce {
+				if config.Schedule != "" {
+					return fmt.Errorf("--schedule cannot be combined with --run-once")
+				}
 				return vmscan.ScanWithProgress(cmd.Context(), config, cmd.OutOrStdout(), cmd.ErrOrStderr())
 			}
 			return installVMScannerWithStatus(cmd, config, schedule)
@@ -105,6 +110,7 @@ func newOmniVMScanCmdWithLifecycle(schedule func(context.Context, vmscan.Config,
 	c.Flags().StringVar(&config.BinaryURL, "omni-binary-url", "", "Omni binary download URL passed to the installer (for internal mirrors)")
 	c.Flags().StringVar(&config.InstallDir, "omni-install-dir", "/usr/local/bin", "Omni installation directory; offline installation requires an executable omni here")
 	c.Flags().BoolVar(&config.MalwareScan, "malware-scan", false, "enable malware scanning for direct scans and native or script installations; skips malware scanning with guidance if ClamAV tools or signatures are missing")
+	c.Flags().StringVar(&config.Schedule, "schedule", "", "cron schedule for native VM scanning (default: daily; example: 0 */6 * * *)")
 	c.Flags().StringVar(&config.MalwareDBDirectory, "malware-db-directory", "/var/lib/clamav", "ClamAV signature database directory")
 	c.MarkFlagsMutuallyExclusive("script-url", "script-path")
 	c.MarkFlagsMutuallyExclusive("use-script", "run-once", "uninstall")
